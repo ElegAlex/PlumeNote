@@ -1,5 +1,6 @@
 // ===========================================
 // Éditeur de Note TipTap (US-010 à US-016, US-030 à US-032)
+// US-008/US-009: Sauvegarde automatique avec indicateur
 // ===========================================
 
 import { useCallback, useEffect } from 'react';
@@ -11,11 +12,20 @@ import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
-import { debounce } from '../../lib/utils';
 import { EditorToolbar } from './EditorToolbar';
+import { SaveIndicator } from './SaveIndicator';
 import { WikilinkExtension } from './extensions/Wikilink';
+import { useAutoSave } from '../../hooks/useAutoSave';
 
 interface NoteEditorProps {
+  content: string;
+  onSave: (content: string) => Promise<void>;
+  noteId: string;
+  editable?: boolean;
+}
+
+/** @deprecated Utiliser onSave à la place */
+interface LegacyNoteEditorProps {
   content: string;
   onChange: (content: string) => void;
   noteId: string;
@@ -24,17 +34,25 @@ interface NoteEditorProps {
 
 export function NoteEditor({
   content,
-  onChange,
+  onSave,
   noteId,
   editable = true,
 }: NoteEditorProps) {
-  // Debounced save
-  const debouncedOnChange = useCallback(
-    debounce((html: string) => {
-      onChange(html);
-    }, 1000),
-    [onChange]
-  );
+  // Hook de sauvegarde automatique avec machine à états
+  const {
+    status,
+    lastSaved,
+    errorMessage,
+    triggerSave,
+    retry,
+    reset,
+  } = useAutoSave(onSave, {
+    debounceMs: 1000,
+    maxWaitMs: 30000,
+    maxRetries: 3,
+    retryDelayMs: 2000,
+    savedDisplayMs: 3000,
+  });
 
   const editor = useEditor({
     extensions: [
@@ -75,16 +93,17 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      debouncedOnChange(editor.getHTML());
+      triggerSave(editor.getHTML());
     },
   });
 
-  // Update content when noteId changes
+  // Reset state et mise à jour du contenu quand la note change
   useEffect(() => {
+    reset();
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content || '');
     }
-  }, [noteId]);
+  }, [noteId, reset]);
 
   if (!editor) {
     return null;
@@ -92,10 +111,46 @@ export function NoteEditor({
 
   return (
     <div className="flex flex-col h-full">
-      {editable && <EditorToolbar editor={editor} />}
+      {editable && (
+        <div className="flex items-center justify-between border-b bg-card">
+          <EditorToolbar editor={editor} />
+          <div className="px-4 py-2">
+            <SaveIndicator
+              status={status}
+              lastSaved={lastSaved}
+              errorMessage={errorMessage}
+              onRetry={retry}
+            />
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-auto">
         <EditorContent editor={editor} />
       </div>
     </div>
+  );
+}
+
+/**
+ * Version legacy pour compatibilité descendante
+ * @deprecated Migrer vers onSave (async)
+ */
+export function NoteEditorLegacy({
+  content,
+  onChange,
+  noteId,
+  editable = true,
+}: LegacyNoteEditorProps) {
+  const handleSave = useCallback(async (html: string) => {
+    onChange(html);
+  }, [onChange]);
+
+  return (
+    <NoteEditor
+      content={content}
+      onSave={handleSave}
+      noteId={noteId}
+      editable={editable}
+    />
   );
 }

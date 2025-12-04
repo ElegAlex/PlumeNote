@@ -40,7 +40,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const Separator = () => <div className="w-px h-6 bg-border mx-1" />;
 
   return (
-    <div className="flex items-center gap-0.5 px-4 py-2 border-b bg-card">
+    <div className="flex items-center gap-0.5 px-4 py-2">
       {/* Text Formatting */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
