@@ -1,0 +1,380 @@
+// ===========================================
+// CollabNotes - Schéma Prisma
+// ===========================================
+// Basé sur le modèle de données du BACKLOG_DETAILS.md
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----- GESTION DES UTILISATEURS -----
+
+model User {
+  id          String    @id @default(uuid()) @db.Uuid
+  username    String    @unique @db.VarChar(50)
+  email       String    @unique @db.VarChar(255)
+  displayName String    @map("display_name") @db.VarChar(100)
+  avatarUrl   String?   @map("avatar_url") @db.VarChar(500)
+  password    String?   @db.VarChar(255) // Hash bcrypt, null si auth LDAP uniquement
+  roleId      String    @map("role_id") @db.Uuid
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  preferences Json      @default("{}") @db.JsonB
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  role             Role              @relation(fields: [roleId], references: [id])
+  sessions         Session[]
+  createdFolders   Folder[]          @relation("FolderCreatedBy")
+  createdNotes     Note[]            @relation("NoteCreatedBy")
+  modifiedNotes    Note[]            @relation("NoteModifiedBy")
+  deletedNotes     Note[]            @relation("NoteDeletedBy")
+  noteVersions     NoteVersion[]
+  comments         Comment[]
+  attachments      Attachment[]
+  permissionsGiven Permission[]      @relation("PermissionGrantedBy")
+  auditLogs        AuditLog[]
+  favorites        Favorite[]
+  homepageConfigs  HomepageConfig[]
+
+  @@index([username])
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  isSystem    Boolean  @default(false) @map("is_system") // Rôles par défaut non supprimables
+  permissions Json     @default("{}") @db.JsonB // Permissions globales du rôle
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users           User[]
+  folderPerms     Permission[] @relation("RolePermissions")
+
+  @@map("roles")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ----- GESTION DES DOSSIERS ET NOTES -----
+
+model Folder {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @db.VarChar(255)
+  path      String   @db.VarChar(1000) // Chemin complet pour navigation rapide
+  parentId  String?  @map("parent_id") @db.Uuid
+  color     String?  @db.VarChar(7) // Couleur hex
+  icon      String?  @db.VarChar(50)
+  position  Int      @default(0)
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  parent      Folder?      @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[]     @relation("FolderHierarchy")
+  notes       Note[]
+  creator     User         @relation("FolderCreatedBy", fields: [createdBy], references: [id])
+  permissions Permission[]
+
+  @@unique([parentId, slug])
+  @@index([parentId])
+  @@index([path])
+  @@index([createdBy])
+  @@map("folders")
+}
+
+model Note {
+  id             String    @id @default(uuid()) @db.Uuid
+  title          String    @db.VarChar(255)
+  slug           String    @db.VarChar(255)
+  folderId       String    @map("folder_id") @db.Uuid
+  content        String    @default("") @db.Text
+  frontmatter    Json      @default("{}") @db.JsonB
+  authorId       String    @map("author_id") @db.Uuid
+  modifiedBy     String?   @map("modified_by") @db.Uuid
+  position       Int       @default(0)
+  isPinnedGlobal Boolean   @default(false) @map("is_pinned_global")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
+  deletedAt      DateTime? @map("deleted_at")
+  deletedById    String?   @map("deleted_by") @db.Uuid
+  yjsState       Bytes?    @map("yjs_state") // État CRDT binaire
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  folder       Folder        @relation(fields: [folderId], references: [id])
+  author       User          @relation("NoteCreatedBy", fields: [authorId], references: [id])
+  modifier     User?         @relation("NoteModifiedBy", fields: [modifiedBy], references: [id])
+  deletedBy    User?         @relation("NoteDeletedBy", fields: [deletedById], references: [id])
+  versions     NoteVersion[]
+  tags         NoteTag[]
+  linksFrom    Link[]        @relation("LinkSource")
+  linksTo      Link[]        @relation("LinkTarget")
+  comments     Comment[]
+  attachments  Attachment[]
+  permissions  Permission[]
+  favorites    Favorite[]
+
+  @@unique([folderId, slug])
+  @@index([folderId])
+  @@index([authorId])
+  @@index([isDeleted])
+  @@index([isPinnedGlobal])
+  @@map("notes")
+}
+
+model NoteVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  noteId        String   @map("note_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  content       String   @db.Text
+  frontmatter   Json     @db.JsonB
+  authorId      String   @map("author_id") @db.Uuid
+  changeSummary String?  @map("change_summary") @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@unique([noteId, versionNumber])
+  @@index([noteId])
+  @@index([createdAt(sort: Desc)])
+  @@map("note_versions")
+}
+
+// ----- TAGS ET LIENS -----
+
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  color     String?  @db.VarChar(7)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  notes NoteTag[]
+
+  @@map("tags")
+}
+
+model NoteTag {
+  noteId String @map("note_id") @db.Uuid
+  tagId  String @map("tag_id") @db.Uuid
+
+  // Relations
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tags")
+}
+
+model Link {
+  id           String   @id @default(uuid()) @db.Uuid
+  sourceNoteId String   @map("source_note_id") @db.Uuid
+  targetNoteId String?  @map("target_note_id") @db.Uuid // Null si lien brisé
+  targetSlug   String   @map("target_slug") @db.VarChar(255) // Slug original pour liens brisés
+  alias        String?  @db.VarChar(255)
+  position     Int      @default(0) // Position dans le document source
+  context      String?  @db.VarChar(500) // Extrait de contexte
+  isBroken     Boolean  @default(false) @map("is_broken")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sourceNote Note  @relation("LinkSource", fields: [sourceNoteId], references: [id], onDelete: Cascade)
+  targetNote Note? @relation("LinkTarget", fields: [targetNoteId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceNoteId, targetSlug])
+  @@index([sourceNoteId])
+  @@index([targetNoteId])
+  @@index([isBroken])
+  @@map("links")
+}
+
+// ----- COLLABORATION -----
+
+model Comment {
+  id          String    @id @default(uuid()) @db.Uuid
+  noteId      String    @map("note_id") @db.Uuid
+  authorId    String    @map("author_id") @db.Uuid
+  parentId    String?   @map("parent_id") @db.Uuid
+  content     String    @db.Text
+  anchorStart Int?      @map("anchor_start") // Position début de la sélection
+  anchorEnd   Int?      @map("anchor_end") // Position fin de la sélection
+  isResolved  Boolean   @default(false) @map("is_resolved")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  note     Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id])
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  @@index([noteId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ----- FICHIERS ATTACHÉS -----
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  noteId      String   @map("note_id") @db.Uuid
+  filename    String   @db.VarChar(255)
+  mimeType    String   @map("mime_type") @db.VarChar(100)
+  sizeBytes   Int      @map("size_bytes")
+  storagePath String   @map("storage_path") @db.VarChar(500)
+  uploadedBy  String   @map("uploaded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  note     Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploadedBy], references: [id])
+
+  @@index([noteId])
+  @@map("attachments")
+}
+
+// ----- PERMISSIONS -----
+
+enum PermissionLevel {
+  NONE
+  READ
+  WRITE
+  ADMIN
+}
+
+enum ResourceType {
+  FOLDER
+  NOTE
+}
+
+enum PrincipalType {
+  USER
+  ROLE
+}
+
+model Permission {
+  id            String          @id @default(uuid()) @db.Uuid
+  resourceType  ResourceType    @map("resource_type")
+  resourceId    String          @map("resource_id") @db.Uuid
+  principalType PrincipalType   @map("principal_type")
+  principalId   String          @map("principal_id") @db.Uuid
+  level         PermissionLevel
+  inherited     Boolean         @default(false)
+  grantedBy     String          @map("granted_by") @db.Uuid
+  grantedAt     DateTime        @default(now()) @map("granted_at")
+
+  // Relations polymorphiques via resourceId
+  folder Folder? @relation(fields: [resourceId], references: [id], onDelete: Cascade, map: "permission_folder_fk")
+  note   Note?   @relation(fields: [resourceId], references: [id], onDelete: Cascade, map: "permission_note_fk")
+
+  // Principal peut être User ou Role
+  grantedByUser User  @relation("PermissionGrantedBy", fields: [grantedBy], references: [id])
+  role          Role? @relation("RolePermissions", fields: [principalId], references: [id], onDelete: Cascade, map: "permission_role_fk")
+
+  @@unique([resourceType, resourceId, principalType, principalId])
+  @@index([resourceType, resourceId])
+  @@index([principalType, principalId])
+  @@map("permissions")
+}
+
+// ----- FAVORIS ET PRÉFÉRENCES -----
+
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  noteId    String   @map("note_id") @db.Uuid
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, noteId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model HomepageConfig {
+  id               String   @id @default(uuid()) @db.Uuid
+  widgets          Json     @default("[]") @db.JsonB
+  pinnedNotes      String[] @map("pinned_notes") @db.Uuid
+  importantMessage String?  @map("important_message") @db.Text
+  messageExpiresAt DateTime? @map("message_expires_at")
+  updatedBy        String   @map("updated_by") @db.Uuid
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  updater User @relation(fields: [updatedBy], references: [id])
+
+  @@map("homepage_config")
+}
+
+// ----- AUDIT ET LOGS -----
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  action       String   @db.VarChar(50)
+  resourceType String   @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  details      Json?    @db.JsonB
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+// ----- CONFIGURATION SYSTÈME -----
+
+model SystemConfig {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(100)
+  value     Json     @db.JsonB
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}

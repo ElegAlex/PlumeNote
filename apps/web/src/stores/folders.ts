@@ -1,0 +1,93 @@
+// ===========================================
+// Store Folders (Zustand)
+// ===========================================
+
+import { create } from 'zustand';
+import type { FolderTreeNode } from '@collabnotes/types';
+import { api } from '../lib/api';
+
+interface FoldersState {
+  tree: FolderTreeNode[];
+  expandedFolders: Set<string>;
+  selectedFolderId: string | null;
+  isLoading: boolean;
+  error: string | null;
+
+  fetchTree: () => Promise<void>;
+  toggleFolder: (folderId: string) => void;
+  expandFolder: (folderId: string) => void;
+  collapseFolder: (folderId: string) => void;
+  selectFolder: (folderId: string | null) => void;
+  createFolder: (name: string, parentId: string | null) => Promise<FolderTreeNode>;
+  updateFolder: (folderId: string, data: { name?: string; color?: string }) => Promise<void>;
+  deleteFolder: (folderId: string) => Promise<void>;
+}
+
+export const useFoldersStore = create<FoldersState>((set, get) => ({
+  tree: [],
+  expandedFolders: new Set(['root']),
+  selectedFolderId: null,
+  isLoading: false,
+  error: null,
+
+  fetchTree: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await api.get('/folders/tree');
+      set({ tree: response.data.tree, isLoading: false });
+    } catch (err: any) {
+      set({
+        error: err.response?.data?.message || 'Erreur de chargement',
+        isLoading: false,
+      });
+    }
+  },
+
+  toggleFolder: (folderId: string) => {
+    const { expandedFolders } = get();
+    const newExpanded = new Set(expandedFolders);
+
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId);
+    } else {
+      newExpanded.add(folderId);
+    }
+
+    set({ expandedFolders: newExpanded });
+  },
+
+  expandFolder: (folderId: string) => {
+    const { expandedFolders } = get();
+    const newExpanded = new Set(expandedFolders);
+    newExpanded.add(folderId);
+    set({ expandedFolders: newExpanded });
+  },
+
+  collapseFolder: (folderId: string) => {
+    const { expandedFolders } = get();
+    const newExpanded = new Set(expandedFolders);
+    newExpanded.delete(folderId);
+    set({ expandedFolders: newExpanded });
+  },
+
+  selectFolder: (folderId: string | null) => {
+    set({ selectedFolderId: folderId });
+  },
+
+  createFolder: async (name: string, parentId: string | null) => {
+    const response = await api.post('/folders', { name, parentId });
+    await get().fetchTree();
+    return response.data;
+  },
+
+  updateFolder: async (folderId: string, data: { name?: string; color?: string }) => {
+    await api.patch(`/folders/${folderId}`, data);
+    await get().fetchTree();
+  },
+
+  deleteFolder: async (folderId: string) => {
+    await api.delete(`/folders/${folderId}`);
+    await get().fetchTree();
+  },
+}));

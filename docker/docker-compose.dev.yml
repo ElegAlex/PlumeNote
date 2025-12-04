@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: collabnotes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-collabnotes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-collabnotes_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-collabnotes}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-collabnotes} -d ${POSTGRES_DB:-collabnotes}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis pour cache et sessions
+  redis:
+    image: redis:7-alpine
+    container_name: collabnotes-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Interface d'administration PostgreSQL (optionnel)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: collabnotes-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@collabnotes.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  # OpenLDAP pour tests d'authentification
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: collabnotes-ldap
+    restart: unless-stopped
+    environment:
+      LDAP_ORGANISATION: "CollabNotes Dev"
+      LDAP_DOMAIN: "collabnotes.local"
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD:-admin}
+      LDAP_BASE_DN: "dc=collabnotes,dc=local"
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+    profiles:
+      - ldap
+
+  # Interface LDAP (optionnel)
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: collabnotes-phpldapadmin
+    restart: unless-stopped
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: 'false'
+    ports:
+      - "8080:80"
+    depends_on:
+      - openldap
+    profiles:
+      - ldap
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  ldap_data:
+    driver: local
+  ldap_config:
+    driver: local
+
+networks:
+  default:
+    name: collabnotes-network

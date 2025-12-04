@@ -1,0 +1,126 @@
+version: '3.8'
+
+# Configuration de production
+services:
+  # Reverse Proxy Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: collabnotes-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - static_files:/var/www/static:ro
+    depends_on:
+      - api
+      - web
+      - yjs
+    networks:
+      - collabnotes-net
+
+  # Application Web (React)
+  web:
+    build:
+      context: ../
+      dockerfile: apps/web/Dockerfile
+    container_name: collabnotes-web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=${API_URL:-http://localhost:3001}
+      - VITE_WS_URL=${WS_URL:-ws://localhost:3002}
+    networks:
+      - collabnotes-net
+
+  # API Backend (Fastify)
+  api:
+    build:
+      context: ../
+      dockerfile: apps/api/Dockerfile
+    container_name: collabnotes-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - JWT_SECRET=${JWT_SECRET}
+      - LDAP_URL=${LDAP_URL}
+      - LDAP_BIND_DN=${LDAP_BIND_DN}
+      - LDAP_BIND_PASSWORD=${LDAP_BIND_PASSWORD}
+      - LDAP_SEARCH_BASE=${LDAP_SEARCH_BASE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - collabnotes-net
+
+  # Serveur Yjs (Hocuspocus)
+  yjs:
+    build:
+      context: ../
+      dockerfile: apps/yjs-server/Dockerfile
+    container_name: collabnotes-yjs
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - collabnotes-net
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: collabnotes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - collabnotes-net
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: collabnotes-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - collabnotes-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_files:
+
+networks:
+  collabnotes-net:
+    driver: bridge
