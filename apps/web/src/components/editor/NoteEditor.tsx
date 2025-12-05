@@ -13,6 +13,7 @@ import { SaveIndicator } from './SaveIndicator';
 import { TagSuggestionPopup, useTagSuggestion } from './extensions/tag';
 import { WikilinkSuggestionPopup, useWikilinkSuggestion } from './extensions/wikilink';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import { useBeforeUnloadWarning } from '../../hooks/useCollaboration';
 import { useImageUpload, type UploadResult } from '../../hooks/useImageUpload';
 import {
   createEditorExtensions,
@@ -58,6 +59,7 @@ export function NoteEditor({
     triggerSave,
     retry,
     reset,
+    hasPendingChanges,
   } = useAutoSave(onSave, {
     debounceMs: 1000,
     maxWaitMs: 30000,
@@ -65,6 +67,9 @@ export function NoteEditor({
     retryDelayMs: 2000,
     savedDisplayMs: 3000,
   });
+
+  // Warning avant fermeture si modifications non sauvegardées (US-008 AC5)
+  useBeforeUnloadWarning(hasPendingChanges || status === 'pending' || status === 'saving');
 
   // Callback pour clic sur un tag
   const handleTagClick = useCallback(
@@ -74,13 +79,24 @@ export function NoteEditor({
     [navigate]
   );
 
-  // Callback pour clic sur un wikilink (US-038)
+  // Callback pour clic sur un wikilink (US-036/US-038)
+  // Supporte: [[note]], [[note|alias]], [[note#section]], [[note#section|alias]]
   const handleWikilinkClick = useCallback(
-    async (title: string) => {
+    async (target: string, section?: string) => {
       try {
+        // Lien vers une section de la note actuelle [[#section]]
+        if (!target && section) {
+          const element = document.getElementById(section) ||
+                         document.querySelector(`[data-heading="${section}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+          return;
+        }
+
         // Chercher la note par titre
         const response = await fetch(
-          `/api/v1/notes/search?q=${encodeURIComponent(title)}&limit=1`,
+          `/api/v1/notes/search?q=${encodeURIComponent(target)}&limit=1`,
           { credentials: 'include' }
         );
 
@@ -88,23 +104,26 @@ export function NoteEditor({
           const data = await response.json();
           const matchingNote = data.notes?.find(
             (n: { title: string; slug: string }) =>
-              n.title.toLowerCase() === title.toLowerCase()
+              n.title.toLowerCase() === target.toLowerCase()
           );
 
           if (matchingNote) {
-            // Note trouvée, naviguer vers elle
-            navigate(`/notes/${matchingNote.slug}`);
+            // Note trouvée, naviguer vers elle (avec section si spécifiée)
+            const url = section
+              ? `/notes/${matchingNote.slug}#${section}`
+              : `/notes/${matchingNote.slug}`;
+            navigate(url);
             return;
           }
         }
 
         // Note non trouvée, proposer de la créer
-        if (window.confirm(`La note "${title}" n'existe pas. Voulez-vous la créer ?`)) {
+        if (window.confirm(`La note "${target}" n'existe pas. Voulez-vous la créer ?`)) {
           const createResponse = await fetch('/api/v1/notes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ title, content: '' }),
+            body: JSON.stringify({ title: target, content: '' }),
           });
 
           if (createResponse.ok) {

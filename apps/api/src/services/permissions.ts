@@ -3,15 +3,56 @@
 // US-070: Permissions dossier
 // US-071: Permissions note
 // US-072: Visualisation accès
+// US-052: Cache Redis pour les permissions
 // ===========================================
 
 import { prisma } from '@collabnotes/database';
 import type { PermissionLevel, ResourceType, EffectivePermission } from '@collabnotes/types';
+import {
+  getCachedPermission,
+  setCachedPermission,
+  getCachedEffectivePermissions,
+  setCachedEffectivePermissions,
+  invalidateUserPermissionCache,
+  invalidateResourcePermissionCache,
+} from './cache';
+import { logger } from '../lib/logger';
 
 /**
  * Vérifie si un utilisateur a le niveau de permission requis sur une ressource
+ * Utilise le cache Redis pour optimiser les performances (US-052)
  */
 export async function checkPermission(
+  userId: string,
+  resourceType: ResourceType,
+  resourceId: string,
+  requiredLevel: 'READ' | 'WRITE' | 'ADMIN'
+): Promise<boolean> {
+  // Clé de cache combinant user + resource + level
+  const cacheKey = `${resourceType}:${resourceId}:${requiredLevel}`;
+
+  // Vérifier le cache d'abord
+  const cached = await getCachedPermission(userId, cacheKey, '');
+  if (cached !== null) {
+    logger.debug({ userId, resourceType, resourceId, cached }, '[Permissions] Cache hit');
+    return cached;
+  }
+
+  // Calculer la permission si pas en cache
+  const result = await computePermission(userId, resourceType, resourceId, requiredLevel);
+
+  // Stocker en cache
+  await setCachedPermission(userId, cacheKey, '', result);
+  logger.debug({ userId, resourceType, resourceId, result }, '[Permissions] Cache miss, computed');
+
+  return result;
+}
+
+/**
+ * Calcule la permission sans utiliser le cache
+ * (Logique originale extraite pour réutilisation)
+ */
+async function computePermission(
   userId: string,
   resourceType: ResourceType,
   resourceId: string,
@@ -214,6 +255,7 @@ async function getResourcesByType(
 
 /**
  * Attribue une permission
+ * Invalide le cache après modification (US-052)
  */
 export async function grantPermission(params: {
   resourceType: ResourceType;
@@ -249,10 +291,18 @@ export async function grantPermission(params: {
       },
     });
   }
+
+  // Invalider le cache (US-052)
+  await invalidateResourcePermissionCache(resourceType, resourceId);
+  if (principalType === 'USER') {
+    await invalidateUserPermissionCache(principalId);
+  }
+  logger.info({ resourceType, resourceId, principalId, level }, '[Permissions] Permission granted, cache invalidated');
 }
 
 /**
  * Révoque une permission
+ * Invalide le cache après modification (US-052)
  */
 export async function revokePermission(params: {
   resourceType: ResourceType;
@@ -260,7 +310,16 @@ export async function revokePermission(params: {
   principalType: 'USER' | 'ROLE';
   principalId: string;
 }): Promise<void> {
+  const { resourceType, resourceId, principalType, principalId } = params;
+
   await prisma.permission.deleteMany({
     where: params,
   });
+
+  // Invalider le cache (US-052)
+  await invalidateResourcePermissionCache(resourceType, resourceId);
+  if (principalType === 'USER') {
+    await invalidateUserPermissionCache(principalId);
+  }
+  logger.info({ resourceType, resourceId, principalId }, '[Permissions] Permission revoked, cache invalidated');
 }

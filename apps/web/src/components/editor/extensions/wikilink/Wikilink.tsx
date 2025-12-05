@@ -1,6 +1,8 @@
 // ===========================================
 // Extension TipTap pour les Wikilinks [[note]]
-// (US-030 à US-032)
+// US-036: Syntaxe [[note]], [[note|alias]], [[note#section]]
+// US-037: Autocomplétion
+// US-038: Création depuis lien cassé
 // ===========================================
 
 import { Node, mergeAttributes } from '@tiptap/core';
@@ -9,13 +11,78 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
 export interface WikilinkOptions {
   HTMLAttributes: Record<string, unknown>;
-  onWikilinkClick?: (title: string) => void;
+  /** Callback lors du clic sur un wikilink */
+  onWikilinkClick?: (target: string, section?: string) => void;
+}
+
+/** Structure d'un wikilink parsé */
+export interface ParsedWikilink {
+  /** Titre de la note cible */
+  target: string;
+  /** Alias affiché (optionnel) */
+  alias?: string;
+  /** Section/ancre (optionnel) */
+  section?: string;
+  /** Texte d'affichage final */
+  displayText: string;
+  /** Texte brut complet [[...]] */
+  rawText: string;
+}
+
+/**
+ * Parse le contenu d'un wikilink
+ * Supporte: [[note]], [[note|alias]], [[note#section]], [[note#section|alias]]
+ */
+export function parseWikilink(content: string): ParsedWikilink {
+  const rawText = `[[${content}]]`;
+
+  // Séparer l'alias (après |)
+  const pipeIndex = content.indexOf('|');
+  let mainPart = content;
+  let alias: string | undefined;
+
+  if (pipeIndex !== -1) {
+    mainPart = content.substring(0, pipeIndex);
+    alias = content.substring(pipeIndex + 1).trim();
+  }
+
+  // Séparer la section (après #)
+  const hashIndex = mainPart.indexOf('#');
+  let target = mainPart;
+  let section: string | undefined;
+
+  if (hashIndex !== -1) {
+    target = mainPart.substring(0, hashIndex);
+    section = mainPart.substring(hashIndex + 1).trim();
+  }
+
+  target = target.trim();
+
+  // Déterminer le texte d'affichage
+  let displayText: string;
+  if (alias) {
+    displayText = alias;
+  } else if (section && !target) {
+    // Lien vers section dans la même note: [[#section]]
+    displayText = section;
+  } else if (section) {
+    displayText = `${target} > ${section}`;
+  } else {
+    displayText = target;
+  }
+
+  return { target, alias, section, displayText, rawText };
 }
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     wikilink: {
+      /** Insère un wikilink simple */
       insertWikilink: (title: string) => ReturnType;
+      /** Insère un wikilink avec alias */
+      insertWikilinkWithAlias: (title: string, alias: string) => ReturnType;
+      /** Insère un wikilink avec section */
+      insertWikilinkWithSection: (title: string, section: string) => ReturnType;
     };
   }
 }
@@ -38,13 +105,31 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
 
   addAttributes() {
     return {
-      title: {
+      // Titre de la note cible
+      target: {
         default: null,
-        parseHTML: (element) => element.getAttribute('data-title'),
+        parseHTML: (element) => element.getAttribute('data-target'),
         renderHTML: (attributes) => ({
-          'data-title': attributes.title,
+          'data-target': attributes.target,
         }),
       },
+      // Alias d'affichage (optionnel)
+      alias: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-alias'),
+        renderHTML: (attributes) => attributes.alias ? ({
+          'data-alias': attributes.alias,
+        }) : {},
+      },
+      // Section/ancre (optionnel)
+      section: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-section'),
+        renderHTML: (attributes) => attributes.section ? ({
+          'data-section': attributes.section,
+        }) : {},
+      },
+      // Note existe-t-elle ?
       exists: {
         default: true,
         parseHTML: (element) => element.getAttribute('data-exists') !== 'false',
@@ -64,13 +149,33 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    const { target, alias, section, exists } = node.attrs;
+
+    // Construire le texte d'affichage
+    let displayText: string;
+    if (alias) {
+      displayText = alias;
+    } else if (section && target) {
+      displayText = `${target} > ${section}`;
+    } else if (section) {
+      displayText = section;
+    } else {
+      displayText = target || '';
+    }
+
+    // Construire le texte brut [[...]]
+    let rawContent = target || '';
+    if (section) rawContent += `#${section}`;
+    if (alias) rawContent += `|${alias}`;
+
     return [
       'span',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         'data-type': 'wikilink',
-        class: `wikilink ${!node.attrs.exists ? 'broken' : ''}`,
+        class: `wikilink ${!exists ? 'broken' : ''}`,
+        title: `${target}${section ? '#' + section : ''}`,
       }),
-      `[[${node.attrs.title}]]`,
+      `[[${rawContent}]]`,
     ];
   },
 
@@ -81,13 +186,30 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
         ({ commands }) => {
           return commands.insertContent({
             type: this.name,
-            attrs: { title },
+            attrs: { target: title },
+          });
+        },
+      insertWikilinkWithAlias:
+        (title: string, alias: string) =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: { target: title, alias },
+          });
+        },
+      insertWikilinkWithSection:
+        (title: string, section: string) =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: { target: title, section },
           });
         },
     };
   },
 
   addProseMirrorPlugins() {
+    // Regex améliorée pour capturer [[target#section|alias]]
     const wikilinkRegex = /\[\[([^\]]+)\]\]/g;
     const onWikilinkClick = this.options.onWikilinkClick;
 
@@ -112,11 +234,16 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
               while ((match = wikilinkRegex.exec(text)) !== null) {
                 const start = pos + match.index;
                 const end = start + match[0].length;
+                const parsed = parseWikilink(match[1]);
 
                 decorations.push(
                   Decoration.inline(start, end, {
                     class: 'wikilink',
-                    'data-title': match[1],
+                    'data-target': parsed.target,
+                    'data-section': parsed.section || '',
+                    'data-alias': parsed.alias || '',
+                    'data-display': parsed.displayText,
+                    title: `${parsed.target}${parsed.section ? '#' + parsed.section : ''}`,
                   })
                 );
               }
@@ -128,22 +255,15 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
           handleClick: (view, pos, event) => {
             const target = event.target as HTMLElement;
 
-            // Check if clicked on a wikilink decoration
-            if (target.classList.contains('wikilink')) {
-              const title = target.getAttribute('data-title');
-              if (title && onWikilinkClick) {
-                event.preventDefault();
-                onWikilinkClick(title);
-                return true;
-              }
-            }
+            // Check if clicked on a wikilink decoration or node
+            if (target.classList.contains('wikilink') ||
+                target.getAttribute('data-type') === 'wikilink') {
+              const targetNote = target.getAttribute('data-target');
+              const section = target.getAttribute('data-section') || undefined;
 
-            // Check if clicked on a wikilink node
-            if (target.getAttribute('data-type') === 'wikilink') {
-              const title = target.getAttribute('data-title');
-              if (title && onWikilinkClick) {
+              if (targetNote && onWikilinkClick) {
                 event.preventDefault();
-                onWikilinkClick(title);
+                onWikilinkClick(targetNote, section);
                 return true;
               }
             }
@@ -159,9 +279,17 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
     return {
       // Ctrl/Cmd + K to insert wikilink
       'Mod-k': () => {
-        const title = window.prompt('Titre de la note liée:');
-        if (title) {
-          return this.editor.commands.insertWikilink(title);
+        const input = window.prompt('Lien vers note (format: note, note|alias, ou note#section):');
+        if (input) {
+          const parsed = parseWikilink(input);
+          return this.editor.commands.insertContent({
+            type: this.name,
+            attrs: {
+              target: parsed.target,
+              alias: parsed.alias,
+              section: parsed.section,
+            },
+          });
         }
         return false;
       },
@@ -170,7 +298,7 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
 });
 
 // Helper to create extension with navigation callback
-export function createWikilinkExtension(onNavigate: (title: string) => void) {
+export function createWikilinkExtension(onNavigate: (target: string, section?: string) => void) {
   return WikilinkExtension.configure({
     onWikilinkClick: onNavigate,
   });

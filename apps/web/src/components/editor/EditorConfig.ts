@@ -8,11 +8,11 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
-import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
 import type { Extensions } from '@tiptap/core';
 
 import { WikilinkExtension } from './extensions/wikilink';
+import { HighlightMarkdownExtension } from './extensions/highlight';
 import { CalloutExtension } from './extensions/callout';
 import { TagExtension } from './extensions/tag';
 import { MathInlineExtension, MathBlockExtension } from './extensions/math';
@@ -166,10 +166,10 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
     );
   }
 
-  // Highlight
+  // Highlight avec InputRule ==texte== (US-016)
   if (flags.highlight) {
     extensions.push(
-      Highlight.configure({
+      HighlightMarkdownExtension.configure({
         multicolor: true,
       })
     );
