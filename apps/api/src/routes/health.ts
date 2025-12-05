@@ -1,9 +1,11 @@
 // ===========================================
 // Routes Health Check
+// US-052: Ajout vérification Redis
 // ===========================================
 
 import type { FastifyPluginAsync } from 'fastify';
 import { prisma } from '@collabnotes/database';
+import { isRedisAvailable } from '../services/cache';
 
 export const healthRoutes: FastifyPluginAsync = async (app) => {
   // Health check simple
@@ -42,6 +44,7 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
               type: 'object',
               properties: {
                 database: { type: 'string' },
+                redis: { type: 'string' },
                 timestamp: { type: 'string' },
               },
             },
@@ -60,10 +63,14 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
       checks.database = 'error';
     }
 
-    const allOk = Object.values(checks).every(v => v === 'ok');
+    // Check Redis (US-052) - optionnel, pas critique
+    checks.redis = isRedisAvailable() ? 'ok' : 'unavailable';
 
-    return reply.status(allOk ? 200 : 503).send({
-      status: allOk ? 'ok' : 'degraded',
+    // Seule la DB est critique pour le readiness
+    const isReady = checks.database === 'ok';
+
+    return reply.status(isReady ? 200 : 503).send({
+      status: isReady ? 'ok' : 'degraded',
       checks: {
         ...checks,
         timestamp: new Date().toISOString(),

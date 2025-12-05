@@ -16,6 +16,7 @@ import multipart from '@fastify/multipart';
 import { config } from './config/index.js';
 import { logger } from './lib/logger.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
+import { initRedis, closeRedis } from './services/cache.js';
 
 // Routes
 import { authRoutes } from './routes/auth.js';
@@ -39,6 +40,15 @@ export async function buildApp() {
   const app = Fastify({
     logger: logger,
     trustProxy: true,
+  });
+
+  // ----- Initialisation Redis (US-052) -----
+  await initRedis();
+
+  // ----- Hook de fermeture propre -----
+  app.addHook('onClose', async () => {
+    await closeRedis();
+    logger.info('Redis connection closed on app shutdown');
   });
 
   // ----- Plugins de sécurité -----

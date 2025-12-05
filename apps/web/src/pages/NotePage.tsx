@@ -1,16 +1,15 @@
 // ===========================================
-// Page Note (US-010 à US-016)
-// Collaboration désactivée temporairement
+// Page Note - Éditeur Markdown style Obsidian
 // ===========================================
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotesStore } from '../stores/notes';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/ui/Toaster';
 import { formatRelativeTime, debounce } from '../lib/utils';
-import { CollaborativeEditor } from '../components/editor/CollaborativeEditor';
+import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 
 export function NotePage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -52,6 +51,16 @@ export function NotePage() {
       }
     }, 500),
     [noteId, currentNote?.title, updateNote]
+  );
+
+  // Debounced content save
+  const debouncedSaveContent = useCallback(
+    debounce((content: string) => {
+      if (noteId) {
+        updateNote(noteId, { content });
+      }
+    }, 500),
+    [noteId, updateNote]
   );
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,12 +222,13 @@ export function NotePage() {
 
       {/* Editor */}
       <div className="flex-1 overflow-hidden">
-        <CollaborativeEditor
-          noteId={noteId!}
-          initialContent={currentNote.content || ''}
+        <MarkdownEditor
+          content={currentNote.content || ''}
+          onChange={debouncedSaveContent}
           onSave={async (content) => {
             await updateNote(noteId!, { content });
           }}
+          autoFocus
         />
       </div>
     </div>

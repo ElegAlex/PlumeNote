@@ -4,6 +4,7 @@
 
 |Version|Date|Auteur|Statut|
 |---|---|---|---|
+|2.4|2025-12-05|Product Team|Améliorations finales: US-008 (beforeunload), US-016 (Highlight markdown), US-036 (wikilinks alias/section), US-052 (cache Redis)|
 |2.3|2025-12-05|Product Team|Sprint 7 terminé (100% global, 322/322 pts)|
 |2.2|2025-12-05|Product Team|Sprint 6 terminé (92% global, 295/322 pts)|
 |2.1|2025-12-05|Product Team|Sprint 1 terminé (88% global, 282/322 pts)|
@@ -378,10 +379,10 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
 
 **Critères d'acceptation**:
 - [x] AC1: Sauvegarde déclenchée 2 secondes après dernière frappe *(implémenté avec 1s)*
-- [ ] AC2: Sauvegarde forcée toutes les 30 secondes si édition continue *(maxWait à ajouter)*
-- [ ] AC3: 3 tentatives automatiques en cas d'échec réseau *(retry à ajouter)*
-- [ ] AC4: Indicateur visuel du statut (pending/saving/saved/error) *(voir US-009)*
-- [ ] AC5: Warning avant fermeture si modifications non sauvées
+- [x] AC2: Sauvegarde forcée toutes les 30 secondes si édition continue *(maxWait: 30000)*
+- [x] AC3: 3 tentatives automatiques en cas d'échec réseau *(retry implémenté dans useAutoSave)*
+- [x] AC4: Indicateur visuel du statut (pending/saving/saved/error) *(voir US-009)*
+- [x] AC5: Warning avant fermeture si modifications non sauvées *(useBeforeUnloadWarning)*
 
 **Tâches techniques**:
 ```
@@ -389,8 +390,8 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
     Fichier: apps/web/src/components/editor/NoteEditor.tsx (lignes 32-37)
     Note: Debounce 1000ms implémenté
 
-[ ] TASK-008-2: Ajouter maxWait pour sauvegarde forcée (2 pts)
-    À faire: Ajouter maxWait: 30000 au debounce
+[x] TASK-008-2: Ajouter maxWait pour sauvegarde forcée (2 pts)
+    Fichier: apps/web/src/hooks/useAutoSave.ts - maxWait: 30000
 
 [x] TASK-008-3: Créer endpoint PATCH /api/v1/notes/:id (3 pts)
     Fichier: apps/api/src/routes/notes.ts (lignes 294-406)
@@ -398,8 +399,9 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
 [x] TASK-008-4: Implémenter mise à jour avec gestion des liens (3 pts)
     Fichier: apps/api/src/routes/notes.ts - updateLinks() appelé
 
-[ ] TASK-008-5: Ajouter useBeforeUnload hook (1 pt)
-    À créer: apps/web/src/hooks/useBeforeUnload.ts
+[x] TASK-008-5: Ajouter useBeforeUnload hook (1 pt)
+    Fichier: apps/web/src/hooks/useCollaboration.ts - useBeforeUnloadWarning
+    Intégré: apps/web/src/components/editor/NoteEditor.tsx (ligne 72)
 ```
 
 **Tests requis**:
@@ -694,7 +696,7 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
 - [x] AC1: Syntaxe `==texte==` rend un surlignage jaune
 - [x] AC2: Raccourci clavier `Cmd/Ctrl+Shift+H`
 - [x] AC3: Toggle via toolbar
-- [ ] AC4: Sérialisation correcte *(markdown input rule à vérifier)*
+- [x] AC4: Sérialisation correcte *(InputRule et PasteRule implémentés)*
 
 **Tâches techniques**:
 ```
@@ -702,10 +704,12 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
     Fichier: apps/web/src/components/editor/NoteEditor.tsx (lignes 12, 64-66)
     Multicolor activé
 
-[ ] TASK-016-2: Implémenter InputRule pour ==texte== (1 pt)
-    Note: Extension standard TipTap, InputRule markdown à ajouter
+[x] TASK-016-2: Implémenter InputRule pour ==texte== (1 pt)
+    Fichier: apps/web/src/components/editor/extensions/highlight/HighlightMarkdown.ts
+    Extension custom étendant Highlight avec markInputRule et markPasteRule
 
-[ ] TASK-016-3: Ajouter au sérialiseur (1 pt)
+[x] TASK-016-3: Intégrer HighlightMarkdownExtension dans EditorConfig (1 pt)
+    Fichier: apps/web/src/components/editor/EditorConfig.ts (ligne 172)
 ```
 
 ---
@@ -1397,21 +1401,23 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
 
 **Critères d'acceptation**:
 - [x] AC1: `[[Nom de note]]` reconnu et rendu comme lien
-- [ ] AC2: `[[note|alias]]` affiche l'alias *(à vérifier)*
-- [ ] AC3: `[[note#section]]` lien vers section *(à implémenter)*
+- [x] AC2: `[[note|alias]]` affiche l'alias *(parseWikilink implémenté)*
+- [x] AC3: `[[note#section]]` lien vers section *(navigation avec scrollIntoView)*
 - [x] AC4: Lien cassé affiché en rouge italique
 - [x] AC5: Clic navigue vers la note
 
 **Tâches techniques**:
 ```
 [x] TASK-036-1: Créer extension TipTap WikiLink Mark (5 pts)
-    Fichier: apps/web/src/components/editor/extensions/Wikilink.tsx
+    Fichier: apps/web/src/components/editor/extensions/wikilink/Wikilink.tsx
 
-[x] TASK-036-2: Implémenter InputRule [[...]] (2 pts)
-    Fichier: apps/web/src/components/editor/extensions/Wikilink.tsx
+[x] TASK-036-2: Implémenter parseWikilink (target, alias, section) (2 pts)
+    Fichier: apps/web/src/components/editor/extensions/wikilink/Wikilink.tsx (lignes 32-75)
+    Supporte: [[note]], [[note|alias]], [[note#section]], [[note#section|alias]]
 
-[x] TASK-036-3: Implémenter click handler (navigation) (2 pts)
-    Fichier: apps/web/src/components/editor/extensions/Wikilink.tsx
+[x] TASK-036-3: Implémenter click handler avec navigation section (2 pts)
+    Fichier: apps/web/src/components/editor/NoteEditor.tsx (handleWikilinkClick)
+    Navigation avec hash (#section) et scrollIntoView pour liens internes
 ```
 
 ---
@@ -1944,12 +1950,17 @@ Bug critique — les notes ne sont actuellement pas sauvegardées. Implémenter 
 
 **Critères d'acceptation**:
 - [x] AC1: canAccess() vérifie hiérarchie permissions
-- [ ] AC2: Cache des permissions (invalidé au changement) *(à implémenter avec Redis)*
+- [x] AC2: Cache des permissions (invalidé au changement) *(Redis implémenté)*
 - [ ] AC3: Intégration Hocuspocus onAuthenticate *(à vérifier)*
 
 **Implémentation**:
 - Fonction `checkPermission()` appelée dans toutes les routes notes/folders
 - Vérification dans apps/api/src/routes/folders.ts et notes.ts
+- Cache Redis: apps/api/src/services/cache.ts
+  - TTL permissions: 60 secondes
+  - Invalidation automatique sur grantPermission/revokePermission
+- Health check Redis: apps/api/src/routes/health.ts
+- Initialisation: apps/api/src/app.ts (initRedis/closeRedis)
 
 ---
 
