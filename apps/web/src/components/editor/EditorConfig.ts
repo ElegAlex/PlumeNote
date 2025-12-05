@@ -18,6 +18,7 @@ import { TagExtension } from './extensions/tag';
 import { MathInlineExtension, MathBlockExtension } from './extensions/math';
 import { MermaidExtension } from './extensions/mermaid';
 import { ToggleExtension } from './extensions/toggle';
+import { ImageExtension, type ImageExtensionOptions } from './extensions/image';
 
 // ===========================================
 // Types pour les feature flags
@@ -44,6 +45,8 @@ export interface EditorFeatureFlags {
   mermaid?: boolean;
   /** Active les sections pliables :::toggle */
   toggle?: boolean;
+  /** Active l'upload d'images (drag, drop, paste) */
+  images?: boolean;
 }
 
 export interface EditorConfigOptions {
@@ -57,6 +60,12 @@ export interface EditorConfigOptions {
   onTagClick?: (tag: string) => void;
   /** Callback pour le clic sur un wikilink */
   onWikilinkClick?: (target: string) => void;
+  /** Configuration pour l'upload d'images */
+  imageUpload?: {
+    uploadFn?: (file: File) => Promise<{ url: string; id: string } | null>;
+    onSuccess?: (result: { url: string; id: string }) => void;
+    onError?: (error: Error) => void;
+  };
 }
 
 // ===========================================
@@ -74,6 +83,7 @@ export const DEFAULT_FEATURE_FLAGS: Required<EditorFeatureFlags> = {
   math: true,
   mermaid: true,
   toggle: true,
+  images: true,
 };
 
 export const DEFAULT_EDITOR_OPTIONS: Required<Omit<EditorConfigOptions, 'onTagClick' | 'onWikilinkClick'>> = {
@@ -97,6 +107,7 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
     placeholder = DEFAULT_EDITOR_OPTIONS.placeholder,
     headingLevels = DEFAULT_EDITOR_OPTIONS.headingLevels,
     onTagClick,
+    imageUpload,
   } = options;
 
   // Fusionner avec les flags par défaut
@@ -197,6 +208,20 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
   // Toggle sections
   if (flags.toggle) {
     extensions.push(ToggleExtension);
+  }
+
+  // Images avec upload (US-023/024/025/026)
+  if (flags.images) {
+    extensions.push(
+      ImageExtension.configure({
+        uploadFn: imageUpload?.uploadFn,
+        onUploadSuccess: imageUpload?.onSuccess,
+        onUploadError: imageUpload?.onError,
+        HTMLAttributes: {
+          class: 'rounded-lg max-w-full',
+        },
+      })
+    );
   }
 
   return extensions;

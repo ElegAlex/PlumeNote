@@ -12,6 +12,7 @@ import { EditorToolbar } from './EditorToolbar';
 import { SaveIndicator } from './SaveIndicator';
 import { TagSuggestionPopup, useTagSuggestion } from './extensions/tag';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import { useImageUpload, type UploadResult } from '../../hooks/useImageUpload';
 import {
   createEditorExtensions,
   createEditorProps,
@@ -72,6 +73,26 @@ export function NoteEditor({
     [navigate]
   );
 
+  // Hook d'upload d'images (US-023/024/025)
+  const imageUpload = useImageUpload({
+    noteId,
+    onError: (error) => {
+      console.error('Image upload failed:', error);
+    },
+  });
+
+  // Fonction d'upload pour l'extension TipTap
+  const handleImageUpload = useCallback(
+    async (file: File): Promise<{ url: string; id: string } | null> => {
+      const result = await imageUpload.upload(file);
+      if (result) {
+        return { url: result.url, id: result.id };
+      }
+      return null;
+    },
+    [imageUpload]
+  );
+
   // Configuration centralisée des extensions (US-022)
   const extensions = useMemo(
     () =>
@@ -79,8 +100,11 @@ export function NoteEditor({
         ...config,
         features,
         onTagClick: handleTagClick,
+        imageUpload: {
+          uploadFn: handleImageUpload,
+        },
       }),
-    [features, config, handleTagClick]
+    [features, config, handleTagClick, handleImageUpload]
   );
 
   // Props de l'éditeur (US-022)
