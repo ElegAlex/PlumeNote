@@ -20,8 +20,9 @@ import { useSidebarStore } from '../../stores/sidebarStore';
 import { useFoldersStore } from '../../stores/folders';
 import { useNotesStore } from '../../stores/notes';
 import { FolderTree } from './FolderTree';
+import { PersonalSidebarSection } from './PersonalSidebarSection';
+import { InlineCreateForm } from '../common';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
 import { toast } from '../ui/Toaster';
 import type { SidebarFolderNode } from '@collabnotes/types';
 
@@ -48,9 +49,10 @@ export function Sidebar() {
   const { createFolder, moveFolder, moveNote } = useFoldersStore();
   const { createNote } = useNotesStore();
 
-  // État création de dossier
+  // État section dossiers
+  const [isFoldersExpanded, setIsFoldersExpanded] = useState(true);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingRootNote, setIsCreatingRootNote] = useState(false);
   const [parentFolderForNew, setParentFolderForNew] = useState<string | null>(null);
 
   // État Drag & Drop
@@ -71,12 +73,9 @@ export function Sidebar() {
   // Handlers création
   // ===========================================
 
-  const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
-
+  const handleCreateFolder = async (name: string) => {
     try {
-      await createFolder(newFolderName, parentFolderForNew);
-      setNewFolderName('');
+      await createFolder(name, parentFolderForNew);
       setIsCreatingFolder(false);
       setParentFolderForNew(null);
       toast.success('Dossier créé');
@@ -84,6 +83,22 @@ export function Sidebar() {
       if (parentFolderForNew) {
         await refreshFolder(parentFolderForNew);
       }
+    } catch {
+      toast.error('Erreur lors de la création');
+    }
+  };
+
+  const handleCancelCreateFolder = () => {
+    setIsCreatingFolder(false);
+    setParentFolderForNew(null);
+  };
+
+  // Création note racine (sans dossier)
+  const handleCreateRootNote = async (title: string) => {
+    try {
+      const note = await createNote({ title });
+      setIsCreatingRootNote(false);
+      navigate(`/notes/${note.id}`);
     } catch {
       toast.error('Erreur lors de la création');
     }
@@ -103,10 +118,17 @@ export function Sidebar() {
     }
   }, [createNote, navigate, refreshFolder]);
 
-  const handleCreateFolderInFolder = useCallback((parentId: string) => {
-    setParentFolderForNew(parentId);
-    setIsCreatingFolder(true);
-  }, []);
+  // Création de sous-dossier depuis FolderItem (nouvelle signature)
+  const handleCreateFolderInFolder = useCallback(async (name: string, parentId: string) => {
+    try {
+      await createFolder(name, parentId);
+      toast.success('Dossier créé');
+      await refreshFolder(parentId);
+    } catch {
+      toast.error('Erreur lors de la création');
+      throw new Error('Création échouée');
+    }
+  }, [createFolder, refreshFolder]);
 
   // ===========================================
   // Handlers Drag & Drop
@@ -258,71 +280,53 @@ export function Sidebar() {
       onDragEnd={handleDragEnd}
     >
       <div>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2 px-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Dossiers
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => {
-              setParentFolderForNew(null);
-              setIsCreatingFolder(true);
-            }}
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </Button>
-        </div>
+        {/* Header cliquable */}
+        <button
+          onClick={() => setIsFoldersExpanded(!isFoldersExpanded)}
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-colors text-foreground hover:bg-muted"
+        >
+          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isFoldersExpanded ? "M19 9l-7 7-7-7" : "M9 5l7 7-7 7"} />
+          </svg>
+          <span className="flex-1 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Dossiers</span>
+        </button>
 
-        {/* New Folder Input */}
-        {isCreatingFolder && (
-          <div className="mb-2 px-2">
-            <div className="flex gap-1">
-              <Input
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Nom du dossier"
-                className="h-7 text-sm"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateFolder();
-                  if (e.key === 'Escape') {
-                    setIsCreatingFolder(false);
-                    setNewFolderName('');
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                className="h-7"
-                onClick={handleCreateFolder}
-                disabled={!newFolderName.trim()}
-              >
-                OK
+        {/* Contenu collapsable */}
+        {isFoldersExpanded && (
+          <div className="mt-1 ml-2 space-y-0.5">
+            {/* Boutons de création */}
+            <div className="flex gap-1 px-1 py-1">
+              <Button variant="ghost" size="sm" className="h-6 flex-1 text-xs gap-1" onClick={() => { setParentFolderForNew(null); setIsCreatingFolder(true); }} title="Nouveau dossier">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 flex-1 text-xs gap-1" onClick={() => setIsCreatingRootNote(true)} title="Nouvelle note">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </Button>
             </div>
+
+            {/* Formulaire création dossier */}
+            {isCreatingFolder && (
+              <div className="px-1 py-1">
+                <InlineCreateForm onSubmit={handleCreateFolder} onCancel={handleCancelCreateFolder} placeholder="Nom du dossier" compact />
+              </div>
+            )}
+
+            {/* Formulaire création note */}
+            {isCreatingRootNote && (
+              <div className="px-1 py-1">
+                <InlineCreateForm onSubmit={handleCreateRootNote} onCancel={() => setIsCreatingRootNote(false)} placeholder="Titre de la note" compact />
+              </div>
+            )}
+
+            {/* Folder Tree */}
+            <FolderTree onCreateNote={handleCreateNote} onCreateFolder={handleCreateFolderInFolder} />
           </div>
         )}
 
-        {/* Folder Tree avec lazy loading */}
-        <FolderTree
-          onCreateNote={handleCreateNote}
-          onCreateFolder={handleCreateFolderInFolder}
-        />
+        {/* Section Notes Personnelles */}
+        <PersonalSidebarSection />
       </div>
 
       {/* Drag Overlay */}

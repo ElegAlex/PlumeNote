@@ -46,6 +46,10 @@ model User {
   announcements       Announcement[]
   propertyDefinitions PropertyDefinition[] // P2: Propriétés créées par l'utilisateur
 
+  // Relations notes personnelles (US-XXX)
+  personalNotes   Note[]   @relation("PersonalNotes")
+  personalFolders Folder[] @relation("PersonalFolders")
+
   @@index([username])
   @@index([email])
   @@index([roleId])
@@ -101,17 +105,24 @@ model Folder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Support notes personnelles (US-XXX)
+  isPersonal Boolean  @default(false) @map("is_personal")
+  ownerId    String?  @map("owner_id") @db.Uuid // Obligatoire si isPersonal=true
+
   // Relations
   parent      Folder?      @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children    Folder[]     @relation("FolderHierarchy")
   notes       Note[]
   creator     User         @relation("FolderCreatedBy", fields: [createdBy], references: [id])
   permissions Permission[]
+  owner       User?        @relation("PersonalFolders", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@unique([parentId, slug])
   @@index([parentId])
   @@index([path])
   @@index([createdBy])
+  @@index([ownerId, isPersonal])
+  @@index([isPersonal])
   @@map("folders")
 }
 
@@ -119,7 +130,7 @@ model Note {
   id             String    @id @default(uuid()) @db.Uuid
   title          String    @db.VarChar(255)
   slug           String    @db.VarChar(255)
-  folderId       String    @map("folder_id") @db.Uuid
+  folderId       String?   @map("folder_id") @db.Uuid // Optionnel pour notes personnelles à la racine
   content        String    @default("") @db.Text
   frontmatter    Json      @default("{}") @db.JsonB
   authorId       String    @map("author_id") @db.Uuid
@@ -134,11 +145,16 @@ model Note {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  // Support notes personnelles (US-XXX)
+  isPersonal Boolean  @default(false) @map("is_personal")
+  ownerId    String?  @map("owner_id") @db.Uuid // Obligatoire si isPersonal=true
+
   // Relations
-  folder       Folder        @relation(fields: [folderId], references: [id])
+  folder       Folder?       @relation(fields: [folderId], references: [id])
   author       User          @relation("NoteCreatedBy", fields: [authorId], references: [id])
   modifier     User?         @relation("NoteModifiedBy", fields: [modifiedBy], references: [id])
   deletedBy    User?         @relation("NoteDeletedBy", fields: [deletedById], references: [id])
+  owner        User?         @relation("PersonalNotes", fields: [ownerId], references: [id], onDelete: Cascade)
   versions     NoteVersion[]
   tags         NoteTag[]
   linksFrom    Link[]        @relation("LinkSource")
@@ -155,6 +171,8 @@ model Note {
   @@index([isPinnedGlobal])
   @@index([viewCount(sort: Desc)]) // P1: Index pour tri par popularité
   @@index([frontmatter(ops: JsonbPathOps)], type: Gin) // P2: Index GIN pour requêtes JSONB
+  @@index([ownerId, isPersonal])
+  @@index([isPersonal])
   @@map("notes")
 }
 

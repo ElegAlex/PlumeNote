@@ -45,6 +45,25 @@ export interface RolePermissions {
 
 export type RoleName = 'admin' | 'editor' | 'reader';
 
+// ----- Statistiques utilisateur (Admin) -----
+
+export interface UserStats {
+  notesCreated: number;
+  notesModified: number;
+}
+
+export interface UserWithStats extends User {
+  stats: UserStats;
+}
+
+export interface AdminUsersResponse {
+  items: UserWithStats[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 // ----- Auth -----
 
 export interface LoginRequest {
@@ -136,10 +155,21 @@ export interface NotePreview {
 /**
  * Contenu d'un dossier pour le lazy loading
  * Retourné par GET /folders/:id/content
+ * Utilisé par la sidebar et par FolderPage
  */
 export interface FolderContent {
-  id: string;
-  name: string;
+  // Format page (avec infos complètes du dossier et breadcrumb)
+  folder?: {
+    id: string;
+    name: string;
+    slug: string;
+    color?: string | null;
+    icon?: string | null;
+    parentId?: string | null;
+    path?: string;
+  };
+  breadcrumb?: Array<{ id: string; name: string; slug: string }>;
+  // Contenu (toujours présent)
   children: FolderChildPreview[];
   notes: NotePreview[];
 }
@@ -855,4 +885,153 @@ export interface CalendarMonth {
   year: number;
   month: number; // 0-11
   weeks: CalendarWeek[];
+}
+
+// ----- NOTES PERSONNELLES -----
+
+/**
+ * Dossier personnel (isolé par utilisateur)
+ */
+export interface PersonalFolder {
+  id: string;
+  name: string;
+  slug: string;
+  path: string;
+  color: string | null;
+  icon: string | null;
+  position: number;
+  hasChildren: boolean;
+  notesCount: number;
+  parentId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Détail d'un dossier personnel avec son contenu
+ */
+export interface PersonalFolderDetail {
+  folder: PersonalFolder;
+  children: PersonalFolderPreview[];
+  notes: PersonalNotePreview[];
+}
+
+/**
+ * Prévisualisation d'un sous-dossier personnel
+ */
+export interface PersonalFolderPreview {
+  id: string;
+  name: string;
+  slug: string;
+  color: string | null;
+  icon: string | null;
+  position: number;
+  hasChildren: boolean;
+  notesCount: number;
+}
+
+/**
+ * Note personnelle
+ */
+export interface PersonalNote {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  frontmatter: NoteFrontmatter;
+  folderId: string | null;
+  folder: {
+    id: string;
+    name: string;
+    slug: string;
+    path: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Prévisualisation d'une note personnelle
+ */
+export interface PersonalNotePreview {
+  id: string;
+  title: string;
+  slug: string;
+  folderId?: string | null;
+  folderName?: string | null;
+  folderPath?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/**
+ * Résultat de recherche dans l'espace personnel
+ */
+export interface PersonalSearchResult {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  folderPath: string | null;
+  updatedAt: string;
+}
+
+/**
+ * Requête de création d'un dossier personnel
+ */
+export interface CreatePersonalFolderRequest {
+  name: string;
+  parentId?: string;
+  color?: string;
+  icon?: string;
+}
+
+/**
+ * Requête de mise à jour d'un dossier personnel
+ */
+export interface UpdatePersonalFolderRequest {
+  name?: string;
+  parentId?: string | null;
+  color?: string | null;
+  icon?: string | null;
+}
+
+/**
+ * Requête de création d'une note personnelle
+ */
+export interface CreatePersonalNoteRequest {
+  title: string;
+  content?: string;
+  folderId?: string;
+}
+
+/**
+ * Requête de mise à jour d'une note personnelle
+ */
+export interface UpdatePersonalNoteRequest {
+  title?: string;
+  content?: string;
+  folderId?: string | null;
+}
+
+/**
+ * Arborescence de l'espace personnel
+ */
+export interface PersonalTreeNode {
+  id: string;
+  name: string;
+  slug: string;
+  color: string | null;
+  icon: string | null;
+  hasChildren: boolean;
+  children: PersonalTreeNode[];
+  notes: PersonalNotePreview[];
+}
+
+/**
+ * Réponse de l'arborescence personnelle
+ */
+export interface PersonalTreeResponse {
+  tree: PersonalTreeNode[];
+  rootNotes: PersonalNotePreview[];
 }

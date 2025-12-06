@@ -1,0 +1,383 @@
+// ===========================================
+// Page Dossier Général
+// Vue du contenu d'un dossier avec breadcrumb
+// Utilise les mêmes composants que PersonalFolderPage
+// ===========================================
+
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useFoldersStore } from '../stores/folders';
+import { useNotesStore } from '../stores/notes';
+import { useSidebarStore } from '../stores/sidebarStore';
+import { Button } from '../components/ui/Button';
+import { Spinner } from '../components/ui/Spinner';
+import { Input } from '../components/ui/Input';
+import { toast } from '../components/ui/Toaster';
+import { api } from '../lib/api';
+import {
+  FolderCard,
+  NoteCard,
+  CreateFolderForm,
+  EmptyState,
+  Breadcrumb,
+  ActionMenu,
+} from '../components/common';
+import type { ActionMenuItem, BreadcrumbItem } from '../components/common';
+import type { FolderContent } from '@collabnotes/types';
+
+// Icons
+const FolderIcon = ({ color }: { color?: string }) => (
+  <svg className="h-5 w-5" fill="none" stroke={color || 'currentColor'} viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+    />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+    />
+  </svg>
+);
+
+const HomeIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+    />
+  </svg>
+);
+
+// ===========================================
+// Composant Principal
+// ===========================================
+
+export function FolderPage() {
+  const { folderId } = useParams<{ folderId: string }>();
+  const navigate = useNavigate();
+  const { createFolder, updateFolder, deleteFolder } = useFoldersStore();
+  const { createNote } = useNotesStore();
+  const { refreshFolder } = useSidebarStore();
+
+  // État local
+  const [folderContent, setFolderContent] = useState<FolderContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+
+  // Charger le contenu du dossier
+  const fetchContent = useCallback(async () => {
+    if (!folderId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get<FolderContent>(`/folders/${folderId}/content`);
+      setFolderContent(response.data);
+      setEditName(response.data.folder?.name ?? '');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur de chargement');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [folderId]);
+
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
+
+  // Créer un sous-dossier
+  const handleCreateFolder = async (name: string) => {
+    if (!folderId) return;
+    setIsSaving(true);
+    try {
+      await createFolder(name, folderId);
+      toast.success('Sous-dossier créé');
+      setIsCreatingFolder(false);
+      await fetchContent();
+      await refreshFolder(folderId);
+    } catch {
+      toast.error('Erreur lors de la création');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Créer une note
+  const handleCreateNote = async () => {
+    if (!folderId) return;
+    setIsSaving(true);
+    try {
+      const note = await createNote({ title: 'Sans titre', folderId });
+      navigate(`/notes/${note.id}`);
+    } catch {
+      toast.error('Erreur lors de la création');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Renommer le dossier
+  const handleRename = async () => {
+    if (!folderId || !editName.trim()) return;
+    setIsSaving(true);
+    try {
+      await updateFolder(folderId, { name: editName.trim() });
+      toast.success('Dossier renommé');
+      setIsEditing(false);
+      await fetchContent();
+    } catch {
+      toast.error('Erreur lors du renommage');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Supprimer le dossier
+  const handleDelete = async () => {
+    if (!folderId) return;
+    if (window.confirm('Voulez-vous vraiment supprimer ce dossier et tout son contenu ?')) {
+      setIsSaving(true);
+      try {
+        await deleteFolder(folderId);
+        toast.success('Dossier supprimé');
+        navigate('/');
+      } catch {
+        toast.error('Erreur lors de la suppression');
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  // Navigation
+  const handleFolderClick = (id: string) => {
+    navigate(`/folders/${id}`);
+  };
+
+  const handleNoteClick = (id: string) => {
+    navigate(`/notes/${id}`);
+  };
+
+  // Convertir le breadcrumb API vers le format du composant
+  const breadcrumbItems: BreadcrumbItem[] = (folderContent?.breadcrumb ?? []).slice(0, -1).map((item) => ({
+    id: item.id,
+    name: item.name,
+  }));
+
+  // Menu actions (composant générique)
+  const menuItems: ActionMenuItem[] = [
+    {
+      label: 'Renommer',
+      icon: <PencilIcon />,
+      onClick: () => setIsEditing(true),
+    },
+    {
+      label: 'Supprimer',
+      icon: <TrashIcon />,
+      onClick: handleDelete,
+      variant: 'destructive',
+      dividerBefore: true,
+    },
+  ];
+
+  // Loading
+  if (isLoading && !folderContent) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Erreur ou dossier non trouvé
+  if (error || !folderContent || !folderContent.folder) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <EmptyState
+          icon={<FolderIcon />}
+          title="Dossier non trouvé"
+          description={error || undefined}
+          action={{
+            label: "Retour à l'accueil",
+            onClick: () => navigate('/'),
+          }}
+        />
+      </div>
+    );
+  }
+
+  // À ce stade, folder est garanti d'exister
+  const { folder } = folderContent;
+
+  return (
+    <div className="h-full overflow-auto">
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Breadcrumb (composant générique) */}
+        <Breadcrumb
+          root={{
+            label: 'Dossiers',
+            icon: <HomeIcon />,
+            onClick: () => navigate('/'),
+          }}
+          items={breadcrumbItems}
+          onItemClick={handleFolderClick}
+          className="mb-4"
+        />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <span style={{ color: folder.color ?? 'inherit' }}>
+              <FolderIcon color={folder.color ?? undefined} />
+            </span>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="h-8"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRename();
+                    if (e.key === 'Escape') {
+                      setIsEditing(false);
+                      setEditName(folder.name);
+                    }
+                  }}
+                />
+                <Button size="sm" onClick={handleRename} disabled={isSaving}>
+                  OK
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditName(folder.name);
+                  }}
+                >
+                  Annuler
+                </Button>
+              </div>
+            ) : (
+              <h1 className="text-2xl font-bold">{folder.name}</h1>
+            )}
+          </div>
+
+          {/* Menu (composant générique) */}
+          {!isEditing && <ActionMenu items={menuItems} />}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant="outline"
+            onClick={() => setIsCreatingFolder(true)}
+            disabled={isSaving}
+          >
+            <PlusIcon />
+            <span className="ml-2">Sous-dossier</span>
+          </Button>
+          <Button onClick={handleCreateNote} disabled={isSaving}>
+            <PlusIcon />
+            <span className="ml-2">Nouvelle note</span>
+          </Button>
+        </div>
+
+        {/* Formulaire création sous-dossier (composant générique) */}
+        {isCreatingFolder && (
+          <CreateFolderForm
+            onSubmit={handleCreateFolder}
+            onCancel={() => setIsCreatingFolder(false)}
+            isLoading={isSaving}
+            title="Nouveau sous-dossier"
+            className="mb-6"
+          />
+        )}
+
+        {/* Sous-dossiers (composant générique) */}
+        {folderContent.children.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">Sous-dossiers</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {folderContent.children.map((folder) => (
+                <FolderCard
+                  key={folder.id}
+                  id={folder.id}
+                  name={folder.name}
+                  color={folder.color}
+                  notesCount={folder.notesCount}
+                  onClick={handleFolderClick}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Notes (composant générique) */}
+        {folderContent.notes.length > 0 && (
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">Notes</h2>
+            <div className="space-y-2">
+              {folderContent.notes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  id={note.id}
+                  title={note.title}
+                  updatedAt={note.updatedAt}
+                  onClick={handleNoteClick}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* État vide (composant générique) */}
+        {folderContent.children.length === 0 && folderContent.notes.length === 0 && !isLoading && (
+          <EmptyState
+            icon={<FolderIcon />}
+            title="Ce dossier est vide"
+            description="Créez un sous-dossier ou une note pour commencer."
+            action={{
+              label: 'Créer une note',
+              onClick: handleCreateNote,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

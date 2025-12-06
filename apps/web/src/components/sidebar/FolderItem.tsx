@@ -1,12 +1,15 @@
 // ===========================================
 // Composant FolderItem - P0
 // Composant récursif pour l'arborescence des dossiers
+// Utilise InlineCreateForm pour création de sous-dossiers
 // ===========================================
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSidebarStore } from '../../stores/sidebarStore';
 import { NoteItem } from './NoteItem';
 import { Spinner } from '../ui/Spinner';
+import { InlineCreateForm } from '../common';
 import { cn } from '../../lib/utils';
 import type { SidebarFolderNode } from '@collabnotes/types';
 
@@ -17,7 +20,7 @@ interface FolderItemProps {
   folder: SidebarFolderNode;
   level: number;
   onCreateNote?: (folderId: string) => void;
-  onCreateFolder?: (parentId: string) => void;
+  onCreateFolder?: (name: string, parentId: string) => Promise<void>;
 }
 
 export const FolderItem = memo(function FolderItem({
@@ -26,6 +29,7 @@ export const FolderItem = memo(function FolderItem({
   onCreateNote,
   onCreateFolder,
 }: FolderItemProps) {
+  const navigate = useNavigate();
   const {
     expandedIds,
     loadedFolders,
@@ -40,6 +44,10 @@ export const FolderItem = memo(function FolderItem({
   const isLoading = isLoadingFolder === folder.id;
   const cache = loadedFolders.get(folder.id);
 
+  // État local pour création de sous-dossier
+  const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Contenu à afficher (cache ou données initiales)
   const children = cache?.children ?? folder.children;
   const notes = cache?.notes ?? folder.notes;
@@ -48,14 +56,14 @@ export const FolderItem = memo(function FolderItem({
   const hasContent = folder.hasChildren || folder.notesCount > 0;
 
   // Handlers
-  // Clic sur toute la ligne = toggle expand/collapse
+  // Clic sur toute la ligne = navigation + toggle expand/collapse
   const handleRowClick = useCallback(() => {
+    navigate(`/folders/${folder.id}`);
     if (hasContent) {
       toggleFolder(folder.id);
     }
-    // Sélectionne aussi le dossier pour feedback visuel
     selectFolder(folder.id);
-  }, [folder.id, hasContent, toggleFolder, selectFolder]);
+  }, [folder.id, hasContent, toggleFolder, selectFolder, navigate]);
 
   // Handler séparé pour le chevron (même comportement mais avec stopPropagation)
   const handleChevronClick = useCallback(
@@ -96,13 +104,35 @@ export const FolderItem = memo(function FolderItem({
     [folder.id, onCreateNote]
   );
 
-  const handleCreateFolder = useCallback(
+  const handleCreateFolderClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      onCreateFolder?.(folder.id);
+      // Ouvrir le dossier si pas déjà ouvert
+      if (!isExpanded && hasContent) {
+        toggleFolder(folder.id);
+      }
+      setIsCreatingSubfolder(true);
+    },
+    [folder.id, isExpanded, hasContent, toggleFolder]
+  );
+
+  const handleCreateFolderSubmit = useCallback(
+    async (name: string) => {
+      if (!onCreateFolder) return;
+      setIsSubmitting(true);
+      try {
+        await onCreateFolder(name, folder.id);
+        setIsCreatingSubfolder(false);
+      } finally {
+        setIsSubmitting(false);
+      }
     },
     [folder.id, onCreateFolder]
   );
+
+  const handleCancelCreateFolder = useCallback(() => {
+    setIsCreatingSubfolder(false);
+  }, []);
 
   // Calcul de l'indentation
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
@@ -132,7 +162,7 @@ export const FolderItem = memo(function FolderItem({
           tabIndex={-1}
         >
           {isLoading ? (
-            <Spinner size="xs" />
+            <Spinner size="sm" />
           ) : hasContent ? (
             <svg
               className={cn(
@@ -201,7 +231,7 @@ export const FolderItem = memo(function FolderItem({
           )}
           {onCreateFolder && (
             <button
-              onClick={handleCreateFolder}
+              onClick={handleCreateFolderClick}
               className="h-5 w-5 rounded hover:bg-muted flex items-center justify-center"
               title="Nouveau sous-dossier"
             >
@@ -230,9 +260,25 @@ export const FolderItem = memo(function FolderItem({
         )}
       </div>
 
-      {/* Contenu déplié : sous-dossiers puis notes */}
-      {isExpanded && (
+      {/* Contenu déplié : formulaire création, sous-dossiers puis notes */}
+      {(isExpanded || isCreatingSubfolder) && (
         <ul role="group" className="mt-0.5">
+          {/* Formulaire de création de sous-dossier (composant générique) */}
+          {isCreatingSubfolder && (
+            <li
+              className="py-1"
+              style={{ paddingLeft: (level + 1) * INDENT_PER_LEVEL + 8 }}
+            >
+              <InlineCreateForm
+                onSubmit={handleCreateFolderSubmit}
+                onCancel={handleCancelCreateFolder}
+                placeholder="Nom du dossier"
+                isLoading={isSubmitting}
+                compact
+              />
+            </li>
+          )}
+
           {/* D'abord les sous-dossiers (tri alphabétique déjà fait côté API) */}
           {children.map((child) => (
             <FolderItem
@@ -250,7 +296,7 @@ export const FolderItem = memo(function FolderItem({
           ))}
 
           {/* État vide */}
-          {children.length === 0 && notes.length === 0 && !isLoading && (
+          {children.length === 0 && notes.length === 0 && !isLoading && !isCreatingSubfolder && (
             <li
               className="text-xs text-muted-foreground italic py-1"
               style={{ paddingLeft: (level + 1) * INDENT_PER_LEVEL + 8 }}

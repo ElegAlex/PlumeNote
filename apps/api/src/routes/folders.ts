@@ -77,8 +77,11 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
   }, async (request) => {
     const userId = request.user.userId;
 
-    // Récupérer tous les dossiers
+    // Récupérer uniquement les dossiers de l'espace général (pas personnels)
     const folders = await prisma.folder.findMany({
+      where: {
+        isPersonal: false,
+      },
       orderBy: [{ path: 'asc' }, { position: 'asc' }, { name: 'asc' }],
       include: {
         notes: {
@@ -178,16 +181,30 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     const slug = generateSlug(name);
     const path = await buildFolderPath(parentId);
 
-    // Vérifier l'unicité du slug dans le parent
+    // Vérifier que le parent n'est pas un dossier personnel
+    if (parentId) {
+      const parentFolder = await prisma.folder.findUnique({
+        where: { id: parentId },
+        select: { isPersonal: true },
+      });
+      if (parentFolder?.isPersonal) {
+        return reply.status(400).send({
+          error: 'INVALID_OPERATION',
+          message: 'Impossible de créer un dossier général dans un dossier personnel',
+        });
+      }
+    }
+
+    // Vérifier l'unicité du slug dans le parent (espace général uniquement)
     const existing = await prisma.folder.findFirst({
-      where: { parentId, slug },
+      where: { parentId, slug, isPersonal: false },
     });
 
     const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
-    // Calculer la position
+    // Calculer la position (espace général uniquement)
     const maxPosition = await prisma.folder.aggregate({
-      where: { parentId },
+      where: { parentId, isPersonal: false },
       _max: { position: true },
     });
     const position = (maxPosition._max.position ?? -1) + 1;
@@ -246,6 +263,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
    * GET /api/v1/folders/:id/content
    * P0: Lazy loading du contenu d'un dossier (sous-dossiers + notes)
    * Optimisé pour la sidebar avec tri alphabétique
+   * Retourne aussi le breadcrumb pour la navigation en page
    */
   app.get('/:id/content', {
     schema: {
@@ -273,11 +291,20 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const folder = await prisma.folder.findUnique({
-      where: { id },
+      where: {
+        id,
+        isPersonal: false,  // Uniquement espace général
+      },
       select: {
         id: true,
         name: true,
+        slug: true,
+        color: true,
+        icon: true,
+        parentId: true,
+        path: true,
         children: {
+          where: { isPersonal: false },  // Filtrer les enfants aussi
           orderBy: [{ name: 'asc' }],
           select: {
             id: true,
@@ -295,7 +322,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
           },
         },
         notes: {
-          where: { isDeleted: false },
+          where: { isDeleted: false, isPersonal: false },
           orderBy: [{ title: 'asc' }],
           select: {
             id: true,
@@ -316,10 +343,34 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    // Formater la réponse selon FolderContent
+    // Construire le breadcrumb en remontant les parents (espace général uniquement)
+    const breadcrumb: Array<{ id: string; name: string; slug: string }> = [];
+    let currentParentId = folder.parentId;
+
+    while (currentParentId) {
+      const parent = await prisma.folder.findUnique({
+        where: { id: currentParentId },
+        select: { id: true, name: true, slug: true, parentId: true },
+      });
+      if (!parent) break;
+      breadcrumb.unshift({ id: parent.id, name: parent.name, slug: parent.slug });
+      currentParentId = parent.parentId;
+    }
+
+    // Ajouter le dossier courant à la fin du breadcrumb
+    breadcrumb.push({ id: folder.id, name: folder.name, slug: folder.slug });
+
+    // Formater la réponse selon FolderContentResponse (format page)
     return {
-      id: folder.id,
-      name: folder.name,
+      folder: {
+        id: folder.id,
+        name: folder.name,
+        slug: folder.slug,
+        color: folder.color,
+        icon: folder.icon,
+        parentId: folder.parentId,
+        path: folder.path,
+      },
       children: folder.children.map((child) => ({
         id: child.id,
         name: child.name,
@@ -338,6 +389,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
         updatedAt: note.updatedAt.toISOString(),
         createdAt: note.createdAt.toISOString(),
       })),
+      breadcrumb,
     };
   });
 
@@ -370,13 +422,17 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const folder = await prisma.folder.findUnique({
-      where: { id },
+      where: {
+        id,
+        isPersonal: false,  // Uniquement espace général
+      },
       include: {
         notes: {
-          where: { isDeleted: false },
+          where: { isDeleted: false, isPersonal: false },
           orderBy: [{ position: 'asc' }, { title: 'asc' }],
         },
         children: {
+          where: { isPersonal: false },
           orderBy: [{ position: 'asc' }, { name: 'asc' }],
         },
       },
@@ -427,6 +483,24 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
+    // Vérifier que le dossier existe et n'est pas personnel
+    const existingFolder = await prisma.folder.findUnique({
+      where: { id },
+      select: { isPersonal: true },
+    });
+    if (!existingFolder) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Dossier non trouvé',
+      });
+    }
+    if (existingFolder.isPersonal) {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: 'Cette route ne permet pas de modifier un dossier personnel',
+      });
+    }
+
     const updates = parseResult.data;
     const updateData: Record<string, unknown> = { ...updates };
 
@@ -436,7 +510,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const folder = await prisma.folder.update({
-      where: { id },
+      where: { id, isPersonal: false },
       data: updateData,
     });
 
@@ -507,18 +581,42 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
-    const folder = await prisma.folder.findUnique({ where: { id } });
+    // Vérifier que le dossier source existe et n'est pas personnel
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      select: { id: true, parentId: true, isPersonal: true },
+    });
     if (!folder) {
       return reply.status(404).send({
         error: 'NOT_FOUND',
         message: 'Dossier non trouvé',
       });
     }
+    if (folder.isPersonal) {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: 'Cette route ne permet pas de déplacer un dossier personnel',
+      });
+    }
+
+    // Vérifier que la destination n'est pas un dossier personnel
+    if (newParentId) {
+      const targetFolder = await prisma.folder.findUnique({
+        where: { id: newParentId },
+        select: { isPersonal: true },
+      });
+      if (targetFolder?.isPersonal) {
+        return reply.status(400).send({
+          error: 'INVALID_OPERATION',
+          message: 'Impossible de déplacer un dossier général vers un dossier personnel',
+        });
+      }
+    }
 
     const newPath = await buildFolderPath(newParentId);
 
     const updated = await prisma.folder.update({
-      where: { id },
+      where: { id, isPersonal: false },
       data: {
         parentId: newParentId,
         path: newPath,
@@ -563,17 +661,35 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    // Compter les éléments impactés
+    // Vérifier que le dossier existe et n'est pas personnel
+    const existingFolder = await prisma.folder.findUnique({
+      where: { id },
+      select: { isPersonal: true },
+    });
+    if (!existingFolder) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Dossier non trouvé',
+      });
+    }
+    if (existingFolder.isPersonal) {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: 'Cette route ne permet pas de supprimer un dossier personnel',
+      });
+    }
+
+    // Compter les éléments impactés (espace général uniquement)
     const notesCount = await prisma.note.count({
-      where: { folderId: id, isDeleted: false },
+      where: { folderId: id, isDeleted: false, isPersonal: false },
     });
     const subFoldersCount = await prisma.folder.count({
-      where: { parentId: id },
+      where: { parentId: id, isPersonal: false },
     });
 
-    // Soft delete des notes
+    // Soft delete des notes (espace général uniquement)
     await prisma.note.updateMany({
-      where: { folderId: id },
+      where: { folderId: id, isPersonal: false },
       data: {
         isDeleted: true,
         deletedAt: new Date(),
@@ -582,7 +698,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     });
 
     // Supprimer le dossier (cascade sur sous-dossiers via Prisma)
-    await prisma.folder.delete({ where: { id } });
+    await prisma.folder.delete({ where: { id, isPersonal: false } });
 
     await createAuditLog({
       userId,
