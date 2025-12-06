@@ -33,6 +33,11 @@ mermaid.initialize({
   },
 });
 
+// Helper: retire le frontmatter YAML pour le mode visualisation
+function stripFrontmatter(content: string): string {
+  return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+}
+
 // ===========================================
 // Composant Mermaid
 // ===========================================
@@ -662,6 +667,12 @@ const icons = {
       <path d="M4 6h16M8 12h8M6 18h12" />
     </svg>
   ),
+  properties: (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M4 6h16M4 12h16M4 18h10" />
+      <circle cx="19" cy="18" r="2" />
+    </svg>
+  ),
 };
 
 // ===========================================
@@ -855,6 +866,18 @@ export function MarkdownEditor({
     }
   }, []);
 
+  const insertFrontmatter = useCallback(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const content = view.state.doc.toString();
+    if (content.startsWith('---')) {
+      view.dispatch({ selection: { anchor: 4 } }); // Positionne après ---\n
+    } else {
+      view.dispatch({ changes: { from: 0, insert: '---\n\n---\n' }, selection: { anchor: 4 } });
+    }
+    view.focus();
+  }, []);
+
   // Extensions CodeMirror
   const getExtensions = useCallback((): Extension[] => {
     return [
@@ -1014,6 +1037,7 @@ export function MarkdownEditor({
         {/* Links & Media */}
         <ToolbarButton onClick={insertLink} icon={icons.link} title="Lien (Ctrl+K)" disabled={!isEditMode} />
         <ToolbarButton onClick={insertImage} icon={icons.image} title="Image" disabled={!isEditMode} />
+        <ToolbarButton onClick={insertFrontmatter} icon={icons.properties} title="Propriétés (Frontmatter)" disabled={!isEditMode} />
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -1151,7 +1175,7 @@ export function MarkdownEditor({
                 },
               }}
             >
-              {localContent || '*Aucun contenu à afficher*'}
+              {stripFrontmatter(localContent) || '*Aucun contenu à afficher*'}
             </ReactMarkdown>
           </div>
         )}

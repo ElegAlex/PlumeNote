@@ -33,7 +33,7 @@ export function PropertiesPanel({
   initialMetadata,
   className = '',
 }: PropertiesPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const {
     propertyDefinitions,
@@ -128,7 +128,7 @@ export function PropertiesPanel({
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
-          Properties
+          Propriétés
           {metadataEntries.length > 0 && (
             <span className="text-xs text-muted-foreground">
               ({metadataEntries.length})

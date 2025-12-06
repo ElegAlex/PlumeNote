@@ -38,6 +38,8 @@ import { announcementsRoutes } from './routes/announcements.js';
 import { propertiesRoutes } from './routes/properties.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { personalRoutes } from './routes/personal.js';
+import { noteMetadataRoutes } from './routes/noteMetadata.js';
+import { noteTagsRoutes } from './routes/noteTags.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -163,6 +165,8 @@ export async function buildApp() {
   await app.register(propertiesRoutes, { prefix: '/api/v1/properties' });
   await app.register(analyticsRoutes, { prefix: '/api/v1/analytics' });
   await app.register(personalRoutes, { prefix: '/api/v1/personal' });
+  await app.register(noteMetadataRoutes, { prefix: '/api/v1/notes' });
+  await app.register(noteTagsRoutes, { prefix: '/api/v1/notes' });
 
   // ----- Error Handler global -----
   app.setErrorHandler((error, request, reply) => {

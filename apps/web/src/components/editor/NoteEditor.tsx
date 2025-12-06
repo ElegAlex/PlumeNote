@@ -3,13 +3,15 @@
 // US-008/US-009: Sauvegarde automatique avec indicateur
 // US-017: Tags inline avec autocomplétion
 // US-022: Configuration centralisée de l'éditeur
+// P2: Intégration du panneau de métadonnées
 // ===========================================
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useNavigate } from 'react-router-dom';
 import { EditorToolbar } from './EditorToolbar';
 import { SaveIndicator } from './SaveIndicator';
+import { PropertiesPanel } from './metadata/PropertiesPanel';
 import { TagSuggestionPopup, useTagSuggestion } from './extensions/tag';
 import { WikilinkSuggestionPopup, useWikilinkSuggestion } from './extensions/wikilink';
 import { useAutoSave } from '../../hooks/useAutoSave';
@@ -21,6 +23,7 @@ import {
   type EditorConfigOptions,
   type EditorFeatureFlags,
 } from './EditorConfig';
+import type { NoteFrontmatter } from '@collabnotes/types';
 
 interface NoteEditorProps {
   content: string;
@@ -31,6 +34,10 @@ interface NoteEditorProps {
   features?: EditorFeatureFlags;
   /** Configuration avancée de l'éditeur (US-022) */
   config?: Omit<EditorConfigOptions, 'features' | 'onTagClick'>;
+  /** Métadonnées initiales de la note (P2) */
+  initialMetadata?: NoteFrontmatter;
+  /** Afficher le panneau de propriétés (P2) */
+  showProperties?: boolean;
 }
 
 /** @deprecated Utiliser onSave à la place */
@@ -48,8 +55,11 @@ export function NoteEditor({
   editable = true,
   features,
   config,
+  initialMetadata,
+  showProperties = true,
 }: NoteEditorProps) {
   const navigate = useNavigate();
+  const [isPropertiesPanelVisible, setIsPropertiesPanelVisible] = useState(showProperties);
 
   // Hook de sauvegarde automatique avec machine à états
   const {
@@ -250,7 +260,22 @@ export function NoteEditor({
       {editable && (
         <div className="flex items-center justify-between border-b bg-card">
           <EditorToolbar editor={editor} />
-          <div className="px-4 py-2">
+          <div className="flex items-center gap-2 px-4 py-2">
+            {/* Toggle panneau propriétés (P2) */}
+            <button
+              type="button"
+              onClick={() => setIsPropertiesPanelVisible(!isPropertiesPanelVisible)}
+              className={`p-1.5 rounded-md transition-colors ${
+                isPropertiesPanelVisible
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+              title={isPropertiesPanelVisible ? 'Masquer les propriétés' : 'Afficher les propriétés'}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </button>
             <SaveIndicator
               status={status}
               lastSaved={lastSaved}
@@ -260,6 +285,16 @@ export function NoteEditor({
           </div>
         </div>
       )}
+
+      {/* Panneau de propriétés/métadonnées (P2) */}
+      {editable && isPropertiesPanelVisible && (
+        <PropertiesPanel
+          noteId={noteId}
+          initialMetadata={initialMetadata}
+          className="bg-muted/30"
+        />
+      )}
+
       <div className="flex-1 overflow-auto relative">
         <EditorContent editor={editor} />
         {/* Tag suggestion popup (US-017) */}

@@ -2,10 +2,12 @@
 // Composant FolderItem - P0
 // Composant récursif pour l'arborescence des dossiers
 // Utilise InlineCreateForm pour création de sous-dossiers
+// US-007: Support drag-and-drop avec feedback visuel
 // ===========================================
 
 import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDroppable } from '@dnd-kit/core';
 import { useSidebarStore } from '../../stores/sidebarStore';
 import { NoteItem } from './NoteItem';
 import { Spinner } from '../ui/Spinner';
@@ -47,6 +49,16 @@ export const FolderItem = memo(function FolderItem({
   // État local pour création de sous-dossier
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Droppable pour le drag-and-drop (US-007)
+  const { setNodeRef, isOver } = useDroppable({
+    id: `folder:${folder.id}`,
+    data: {
+      type: 'folder',
+      id: folder.id,
+      name: folder.name,
+    },
+  });
 
   // Contenu à afficher (cache ou données initiales)
   const children = cache?.children ?? folder.children;
@@ -144,12 +156,15 @@ export const FolderItem = memo(function FolderItem({
     <li role="treeitem" aria-expanded={isExpanded}>
       {/* En-tête du dossier */}
       <div
+        ref={setNodeRef}
         className={cn(
           'group flex items-center h-8 px-2 rounded-md cursor-pointer',
           'hover:bg-accent hover:text-accent-foreground',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'transition-colors duration-150',
-          isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+          isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+          // Feedback visuel pendant le drag-over (US-007)
+          isOver && 'ring-2 ring-primary ring-inset bg-primary/10'
         )}
         style={{ paddingLeft }}
         onClick={handleRowClick}
@@ -295,7 +310,7 @@ export const FolderItem = memo(function FolderItem({
 
           {/* Ensuite les notes (tri alphabétique déjà fait côté API) */}
           {notes.map((note) => (
-            <NoteItem key={note.id} note={note} level={level + 1} />
+            <NoteItem key={note.id} note={note} level={level + 1} folderId={folder.id} />
           ))}
 
           {/* État vide */}

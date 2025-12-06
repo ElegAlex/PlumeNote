@@ -16,6 +16,8 @@ import { PinButton } from '../components/editor/PinButton';
 import { VersionHistoryPanel } from '../components/editor/VersionHistoryPanel';
 import { TableOfContentsPanel } from '../components/editor/TableOfContentsPanel';
 import { LinksPanel } from '../components/editor/LinksPanel';
+import { PropertiesPanel } from '../components/editor/metadata/PropertiesPanel';
+import { TagsPanel } from '../components/editor/metadata/TagsPanel';
 import { NoteActionMenu, MoveToFolderDialog } from '../components/common';
 import type { FolderTreeNode } from '../components/common';
 import { useNoteView } from '../hooks';
@@ -38,6 +40,7 @@ export function NotePage() {
   const [title, setTitle] = useState('');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const { isOpen: isRightPanelOpen, togglePanel, closePanel } = useRightPanelStore();
 
   // P1: Enregistrer la vue de la note
@@ -166,6 +169,19 @@ export function NotePage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Properties Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPropertiesPanel(!showPropertiesPanel)}
+            title={showPropertiesPanel ? 'Masquer les propriétés' : 'Afficher les propriétés'}
+            className={showPropertiesPanel ? 'bg-muted' : ''}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 6h16M4 12h16M4 18h10" />
+            </svg>
+          </Button>
+
           {/* P1: Pin Button */}
           {currentNote && <PinButton noteId={currentNote.id} />}
 
@@ -194,6 +210,22 @@ export function NotePage() {
           />
         </div>
       </div>
+
+      {/* Properties Panel */}
+      {showPropertiesPanel && currentNote && (
+        <PropertiesPanel
+          noteId={currentNote.id}
+          className="bg-muted/30"
+        />
+      )}
+
+      {/* Tags Panel */}
+      {showPropertiesPanel && currentNote && (
+        <TagsPanel
+          noteId={currentNote.id}
+          className="bg-muted/30"
+        />
+      )}
 
       {/* Editor */}
       <div className="flex-1 overflow-hidden">

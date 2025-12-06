@@ -169,6 +169,7 @@ model Note {
   attachments  Attachment[]
   permissions  Permission[]
   favorites    Favorite[]
+  metadata     NoteMetadata[]
 
   @@unique([folderId, slug])
   @@index([folderId])
@@ -429,7 +430,37 @@ model Announcement {
 
 // ----- P2: SYSTÈME DE MÉTADONNÉES -----
 
-/// Types de propriétés supportés pour les métadonnées des notes
+/// Types de métadonnées pour la table NoteMetadata
+enum MetadataType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  MULTI_SELECT
+  CHECKBOX
+  URL
+  EMAIL
+}
+
+/// Table NoteMetadata - Stockage des métadonnées par note
+model NoteMetadata {
+  id        String       @id @default(cuid())
+  noteId    String       @map("note_id") @db.Uuid
+  note      Note         @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  key       String       @db.VarChar(100)
+  value     String       @db.Text // JSON stringifié
+  type      MetadataType
+  position  Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@unique([noteId, key])
+  @@index([noteId])
+  @@index([key])
+  @@map("note_metadata")
+}
+
+/// Types de propriétés supportés pour les métadonnées des notes (legacy)
 enum PropertyType {
   TEXT
   NUMBER

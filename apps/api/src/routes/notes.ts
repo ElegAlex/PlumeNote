@@ -15,7 +15,7 @@ import type { Note, CreateNoteRequest, NoteFrontmatter, NoteMetadata } from '@co
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission } from '../services/permissions.js';
 import { parseLinks, updateLinks } from '../services/links.js';
-import { validateMetadata, updateNoteMetadata } from '../services/metadata.js';
+import { syncYamlToMetadata } from '../services/metadataSync.js';
 
 // ----- Schémas de validation -----
 
@@ -356,144 +356,6 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * PATCH /api/v1/notes/:id/metadata
-   * P2: Mettre à jour les métadonnées d'une note
-   */
-  app.patch('/:id/metadata', {
-    schema: {
-      tags: ['Notes'],
-      summary: 'Update note metadata',
-      description: 'Update the frontmatter/metadata of a note with validation',
-      security: [{ cookieAuth: [] }],
-    },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const userId = request.user.userId;
-    const { metadata } = request.body as { metadata: NoteMetadata };
-
-    if (!metadata || typeof metadata !== 'object') {
-      return reply.status(400).send({
-        error: 'VALIDATION_ERROR',
-        message: 'Invalid metadata object',
-      });
-    }
-
-    // Vérifier que la note existe
-    const note = await prisma.note.findFirst({
-      where: { id, isDeleted: false },
-    });
-
-    if (!note) {
-      return reply.status(404).send({
-        error: 'NOT_FOUND',
-        message: 'Note non trouvée',
-      });
-    }
-
-    // Vérifier les permissions d'écriture
-    const hasPermission = await checkPermission(userId, 'FOLDER', note.folderId, 'WRITE');
-    if (!hasPermission) {
-      return reply.status(403).send({
-        error: 'FORBIDDEN',
-        message: "Vous n'avez pas les droits de modification sur cette note",
-      });
-    }
-
-    // Valider et normaliser les métadonnées
-    const validation = await validateMetadata(metadata);
-
-    if (!validation.valid) {
-      return reply.status(400).send({
-        error: 'VALIDATION_ERROR',
-        message: 'Invalid metadata',
-        details: {
-          errors: validation.errors,
-          warnings: validation.warnings,
-        },
-      });
-    }
-
-    // Fusionner avec le frontmatter existant
-    const currentFrontmatter = (note.frontmatter || {}) as NoteFrontmatter;
-    const newFrontmatter = {
-      ...currentFrontmatter,
-      ...validation.normalizedMetadata,
-      modified: new Date().toISOString(),
-      modified_by: request.user.username,
-    };
-
-    // Mettre à jour la note
-    const updated = await prisma.note.update({
-      where: { id },
-      data: {
-        frontmatter: newFrontmatter,
-        modifiedBy: userId,
-      },
-      include: {
-        folder: { select: { id: true, name: true, path: true } },
-      },
-    });
-
-    await createAuditLog({
-      userId,
-      action: 'NOTE_UPDATED',
-      resourceType: 'NOTE',
-      resourceId: id,
-      details: { fields: ['metadata'], keys: Object.keys(metadata) },
-      ipAddress: request.ip,
-    });
-
-    // Retourner la note avec les warnings éventuels
-    return reply.send({
-      ...updated,
-      frontmatter: newFrontmatter,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString(),
-      warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
-    });
-  });
-
-  /**
-   * GET /api/v1/notes/:id/metadata
-   * P2: Récupérer uniquement les métadonnées d'une note
-   */
-  app.get('/:id/metadata', {
-    schema: {
-      tags: ['Notes'],
-      summary: 'Get note metadata',
-      security: [{ cookieAuth: [] }],
-    },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const userId = request.user.userId;
-
-    const note = await prisma.note.findFirst({
-      where: { id, isDeleted: false },
-      select: { id: true, folderId: true, frontmatter: true },
-    });
-
-    if (!note) {
-      return reply.status(404).send({
-        error: 'NOT_FOUND',
-        message: 'Note non trouvée',
-      });
-    }
-
-    const hasPermission = await checkPermission(userId, 'FOLDER', note.folderId, 'READ');
-    if (!hasPermission) {
-      return reply.status(403).send({
-        error: 'FORBIDDEN',
-        message: "Vous n'avez pas accès à cette note",
-      });
-    }
-
-    return reply.send({
-      noteId: note.id,
-      metadata: note.frontmatter || {},
-    });
-  });
-
-  /**
    * POST /api/v1/notes
    * US-010: Créer une note
    */
@@ -803,6 +665,7 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
     // Mettre à jour les liens si le contenu a changé
     if (updates.content !== undefined) {
       await updateLinks(note.id, updates.content);
+      await syncYamlToMetadata(note.id, updates.content);
     }
 
     // Créer une nouvelle version (toutes les 5 minutes ou sauvegarde manuelle)
@@ -905,6 +768,120 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
     });
 
     return { success: true };
+  });
+
+  /**
+   * PATCH /api/v1/notes/:id/move
+   * US-007: Déplacer une note vers un autre dossier (endpoint dédié)
+   */
+  app.patch('/:id/move', {
+    schema: {
+      tags: ['Notes'],
+      summary: 'Move note to another folder',
+      description: 'Move a note to a different folder. Validates permissions on both source and target.',
+      security: [{ cookieAuth: [] }],
+    },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { targetFolderId } = request.body as { targetFolderId: string | null };
+    const userId = request.user.userId;
+
+    // Valider le paramètre targetFolderId
+    if (targetFolderId !== null && typeof targetFolderId !== 'string') {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        message: 'targetFolderId must be a string or null',
+      });
+    }
+
+    // Trouver la note
+    const note = await prisma.note.findFirst({
+      where: { id, isDeleted: false },
+      include: {
+        folder: { select: { id: true, name: true, path: true } },
+      },
+    });
+
+    if (!note) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Note non trouvée',
+      });
+    }
+
+    // Vérifier les permissions sur le dossier source
+    const hasSourcePermission = await checkPermission(userId, 'FOLDER', note.folderId, 'WRITE');
+    if (!hasSourcePermission) {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: "Vous n'avez pas les droits de modification sur cette note",
+      });
+    }
+
+    // Si le dossier cible est le même, ne rien faire
+    if (note.folderId === targetFolderId) {
+      return reply.send({
+        ...note,
+        message: 'Note already in this folder',
+        createdAt: note.createdAt.toISOString(),
+        updatedAt: note.updatedAt.toISOString(),
+      });
+    }
+
+    // Vérifier les permissions sur le dossier cible
+    if (targetFolderId) {
+      const targetFolder = await prisma.folder.findUnique({
+        where: { id: targetFolderId },
+      });
+
+      if (!targetFolder) {
+        return reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: 'Dossier cible non trouvé',
+        });
+      }
+
+      const hasTargetPermission = await checkPermission(userId, 'FOLDER', targetFolderId, 'WRITE');
+      if (!hasTargetPermission) {
+        return reply.status(403).send({
+          error: 'FORBIDDEN',
+          message: "Vous n'avez pas les droits d'écriture sur le dossier cible",
+        });
+      }
+    }
+
+    // Effectuer le déplacement
+    const updated = await prisma.note.update({
+      where: { id },
+      data: {
+        folderId: targetFolderId,
+        modifiedBy: userId,
+      },
+      include: {
+        author: { select: { id: true, username: true, displayName: true } },
+        folder: { select: { id: true, name: true, path: true } },
+      },
+    });
+
+    // Log d'audit
+    await createAuditLog({
+      userId,
+      action: 'NOTE_MOVED',
+      resourceType: 'NOTE',
+      resourceId: id,
+      details: {
+        fromFolderId: note.folderId,
+        toFolderId: targetFolderId,
+        noteTitle: note.title,
+      },
+      ipAddress: request.ip,
+    });
+
+    return reply.send({
+      ...updated,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    });
   });
 
   /**

@@ -110,9 +110,9 @@ export const useFoldersStore = create<FoldersState>()(
         await get().fetchTree();
       },
 
-      // US-007: Déplacer une note vers un autre dossier
+      // US-007: Déplacer une note vers un autre dossier (utilise l'endpoint dédié)
       moveNote: async (noteId: string, newFolderId: string) => {
-        await api.patch(`/notes/${noteId}`, { folderId: newFolderId });
+        await api.patch(`/notes/${noteId}/move`, { targetFolderId: newFolderId || null });
         await get().fetchTree();
       },
     }),

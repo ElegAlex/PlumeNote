@@ -11,6 +11,8 @@ import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/ui/Toaster';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
+import { PropertiesPanel } from '../components/editor/metadata/PropertiesPanel';
+import { TagsPanel } from '../components/editor/metadata/TagsPanel';
 import {
   NoteActionMenu,
   MoveToFolderDialog,
@@ -72,6 +74,7 @@ export function PersonalNotePage() {
   const [title, setTitle] = useState('');
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
 
   // Rediriger les readers
   useEffect(() => {
@@ -218,6 +221,19 @@ export function PersonalNotePage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Properties Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPropertiesPanel(!showPropertiesPanel)}
+            title={showPropertiesPanel ? 'Masquer les propriétés' : 'Afficher les propriétés'}
+            className={showPropertiesPanel ? 'bg-muted' : ''}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 6h16M4 12h16M4 18h10" />
+            </svg>
+          </Button>
+
           {/* Status sauvegarde */}
           <span className="text-sm text-muted-foreground">
             {isSaving ? (
@@ -243,6 +259,22 @@ export function PersonalNotePage() {
           />
         </div>
       </div>
+
+      {/* Properties Panel */}
+      {showPropertiesPanel && noteId && (
+        <PropertiesPanel
+          noteId={noteId}
+          className="bg-muted/30"
+        />
+      )}
+
+      {/* Tags Panel */}
+      {showPropertiesPanel && noteId && (
+        <TagsPanel
+          noteId={noteId}
+          className="bg-muted/30"
+        />
+      )}
 
       {/* Editor */}
       <div className="flex-1 overflow-hidden">
