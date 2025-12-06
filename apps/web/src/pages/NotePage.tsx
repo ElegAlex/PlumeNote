@@ -2,15 +2,22 @@
 // Page Note - Éditeur Markdown style Obsidian
 // ===========================================
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotesStore } from '../stores/notes';
+import { useFoldersStore } from '../stores/folders';
+import { useRightPanelStore } from '../stores/rightPanelStore';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/ui/Toaster';
 import { formatRelativeTime, debounce } from '../lib/utils';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import { PinButton } from '../components/editor/PinButton';
+import { VersionHistoryPanel } from '../components/editor/VersionHistoryPanel';
+import { TableOfContentsPanel } from '../components/editor/TableOfContentsPanel';
+import { LinksPanel } from '../components/editor/LinksPanel';
+import { NoteActionMenu, MoveToFolderDialog } from '../components/common';
+import type { FolderTreeNode } from '../components/common';
 import { useNoteView } from '../hooks';
 
 export function NotePage() {
@@ -25,11 +32,13 @@ export function NotePage() {
     fetchNote,
     updateNote,
     deleteNote,
-    duplicateNote,
   } = useNotesStore();
 
+  const { folders } = useFoldersStore();
   const [title, setTitle] = useState('');
-  const [showMenu, setShowMenu] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const { isOpen: isRightPanelOpen, togglePanel, closePanel } = useRightPanelStore();
 
   // P1: Enregistrer la vue de la note
   useNoteView(currentNote?.id);
@@ -88,16 +97,24 @@ export function NotePage() {
     }
   };
 
-  const handleDuplicate = async () => {
+  const handleMove = async (folderId: string | null) => {
     if (!noteId) return;
-
     try {
-      const newNote = await duplicateNote(noteId);
-      toast.success('Note dupliquée');
-      navigate(`/notes/${newNote.id}`);
+      await updateNote(noteId, { folderId });
+      toast.success('Note déplacée');
+      setShowMoveDialog(false);
     } catch {
-      toast.error('Erreur lors de la duplication');
+      toast.error('Erreur lors du déplacement');
     }
+  };
+
+  // Convertir les dossiers pour le dialog
+  const convertFoldersForDialog = (folderList: typeof folders): FolderTreeNode[] => {
+    return (folderList ?? []).map((f) => ({
+      id: f.id,
+      name: f.name,
+      children: [],
+    }));
   };
 
   if (isLoading) {
@@ -133,9 +150,11 @@ export function NotePage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3">
+    <div className="flex h-full">
+      {/* Main content area */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <input
             type="text"
@@ -163,68 +182,16 @@ export function NotePage() {
           </span>
 
           {/* Menu */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowMenu(!showMenu)}
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                />
-              </svg>
-            </Button>
-
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute right-0 mt-2 w-48 rounded-md border bg-popover shadow-lg z-20">
-                  <div className="py-1">
-                    <button
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
-                      onClick={() => {
-                        handleDuplicate();
-                        setShowMenu(false);
-                      }}
-                    >
-                      Dupliquer
-                    </button>
-                    <button
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
-                      onClick={() => {
-                        // TODO: Implement version history
-                        setShowMenu(false);
-                      }}
-                    >
-                      Historique des versions
-                    </button>
-                    <hr className="my-1" />
-                    <button
-                      className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
-                      onClick={() => {
-                        handleDelete();
-                        setShowMenu(false);
-                      }}
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <NoteActionMenu
+            noteId={noteId!}
+            isPersonal={false}
+            onShowToc={() => togglePanel('toc')}
+            onShowLinks={() => togglePanel('links')}
+            onShowHistory={() => setShowVersionHistory(true)}
+            onMoveClick={() => setShowMoveDialog(true)}
+            onSplitView={() => navigate(`/split/${noteId}`)}
+            onDelete={handleDelete}
+          />
         </div>
       </div>
 
@@ -237,8 +204,84 @@ export function NotePage() {
             await updateNote(noteId!, { content });
           }}
           autoFocus
+          onWikilinkClick={async (target, section) => {
+            try {
+              // Chercher la note par titre
+              const response = await fetch(
+                `/api/v1/notes/search?q=${encodeURIComponent(target)}&limit=1`,
+                { credentials: 'include' }
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+                const matchingNote = data.notes?.find(
+                  (n: { title: string; slug: string }) =>
+                    n.title.toLowerCase() === target.toLowerCase()
+                );
+
+                if (matchingNote) {
+                  const url = section
+                    ? `/notes/${matchingNote.id}#${section}`
+                    : `/notes/${matchingNote.id}`;
+                  navigate(url);
+                  return;
+                }
+              }
+
+              // Note non trouvée, proposer de la créer
+              if (window.confirm(`La note "${target}" n'existe pas. Voulez-vous la créer ?`)) {
+                const createResponse = await fetch('/api/v1/notes', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ title: target, content: '' }),
+                });
+
+                if (createResponse.ok) {
+                  const newNote = await createResponse.json();
+                  navigate(`/notes/${newNote.id}`);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to handle wikilink click:', error);
+            }
+          }}
         />
       </div>
+
+        {/* Version History Panel */}
+        <VersionHistoryPanel
+          noteId={noteId!}
+          isOpen={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          onRestore={() => {
+            // Recharger la note après restauration
+            if (noteId) {
+              fetchNote(noteId);
+            }
+          }}
+        />
+      </div>
+
+      {/* Right Panels */}
+      <TableOfContentsPanel
+        content={currentNote.content || ''}
+        onHeadingClick={(line) => {
+          // Scroll vers la ligne dans l'éditeur si possible
+          console.log('Navigate to line:', line);
+        }}
+      />
+      <LinksPanel noteId={noteId!} />
+
+      {/* Move Dialog */}
+      {showMoveDialog && (
+        <MoveToFolderDialog
+          folders={convertFoldersForDialog(folders)}
+          currentFolderId={currentNote.folderId}
+          onMove={handleMove}
+          onClose={() => setShowMoveDialog(false)}
+        />
+      )}
     </div>
   );
 }

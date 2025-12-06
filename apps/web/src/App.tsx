@@ -9,6 +9,7 @@ import { SearchPage } from './pages/SearchPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { GraphPage } from './pages/GraphPage';
+import { SplitViewPage } from './pages/SplitViewPage';
 import { PersonalHomePage } from './pages/PersonalHomePage';
 import { PersonalNotePage } from './pages/PersonalNotePage';
 import { PersonalFolderPage } from './pages/PersonalFolderPage';
@@ -58,6 +59,8 @@ export function App() {
           <Route path="shortcuts" element={<ShortcutsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="split" element={<SplitViewPage />} />
+          <Route path="split/:noteId" element={<SplitViewPage />} />
           <Route path="admin/*" element={<AdminPage />} />
           <Route path="settings" element={<SettingsPage />} />
           {/* Espace Personnel */}

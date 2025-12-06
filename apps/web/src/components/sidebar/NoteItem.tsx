@@ -4,8 +4,9 @@
 // ===========================================
 
 import { memo, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useSidebarStore } from '../../stores/sidebarStore';
+import { usePanesStore } from '../../stores/panesStore';
 import { cn } from '../../lib/utils';
 import type { NotePreview } from '@collabnotes/types';
 
@@ -19,16 +20,23 @@ interface NoteItemProps {
 
 export const NoteItem = memo(function NoteItem({ note, level }: NoteItemProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { noteId: currentNoteId } = useParams<{ noteId: string }>();
   const { selectNote } = useSidebarStore();
+  const { openNoteInActivePane } = usePanesStore();
 
   const isActive = currentNoteId === note.id;
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
+  const isSplitView = location.pathname.startsWith('/split');
 
   const handleClick = useCallback(() => {
     selectNote(note.id);
-    navigate(`/notes/${note.id}`);
-  }, [navigate, note.id, selectNote]);
+    if (isSplitView) {
+      openNoteInActivePane(note.id);
+    } else {
+      navigate(`/notes/${note.id}`);
+    }
+  }, [navigate, note.id, selectNote, isSplitView, openNoteInActivePane]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

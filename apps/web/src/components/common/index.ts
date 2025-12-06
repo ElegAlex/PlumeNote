@@ -26,3 +26,6 @@ export type { FolderTreeNode, MoveToFolderDialogProps } from './MoveToFolderDial
 
 export { ActionMenu } from './ActionMenu';
 export type { ActionMenuItem, ActionMenuProps } from './ActionMenu';
+
+export { NoteActionMenu } from './NoteActionMenu';
+export type { NoteActionMenuProps } from './NoteActionMenu';

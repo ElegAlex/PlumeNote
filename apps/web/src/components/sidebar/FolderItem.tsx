@@ -137,6 +137,9 @@ export const FolderItem = memo(function FolderItem({
   // Calcul de l'indentation
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
 
+  // Couleur de l'icône : utiliser la couleur définie ou la couleur par défaut
+  const folderIconColor = folder.color || 'currentColor';
+
   return (
     <li role="treeitem" aria-expanded={isExpanded}>
       {/* En-tête du dossier */}
@@ -146,7 +149,7 @@ export const FolderItem = memo(function FolderItem({
           'hover:bg-accent hover:text-accent-foreground',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'transition-colors duration-150',
-          isSelected && 'bg-accent text-accent-foreground'
+          isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
         )}
         style={{ paddingLeft }}
         onClick={handleRowClick}
@@ -186,7 +189,7 @@ export const FolderItem = memo(function FolderItem({
         {/* Icône dossier */}
         <svg
           className="h-4 w-4 mr-2 flex-shrink-0"
-          style={{ color: folder.color || 'currentColor' }}
+          style={{ color: folderIconColor }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

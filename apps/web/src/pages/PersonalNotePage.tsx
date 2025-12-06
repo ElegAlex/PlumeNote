@@ -12,11 +12,11 @@ import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/ui/Toaster';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import {
-  ActionMenu,
+  NoteActionMenu,
   MoveToFolderDialog,
   EmptyState,
 } from '../components/common';
-import type { ActionMenuItem, FolderTreeNode } from '../components/common';
+import type { FolderTreeNode } from '../components/common';
 import { debounce } from '../lib/utils';
 
 // Icons
@@ -34,28 +34,6 @@ const LockIcon = () => (
 const ChevronLeftIcon = () => (
   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-    />
-  </svg>
-);
-
-const FolderIcon = () => (
-  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-    />
   </svg>
 );
 
@@ -190,22 +168,6 @@ export function PersonalNotePage() {
     }));
   };
 
-  // Menu actions (composant générique)
-  const menuItems: ActionMenuItem[] = [
-    {
-      label: 'Déplacer vers...',
-      icon: <FolderIcon />,
-      onClick: () => setShowMoveDialog(true),
-    },
-    {
-      label: 'Supprimer',
-      icon: <TrashIcon />,
-      onClick: handleDelete,
-      variant: 'destructive',
-      dividerBefore: true,
-    },
-  ];
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -268,8 +230,17 @@ export function PersonalNotePage() {
             ) : null}
           </span>
 
-          {/* Menu (composant générique) */}
-          <ActionMenu items={menuItems} />
+          {/* Menu */}
+          <NoteActionMenu
+            noteId={noteId!}
+            isPersonal={true}
+            onShowToc={() => {}}
+            onShowLinks={() => {}}
+            onShowHistory={() => {}}
+            onMoveClick={() => setShowMoveDialog(true)}
+            onSplitView={() => navigate(`/split/${noteId}`)}
+            onDelete={handleDelete}
+          />
         </div>
       </div>
 

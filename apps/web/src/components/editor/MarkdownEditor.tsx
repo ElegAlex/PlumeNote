@@ -2,7 +2,7 @@
 // Éditeur Markdown style Obsidian (CodeMirror 6)
 // ===========================================
 
-import { useEffect, useRef, useCallback, useState, useId } from 'react';
+import React, { useEffect, useRef, useCallback, useState, useId } from 'react';
 import { EditorState } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 import { EditorView, keymap, drawSelection, dropCursor, placeholder as placeholderExt } from '@codemirror/view';
@@ -437,6 +437,103 @@ interface MarkdownEditorProps {
   readOnly?: boolean;
   className?: string;
   autoFocus?: boolean;
+  /** Callback when a wikilink is clicked in preview mode */
+  onWikilinkClick?: (target: string, section?: string) => void;
+}
+
+// ===========================================
+// Wikilink Parser & Renderer
+// ===========================================
+
+interface ParsedWikilink {
+  target: string;
+  alias?: string;
+  section?: string;
+  displayText: string;
+}
+
+function parseWikilink(content: string): ParsedWikilink {
+  const pipeIndex = content.indexOf('|');
+  let mainPart = content;
+  let alias: string | undefined;
+
+  if (pipeIndex !== -1) {
+    mainPart = content.substring(0, pipeIndex);
+    alias = content.substring(pipeIndex + 1).trim();
+  }
+
+  const hashIndex = mainPart.indexOf('#');
+  let target = mainPart;
+  let section: string | undefined;
+
+  if (hashIndex !== -1) {
+    target = mainPart.substring(0, hashIndex);
+    section = mainPart.substring(hashIndex + 1).trim();
+  }
+
+  target = target.trim();
+
+  let displayText: string;
+  if (alias) {
+    displayText = alias;
+  } else if (section && !target) {
+    displayText = section;
+  } else if (section) {
+    displayText = `${target} > ${section}`;
+  } else {
+    displayText = target;
+  }
+
+  return { target, alias, section, displayText };
+}
+
+/**
+ * Renders text with wikilinks as clickable spans
+ */
+function renderTextWithWikilinks(
+  text: string,
+  onWikilinkClick?: (target: string, section?: string) => void
+): React.ReactNode[] {
+  if (!text) return [text];
+
+  const wikilinkRegex = /\[\[([^\]]+)\]\]/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = wikilinkRegex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+
+    const parsed = parseWikilink(match[1]);
+
+    // Add clickable wikilink
+    parts.push(
+      <span
+        key={`wikilink-${match.index}`}
+        className="wikilink text-primary cursor-pointer hover:underline"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onWikilinkClick?.(parsed.target, parsed.section);
+        }}
+        title={`${parsed.target}${parsed.section ? '#' + parsed.section : ''}`}
+      >
+        {parsed.displayText}
+      </span>
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
 }
 
 // ===========================================
@@ -632,6 +729,7 @@ export function MarkdownEditor({
   readOnly = false,
   className,
   autoFocus = true,
+  onWikilinkClick,
 }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -941,10 +1039,10 @@ export function MarkdownEditor({
               'flex items-center gap-1.5 px-2.5 py-1 text-sm rounded transition-colors',
               mode === 'preview' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             )}
-            title="Mode aperçu"
+            title="Mode visualisation"
           >
             {icons.preview}
-            <span className="hidden md:inline">Aperçu</span>
+            <span className="hidden md:inline">Visualisation</span>
           </button>
         </div>
 
@@ -984,6 +1082,40 @@ export function MarkdownEditor({
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                 blockquote: ({ children }) => <CalloutBlock>{children}</CalloutBlock>,
+                // Render paragraphs with wikilinks support
+                p: ({ children }) => {
+                  const processChildren = (child: React.ReactNode): React.ReactNode => {
+                    if (typeof child === 'string') {
+                      return renderTextWithWikilinks(child, onWikilinkClick);
+                    }
+                    return child;
+                  };
+
+                  const processed = Array.isArray(children)
+                    ? children.map((child, i) => (
+                        <React.Fragment key={i}>{processChildren(child)}</React.Fragment>
+                      ))
+                    : processChildren(children);
+
+                  return <p>{processed}</p>;
+                },
+                // Also handle text in list items, headings, etc.
+                li: ({ children }) => {
+                  const processChildren = (child: React.ReactNode): React.ReactNode => {
+                    if (typeof child === 'string') {
+                      return renderTextWithWikilinks(child, onWikilinkClick);
+                    }
+                    return child;
+                  };
+
+                  const processed = Array.isArray(children)
+                    ? children.map((child, i) => (
+                        <React.Fragment key={i}>{processChildren(child)}</React.Fragment>
+                      ))
+                    : processChildren(children);
+
+                  return <li>{processed}</li>;
+                },
                 code: ({ className, children, ...props }) => {
                   const match = /language-(\w+)/.exec(className || '');
                   const language = match ? match[1] : '';

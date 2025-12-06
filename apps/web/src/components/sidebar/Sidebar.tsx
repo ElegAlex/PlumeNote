@@ -45,7 +45,7 @@ interface DragItem {
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { tree, refreshFolder } = useSidebarStore();
+  const { tree, fetchTree, refreshFolder } = useSidebarStore();
   const { createFolder, moveFolder, moveNote } = useFoldersStore();
   const { createNote } = useNotesStore();
 
@@ -79,7 +79,9 @@ export function Sidebar() {
       setIsCreatingFolder(false);
       setParentFolderForNew(null);
       toast.success('Dossier créé');
-      // Rafraîchir le parent si existant
+      // Rafraîchir l'arbre complet pour afficher le nouveau dossier
+      await fetchTree();
+      // Si sous-dossier, rafraîchir aussi le cache du parent
       if (parentFolderForNew) {
         await refreshFolder(parentFolderForNew);
       }
@@ -123,12 +125,14 @@ export function Sidebar() {
     try {
       await createFolder(name, parentId);
       toast.success('Dossier créé');
+      // Rafraîchir l'arbre complet puis le cache du parent
+      await fetchTree();
       await refreshFolder(parentId);
     } catch {
       toast.error('Erreur lors de la création');
       throw new Error('Création échouée');
     }
-  }, [createFolder, refreshFolder]);
+  }, [createFolder, fetchTree, refreshFolder]);
 
   // ===========================================
   // Handlers Drag & Drop
@@ -283,12 +287,15 @@ export function Sidebar() {
         {/* Header cliquable */}
         <button
           onClick={() => setIsFoldersExpanded(!isFoldersExpanded)}
-          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-colors text-foreground hover:bg-muted"
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-colors bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
         >
+          <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          <span className="flex-1 text-left">Dossiers</span>
           <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isFoldersExpanded ? "M19 9l-7 7-7-7" : "M9 5l7 7-7 7"} />
           </svg>
-          <span className="flex-1 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Dossiers</span>
         </button>
 
         {/* Contenu collapsable */}
