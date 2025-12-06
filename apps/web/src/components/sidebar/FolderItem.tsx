@@ -48,7 +48,17 @@ export const FolderItem = memo(function FolderItem({
   const hasContent = folder.hasChildren || folder.notesCount > 0;
 
   // Handlers
-  const handleToggle = useCallback(
+  // Clic sur toute la ligne = toggle expand/collapse
+  const handleRowClick = useCallback(() => {
+    if (hasContent) {
+      toggleFolder(folder.id);
+    }
+    // Sélectionne aussi le dossier pour feedback visuel
+    selectFolder(folder.id);
+  }, [folder.id, hasContent, toggleFolder, selectFolder]);
+
+  // Handler séparé pour le chevron (même comportement mais avec stopPropagation)
+  const handleChevronClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       if (hasContent) {
@@ -57,10 +67,6 @@ export const FolderItem = memo(function FolderItem({
     },
     [folder.id, hasContent, toggleFolder]
   );
-
-  const handleSelect = useCallback(() => {
-    selectFolder(folder.id);
-  }, [folder.id, selectFolder]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -113,7 +119,7 @@ export const FolderItem = memo(function FolderItem({
           isSelected && 'bg-accent text-accent-foreground'
         )}
         style={{ paddingLeft }}
-        onClick={handleSelect}
+        onClick={handleRowClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="button"
@@ -121,7 +127,7 @@ export const FolderItem = memo(function FolderItem({
       >
         {/* Chevron de dépliage */}
         <button
-          onClick={handleToggle}
+          onClick={handleChevronClick}
           className="w-4 h-4 flex items-center justify-center mr-1 hover:bg-muted rounded"
           tabIndex={-1}
         >

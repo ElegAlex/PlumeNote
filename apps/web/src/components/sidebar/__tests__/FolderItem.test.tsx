@@ -143,18 +143,32 @@ describe('FolderItem', () => {
   });
 
   describe('Interactions', () => {
-    it('should call selectFolder when clicked', () => {
-      const folder = createMockFolder({ id: 'folder-123' });
+    it('should call selectFolder when clicking on empty folder row', () => {
+      const folder = createMockFolder({ id: 'folder-123', hasChildren: false, notesCount: 0 });
 
       renderWithRouter(<FolderItem folder={folder} level={0} />);
 
       fireEvent.click(screen.getByRole('button', { name: /Dossier Test Folder/ }));
 
       expect(mockSelectFolder).toHaveBeenCalledWith('folder-123');
+      // toggleFolder not called because folder has no content
+      expect(mockToggleFolder).not.toHaveBeenCalled();
+    });
+
+    it('should call both toggleFolder and selectFolder when clicking folder row with content', () => {
+      const folder = createMockFolder({ id: 'folder-456', hasChildren: true });
+
+      renderWithRouter(<FolderItem folder={folder} level={0} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Dossier Test Folder/ }));
+
+      // Both should be called when clicking on a folder with content
+      expect(mockToggleFolder).toHaveBeenCalledWith('folder-456');
+      expect(mockSelectFolder).toHaveBeenCalledWith('folder-456');
     });
 
     it('should call toggleFolder when chevron is clicked', () => {
-      const folder = createMockFolder({ id: 'folder-456', hasChildren: true });
+      const folder = createMockFolder({ id: 'folder-789', hasChildren: true });
 
       renderWithRouter(<FolderItem folder={folder} level={0} />);
 
@@ -165,7 +179,9 @@ describe('FolderItem', () => {
 
       if (chevronButton) {
         fireEvent.click(chevronButton);
-        expect(mockToggleFolder).toHaveBeenCalledWith('folder-456');
+        expect(mockToggleFolder).toHaveBeenCalledWith('folder-789');
+        // selectFolder should NOT be called when clicking chevron only
+        expect(mockSelectFolder).not.toHaveBeenCalled();
       }
     });
 
