@@ -5,16 +5,20 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
+import { useImportStore } from '../stores/importStore';
 import { Button } from '../components/ui/Button';
 import { Sidebar } from '../components/sidebar/Sidebar';
-import { HelpMenu } from '../components/sidebar/HelpMenu';
+import { ShortcutsModal } from '../components/shortcuts/ShortcutsModal';
+import { ImportWizard } from '../components/import';
 import { cn } from '../lib/utils';
 
 export function MainLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { isWizardOpen, openWizard, closeWizard } = useImportStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -126,11 +130,6 @@ export function MainLayout() {
           )}
         </nav>
 
-        {/* Menu Aide */}
-        <div className="px-2 py-2 border-t">
-          <HelpMenu isCollapsed={isSidebarCollapsed} />
-        </div>
-
         {/* User Menu */}
         <div className="border-t p-2">
           <div className="relative">
@@ -176,15 +175,38 @@ export function MainLayout() {
                         Administration
                       </NavLink>
                     )}
+                    <NavLink
+                      to="/dashboard"
+                      className="block px-4 py-2 text-sm hover:bg-muted"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Statistiques
+                    </NavLink>
                     <button
                       className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
                       onClick={() => {
-                        // TODO: Settings page
                         setShowUserMenu(false);
+                        openWizard();
                       }}
                     >
-                      Paramètres
+                      Importer des notes
                     </button>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setShowShortcutsModal(true);
+                      }}
+                    >
+                      Raccourcis
+                    </button>
+                    <NavLink
+                      to="/settings"
+                      className="block px-4 py-2 text-sm hover:bg-muted"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Paramètres
+                    </NavLink>
                     <hr className="my-1" />
                     <button
                       className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
@@ -207,6 +229,18 @@ export function MainLayout() {
       <main className="flex-1 overflow-hidden">
         <Outlet />
       </main>
+
+      {/* Modal Raccourcis */}
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
+      />
+
+      {/* Modal Import */}
+      <ImportWizard
+        open={isWizardOpen}
+        onClose={closeWizard}
+      />
     </div>
   );
 }

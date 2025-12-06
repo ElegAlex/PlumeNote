@@ -50,6 +50,9 @@ model User {
   personalNotes   Note[]   @relation("PersonalNotes")
   personalFolders Folder[] @relation("PersonalFolders")
 
+  // Relations import (EP-008)
+  importJobs      ImportJob[]
+
   @@index([username])
   @@index([email])
   @@index([roleId])
@@ -116,6 +119,9 @@ model Folder {
   creator     User         @relation("FolderCreatedBy", fields: [createdBy], references: [id])
   permissions Permission[]
   owner       User?        @relation("PersonalFolders", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Relations import (EP-008)
+  importJobs  ImportJob[]  @relation("ImportTargetFolder")
 
   @@unique([parentId, slug])
   @@index([parentId])
@@ -475,4 +481,64 @@ model CalendarConfig {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("calendar_config")
+}
+
+// ----- IMPORT MARKDOWN (EP-008) -----
+
+/// Statut d'un job d'import
+enum ImportStatus {
+  PENDING
+  EXTRACTING
+  PARSING
+  CREATING
+  RESOLVING
+  COMPLETED
+  FAILED
+}
+
+/// Stratégie de gestion des conflits de noms
+enum ConflictStrategy {
+  RENAME
+  SKIP
+  OVERWRITE
+}
+
+/// Job d'import de fichiers Markdown
+model ImportJob {
+  id             String          @id @default(uuid()) @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  status         ImportStatus    @default(PENDING)
+  fileName       String          @map("file_name") @db.VarChar(255)
+  targetFolderId String?         @map("target_folder_id") @db.Uuid
+  conflictStrategy ConflictStrategy @default(RENAME) @map("conflict_strategy")
+
+  // Chemin vers le fichier ZIP temporaire
+  tempFilePath   String?         @map("temp_file_path") @db.VarChar(500)
+
+  // Statistiques
+  totalFiles     Int             @default(0) @map("total_files")
+  processedFiles Int             @default(0) @map("processed_files")
+  successCount   Int             @default(0) @map("success_count")
+  errorCount     Int             @default(0) @map("error_count")
+  warningCount   Int             @default(0) @map("warning_count")
+
+  // Résultats détaillés (JSON)
+  results        Json?           @db.JsonB
+  errors         Json?           @db.JsonB
+
+  // Aperçu des fichiers à importer
+  preview        Json?           @db.JsonB
+
+  startedAt      DateTime?       @map("started_at")
+  completedAt    DateTime?       @map("completed_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetFolder   Folder?         @relation("ImportTargetFolder", fields: [targetFolderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("import_jobs")
 }

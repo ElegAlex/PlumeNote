@@ -77,10 +77,10 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
     const { q = '', limit = '10' } = request.query as { q?: string; limit?: string };
     const maxLimit = Math.min(parseInt(limit, 10) || 10, 20);
 
-    // Si pas de query, retourner les notes récentes
+    // Si pas de query, retourner les notes récentes (exclure notes personnelles)
     if (!q.trim()) {
       const notes = await prisma.note.findMany({
-        where: { isDeleted: false },
+        where: { isDeleted: false, isPersonal: false },
         select: {
           id: true,
           title: true,
@@ -103,11 +103,12 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       };
     }
 
-    // Recherche fuzzy dans le titre
+    // Recherche fuzzy dans le titre (exclure notes personnelles)
     const searchTerm = q.toLowerCase();
     const notes = await prisma.note.findMany({
       where: {
         isDeleted: false,
+        isPersonal: false, // Exclure les notes personnelles des wikilinks
         OR: [
           { title: { contains: searchTerm, mode: 'insensitive' } },
           { slug: { contains: searchTerm, mode: 'insensitive' } },

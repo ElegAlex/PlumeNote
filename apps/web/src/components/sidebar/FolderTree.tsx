@@ -10,7 +10,7 @@ import { Spinner } from '../ui/Spinner';
 
 interface FolderTreeProps {
   onCreateNote?: (folderId: string) => void;
-  onCreateFolder?: (parentId: string | null) => void;
+  onCreateFolder?: (name: string, parentId: string) => Promise<void>;
 }
 
 export function FolderTree({ onCreateNote, onCreateFolder }: FolderTreeProps) {

@@ -72,8 +72,10 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
       .map((p) => p.resourceId);
 
     // Construire la requête WHERE
+    // IMPORTANT: Exclure les notes personnelles de la recherche globale
     const where: Record<string, unknown> = {
       isDeleted: false,
+      isPersonal: false, // Ne pas inclure les notes personnelles
       folderId: { in: accessibleFolderIds },
     };
 
@@ -204,10 +206,11 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
       .filter((p) => p.level !== 'NONE')
       .map((p) => p.resourceId);
 
-    // Chercher dans les titres
+    // Chercher dans les titres (exclure notes personnelles)
     const notes = await prisma.note.findMany({
       where: {
         isDeleted: false,
+        isPersonal: false, // Exclure les notes personnelles
         folderId: { in: accessibleFolderIds },
         title: { contains: q, mode: 'insensitive' },
       },
@@ -302,6 +305,7 @@ function calculateRank(
 async function generateFacets(accessibleFolderIds: string[], searchTerms: string[]) {
   const whereBase = {
     isDeleted: false,
+    isPersonal: false, // Exclure les notes personnelles des facettes
     folderId: { in: accessibleFolderIds },
   };
 

@@ -33,13 +33,22 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
     },
     preHandler: [app.authorizeAdmin],
   }, async (request) => {
-    const { search, roleId, isActive, page = 1, limit = 20 } = request.query as {
+    const query = request.query as {
       search?: string;
       roleId?: string;
       isActive?: string;
-      page?: number;
-      limit?: number;
+      page?: string;
+      limit?: string;
+      sortBy?: 'displayName' | 'lastLoginAt' | 'createdAt' | 'notesCreated' | 'notesModified';
+      sortOrder?: 'asc' | 'desc';
     };
+    const search = query.search;
+    const roleId = query.roleId;
+    const isActive = query.isActive;
+    const page = parseInt(query.page || '1', 10);
+    const limit = parseInt(query.limit || '20', 10);
+    const sortBy = query.sortBy || 'displayName';
+    const sortOrder = query.sortOrder || 'asc';
 
     const where: Record<string, unknown> = {};
 
@@ -54,25 +63,69 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
     if (roleId) where.roleId = roleId;
     if (isActive !== undefined) where.isActive = isActive === 'true';
 
+    // Déterminer l'ordre de tri (les stats seront triées côté client si nécessaire)
+    const orderBy: Record<string, string> = {};
+    if (sortBy === 'notesCreated' || sortBy === 'notesModified') {
+      orderBy['displayName'] = sortOrder; // Fallback, tri effectif en mémoire
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
-        include: { role: true },
-        orderBy: { displayName: 'asc' },
+        include: {
+          role: true,
+          _count: {
+            select: {
+              createdNotes: { where: { isDeleted: false } },
+              modifiedNotes: { where: { isDeleted: false } },
+            },
+          },
+        },
+        orderBy,
         take: limit,
         skip: (page - 1) * limit,
       }),
       prisma.user.count({ where }),
     ]);
 
+    // Construire la réponse avec les statistiques de contribution
+    let items = users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrl,
+      role: u.role,
+      isActive: u.isActive,
+      lastLoginAt: u.lastLoginAt?.toISOString() || null,
+      preferences: u.preferences,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
+      stats: {
+        notesCreated: u._count.createdNotes,
+        notesModified: u._count.modifiedNotes,
+      },
+    }));
+
+    // Tri côté serveur pour les stats si demandé
+    if (sortBy === 'notesCreated') {
+      items = items.sort((a, b) =>
+        sortOrder === 'asc'
+          ? a.stats.notesCreated - b.stats.notesCreated
+          : b.stats.notesCreated - a.stats.notesCreated
+      );
+    } else if (sortBy === 'notesModified') {
+      items = items.sort((a, b) =>
+        sortOrder === 'asc'
+          ? a.stats.notesModified - b.stats.notesModified
+          : b.stats.notesModified - a.stats.notesModified
+      );
+    }
+
     return {
-      items: users.map((u) => ({
-        ...u,
-        password: undefined,
-        createdAt: u.createdAt.toISOString(),
-        updatedAt: u.updatedAt.toISOString(),
-        lastLoginAt: u.lastLoginAt?.toISOString(),
-      })),
+      items,
       total,
       page,
       pageSize: limit,

@@ -89,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        // Ne pas persister l'utilisateur complet pour des raisons de sécurité
+        user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
     }

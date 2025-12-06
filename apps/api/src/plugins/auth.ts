@@ -33,10 +33,19 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
   // Décorateur d'autorisation admin
   fastify.decorate('authorizeAdmin', async function(request: FastifyRequest, reply: FastifyReply) {
+    console.log('[authorizeAdmin] request.user:', request.user);
+
+    if (!request.user?.userId) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'User not authenticated' });
+      throw new Error('User not authenticated');
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: request.user.userId },
       include: { role: true },
     });
+
+    console.log('[authorizeAdmin] DB user:', user?.username, 'role:', user?.role?.name);
 
     if (!user || user.role.name !== 'admin') {
       reply.status(403).send({ error: 'FORBIDDEN', message: 'Admin access required' });

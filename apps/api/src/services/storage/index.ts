@@ -31,3 +31,6 @@ export {
   ALL_ALLOWED_MIME_TYPES,
   MIME_TO_EXTENSION,
 } from './validators/file.validator.js';
+
+// Temporary Storage (EP-008: Import)
+export { TempStorageService, tempStorageService } from './temp-storage.service.js';

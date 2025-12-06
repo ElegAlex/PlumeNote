@@ -1035,3 +1035,91 @@ export interface PersonalTreeResponse {
   tree: PersonalTreeNode[];
   rootNotes: PersonalNotePreview[];
 }
+
+// ----- IMPORT MARKDOWN (EP-008) -----
+
+/**
+ * Statut d'un job d'import
+ */
+export type ImportStatus =
+  | 'PENDING'
+  | 'EXTRACTING'
+  | 'PARSING'
+  | 'CREATING'
+  | 'RESOLVING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+/**
+ * Stratégie de gestion des conflits
+ */
+export type ConflictStrategy = 'RENAME' | 'SKIP' | 'OVERWRITE';
+
+/**
+ * Résultat d'import pour un fichier
+ */
+export interface ImportFileResult {
+  file: string;
+  status: 'success' | 'error' | 'skipped' | 'renamed';
+  noteId?: string;
+  noteTitle?: string;
+  error?: string;
+  renamedTo?: string;
+}
+
+/**
+ * Analyse d'un fichier ZIP
+ */
+export interface ZipAnalysis {
+  markdownFiles: string[];
+  directories: string[];
+  assetFiles: string[];
+  totalFiles: number;
+}
+
+/**
+ * Prévisualisation d'un import
+ */
+export interface ImportPreview {
+  id: string;
+  fileName: string;
+  totalFiles: number;
+  markdownFiles: string[];
+  directories: string[];
+  assetFiles: string[];
+}
+
+/**
+ * Résumé d'un job d'import
+ */
+export interface ImportJobSummary {
+  id: string;
+  fileName: string;
+  status: ImportStatus;
+  totalFiles: number;
+  processedFiles: number;
+  successCount: number;
+  errorCount: number;
+  warningCount: number;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+/**
+ * Détail complet d'un job d'import
+ */
+export interface ImportJobDetail extends ImportJobSummary {
+  results: ImportFileResult[] | null;
+  errors: string[] | null;
+  targetFolderId: string | null;
+  preview: ZipAnalysis | null;
+}
+
+/**
+ * Options pour démarrer un import
+ */
+export interface StartImportOptions {
+  targetFolderId?: string;
+  conflictStrategy: ConflictStrategy;
+}

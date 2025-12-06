@@ -161,6 +161,7 @@ const server = new Hocuspocus({
 
       // Vérifier les permissions sur la note si noteId existe
       let canWrite = true;
+      let isPersonalNote = false;
       if (noteId) {
         const note = await prisma.note.findUnique({
           where: { id: noteId },
@@ -170,8 +171,8 @@ const server = new Hocuspocus({
                 permissions: {
                   where: {
                     OR: [
-                      { userId: user.id },
-                      { roleId: { not: null } }, // TODO: vérifier le rôle de l'utilisateur
+                      { principalId: user.id },
+                      { principalType: 'ROLE' },
                     ]
                   },
                 },
@@ -181,23 +182,35 @@ const server = new Hocuspocus({
         });
 
         if (note) {
-          // Propriétaire a tous les droits
-          if (note.authorId === user.id) {
+          // Vérifier si c'est une note personnelle
+          if (note.isPersonal) {
+            isPersonalNote = true;
+            // Seul le propriétaire peut accéder à une note personnelle
+            if (note.ownerId !== user.id) {
+              console.log(`[Auth] Access denied to personal note ${noteId} for user ${user.id}`);
+              throw new Error('Access denied to personal note');
+            }
+            canWrite = true;
+          } else if (note.authorId === user.id) {
+            // Propriétaire de note collaborative a tous les droits
             canWrite = true;
           } else {
-            // Vérifier permissions du dossier
-            const permission = note.folder?.permissions.find(p => p.userId === user.id);
-            canWrite = permission?.canWrite ?? false;
+            // Vérifier permissions du dossier pour notes collaboratives
+            const permission = note.folder?.permissions.find(
+              p => p.principalId === user.id && p.principalType === 'USER'
+            );
+            canWrite = permission ? ['WRITE', 'ADMIN'].includes(permission.level) : false;
           }
         }
       }
 
-      console.log(`[Auth] User ${user.displayName || user.username} authenticated (canWrite: ${canWrite})`);
+      console.log(`[Auth] User ${user.displayName || user.username} authenticated (canWrite: ${canWrite}, personal: ${isPersonalNote})`);
 
       return {
         userId: user.id,
         username: user.displayName || user.username,
         canWrite,
+        isPersonalNote,
       };
     } catch (error) {
       // En développement, permettre l'accès anonyme
@@ -224,6 +237,20 @@ const server = new Hocuspocus({
       throw new Error('Invalid document name format');
     }
 
+    // Pour les notes personnelles, refuser les connexions multiples
+    // (la collaboration temps réel est désactivée)
+    if (context.isPersonalNote) {
+      const existingUsers = documentUsers.get(documentName);
+      if (existingUsers && existingUsers.size > 0) {
+        // Vérifier si c'est le même utilisateur (reconnexion autorisée)
+        const existingUserIds = Array.from(existingUsers.values()).map(u => u.userId);
+        if (!existingUserIds.includes(context.userId)) {
+          console.log(`[Connect] Rejected connection to personal note: another user connected`);
+          throw new Error('Personal notes do not support collaboration');
+        }
+      }
+    }
+
     // Initialiser la map des utilisateurs pour ce document
     if (!documentUsers.has(documentName)) {
       documentUsers.set(documentName, new Map());
@@ -239,7 +266,7 @@ const server = new Hocuspocus({
     });
 
     const userCount = users.size;
-    console.log(`[Connect] ${context.username || 'Anonymous'} joined ${documentName} (canWrite: ${context.canWrite}, ${userCount} users)`);
+    console.log(`[Connect] ${context.username || 'Anonymous'} joined ${documentName} (canWrite: ${context.canWrite}, personal: ${context.isPersonalNote}, ${userCount} users)`);
 
     // US-034: Envoyer les permissions au client via stateless message
     connection.sendStateless(JSON.stringify({
@@ -247,6 +274,7 @@ const server = new Hocuspocus({
       canWrite: context.canWrite ?? true,
       userId: context.userId,
       username: context.username,
+      isPersonalNote: context.isPersonalNote ?? false,
     }));
   },
 

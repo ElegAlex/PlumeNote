@@ -37,6 +37,7 @@ import { calendarRoutes } from './routes/calendar.js';
 import { announcementsRoutes } from './routes/announcements.js';
 import { propertiesRoutes } from './routes/properties.js';
 import { analyticsRoutes } from './routes/analytics.js';
+import { personalRoutes } from './routes/personal.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -161,6 +162,7 @@ export async function buildApp() {
   await app.register(announcementsRoutes, { prefix: '/api/v1/announcements' });
   await app.register(propertiesRoutes, { prefix: '/api/v1/properties' });
   await app.register(analyticsRoutes, { prefix: '/api/v1/analytics' });
+  await app.register(personalRoutes, { prefix: '/api/v1/personal' });
 
   // ----- Error Handler global -----
   app.setErrorHandler((error, request, reply) => {

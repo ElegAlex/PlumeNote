@@ -4,9 +4,14 @@ import { LoginPage } from './pages/LoginPage';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { NotePage } from './pages/NotePage';
+import { FolderPage } from './pages/FolderPage';
 import { SearchPage } from './pages/SearchPage';
 import { AdminPage } from './pages/AdminPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { GraphPage } from './pages/GraphPage';
+import { PersonalHomePage } from './pages/PersonalHomePage';
+import { PersonalNotePage } from './pages/PersonalNotePage';
+import { PersonalFolderPage } from './pages/PersonalFolderPage';
 import { Toaster } from './components/ui/Toaster';
 import { ShortcutsPage } from './components/shortcuts/ShortcutsPage';
 import { ShortcutsModalTrigger } from './components/shortcuts/ShortcutsModal';
@@ -47,13 +52,20 @@ export function App() {
         >
           <Route index element={<HomePage />} />
           <Route path="notes/:noteId" element={<NotePage />} />
-          <Route path="folders/:folderId" element={<HomePage />} />
+          <Route path="folders/:folderId" element={<FolderPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="graph" element={<GraphPage />} />
           <Route path="shortcuts" element={<ShortcutsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="admin/*" element={<AdminPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          {/* Espace Personnel */}
+          <Route path="personal" element={<PersonalHomePage />} />
+          <Route path="personal/note/:noteId" element={<PersonalNotePage />} />
+          <Route path="personal/folder/:folderId" element={<PersonalFolderPage />} />
+          <Route path="personal/new" element={<PersonalHomePage />} />
+          <Route path="personal/new-folder" element={<PersonalHomePage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
