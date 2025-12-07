@@ -23,7 +23,7 @@ Merci de votre intérêt pour contribuer à PlumeNote ! Ce document décrit les 
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/votre-org/plumenote.git
+git clone https://github.com/ElegAlex/PlumeNote.git
 cd plumenote
 
 # Copier les variables d'environnement

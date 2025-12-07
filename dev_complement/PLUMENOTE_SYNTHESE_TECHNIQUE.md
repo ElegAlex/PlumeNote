@@ -622,12 +622,12 @@ Chaque module = une branche feature. Merge dans develop après tests OK.
 
 |Module|Fichier|Contenu|
 |---|---|---|
-|P0 - Sidebar|`SPECS_P0_SIDEBAR_COLLABNOTES.md`|API, composants, store, tests|
-|P1 - Homepage + Pin|`SPECS_P1_HOMEPAGE_PIN_COLLABNOTES.md`|Migration DB, endpoints, UI, tests|
-|P2 - Métadonnées|`SPECS_P2_METADATA_COLLABNOTES.md`|Schéma complet, 9 types, CRDT, calendrier|
-|P3 - Dashboard|`SPECS_P3_DASHBOARD_COLLABNOTES.md`|Analytics, charts Recharts, cache|
-|P3 - Raccourcis|`SPECS_P3_SHORTCUTS_COLLABNOTES.md`|Registre, hook, modal, page|
-|P3 - Calendrier|`SPECS_P3_CALENDAR_COLLABNOTES.md`|3 vues, filtres, création rapide|
+|P0 - Sidebar|`SPECS_P0_SIDEBAR_PLUMENOTE.md`|API, composants, store, tests|
+|P1 - Homepage + Pin|`SPECS_P1_HOMEPAGE_PIN_PLUMENOTE.md`|Migration DB, endpoints, UI, tests|
+|P2 - Métadonnées|`SPECS_P2_METADATA_PLUMENOTE.md`|Schéma complet, 9 types, CRDT, calendrier|
+|P3 - Dashboard|`SPECS_P3_DASHBOARD_PLUMENOTE.md`|Analytics, charts Recharts, cache|
+|P3 - Raccourcis|`SPECS_P3_SHORTCUTS_PLUMENOTE.md`|Registre, hook, modal, page|
+|P3 - Calendrier|`SPECS_P3_CALENDAR_PLUMENOTE.md`|3 vues, filtres, création rapide|
 
 ### 7.2 Comment utiliser les specs
 

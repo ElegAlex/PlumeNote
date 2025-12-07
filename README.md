@@ -26,7 +26,7 @@ PlumeNote est une application de prise de notes Markdown collaborative conçue p
 
 ```bash
 # Cloner le projet
-git clone https://github.com/votre-org/plumenote.git
+git clone https://github.com/ElegAlex/PlumeNote.git
 cd plumenote
 
 # Configuration
@@ -147,7 +147,8 @@ npm run docker:dev   # Démarrer services Docker
 
 - [Guide de contribution](./CONTRIBUTING.md)
 - [Documentation API](http://localhost:3001/docs) (après démarrage)
-- [Architecture détaillée](./docs/architecture.md)
+- [Backlog produit](./docs/BACKLOG.md)
+- [Éditeur Markdown](./docs/MARKDOWN_EDITOR.md)
 
 ## Roadmap
 

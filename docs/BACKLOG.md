@@ -71,7 +71,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              ROADMAP COLLABNOTES                             │
+│                               ROADMAP PLUMENOTE                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  PHASE 1 — MVP CORE (P0)                                                    │
@@ -2301,7 +2301,7 @@ Une User Story est considérée **DONE** quand :
 
 *Document généré le 2025-12-04*
 *Dernière mise à jour: 2025-12-05 — Sprint 1 Arborescence terminé (100%)*
-*Basé sur SPECS_TECHNIQUES_COLLABNOTES.md v1.0*
+*Basé sur SPECS_TECHNIQUES_PLUMENOTE.md v1.0*
 
 ### Historique des mises à jour
 | Date | Version | Changement |
