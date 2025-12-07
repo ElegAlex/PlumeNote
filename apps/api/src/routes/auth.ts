@@ -382,7 +382,10 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         200: {
           type: 'object',
           properties: {
-            user: { type: 'object' },
+            user: {
+              type: 'object',
+              additionalProperties: true,
+            },
           },
         },
         401: {

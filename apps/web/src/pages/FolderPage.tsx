@@ -9,6 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useFoldersStore } from '../stores/folders';
 import { useNotesStore } from '../stores/notes';
 import { useSidebarStore } from '../stores/sidebarStore';
+import { useAuthStore } from '../stores/auth';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { Input } from '../components/ui/Input';
@@ -22,6 +23,7 @@ import {
   Breadcrumb,
   ActionMenu,
 } from '../components/common';
+import { FolderAccessModal } from '../components/folders/FolderAccessModal';
 import type { ActionMenuItem, BreadcrumbItem } from '../components/common';
 import type { FolderContent } from '@plumenote/types';
 
@@ -76,6 +78,28 @@ const HomeIcon = () => (
   </svg>
 );
 
+const LockIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+    />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+    />
+  </svg>
+);
+
 // ===========================================
 // Composant Principal
 // ===========================================
@@ -86,6 +110,10 @@ export function FolderPage() {
   const { createFolder, updateFolder, deleteFolder } = useFoldersStore();
   const { createNote } = useNotesStore();
   const { refreshFolder, removeFolderFromTree } = useSidebarStore();
+  const { user } = useAuthStore();
+
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = user?.role?.name === 'admin';
 
   // État local
   const [folderContent, setFolderContent] = useState<FolderContent | null>(null);
@@ -95,6 +123,7 @@ export function FolderPage() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   // Charger le contenu du dossier
   const fetchContent = useCallback(async () => {
@@ -206,11 +235,17 @@ export function FolderPage() {
       icon: <PencilIcon />,
       onClick: () => setIsEditing(true),
     },
+    // "Gérer les accès" uniquement pour les admins
+    ...(isAdmin ? [{
+      label: 'Gérer les accès',
+      icon: <ShieldIcon />,
+      onClick: () => setIsAccessModalOpen(true),
+    }] : []),
     {
       label: 'Supprimer',
       icon: <TrashIcon />,
       onClick: handleDelete,
-      variant: 'destructive',
+      variant: 'destructive' as const,
       dividerBefore: true,
     },
   ];
@@ -295,7 +330,18 @@ export function FolderPage() {
                 </Button>
               </div>
             ) : (
-              <h1 className="text-2xl font-bold">{folder.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{folder.name}</h1>
+                {/* Indicateur d'accès restreint */}
+                {(folderContent.folder as any)?.accessType === 'RESTRICTED' && (
+                  <span
+                    className="text-amber-600"
+                    title="Accès restreint"
+                  >
+                    <LockIcon />
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -303,7 +349,7 @@ export function FolderPage() {
           {!isEditing && <ActionMenu items={menuItems} />}
         </div>
 
-        {/* Actions */}
+        {/* Actions de création */}
         <div className="flex gap-2 mb-6">
           <Button
             variant="outline"
@@ -335,13 +381,14 @@ export function FolderPage() {
           <section className="mb-8">
             <h2 className="text-sm font-medium text-muted-foreground mb-3">Sous-dossiers</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {folderContent.children.map((folder) => (
+              {folderContent.children.map((childFolder) => (
                 <FolderCard
-                  key={folder.id}
-                  id={folder.id}
-                  name={folder.name}
-                  color={folder.color}
-                  notesCount={folder.notesCount}
+                  key={childFolder.id}
+                  id={childFolder.id}
+                  name={childFolder.name}
+                  color={childFolder.color}
+                  notesCount={childFolder.notesCount}
+                  accessType={(childFolder as any).accessType}
                   onClick={handleFolderClick}
                 />
               ))}
@@ -380,6 +427,20 @@ export function FolderPage() {
           />
         )}
       </div>
+
+      {/* Modal de gestion des accès - uniquement montée pour les admins quand ouverte */}
+      {folderId && isAdmin && isAccessModalOpen && (
+        <FolderAccessModal
+          isOpen={isAccessModalOpen}
+          onClose={() => {
+            setIsAccessModalOpen(false);
+            // Rafraîchir le contenu pour mettre à jour l'icône cadenas
+            fetchContent();
+          }}
+          folderId={folderId}
+          folderName={folder.name}
+        />
+      )}
     </div>
   );
 }

@@ -201,25 +201,42 @@ export const FolderItem = memo(function FolderItem({
           ) : null}
         </button>
 
-        {/* Icône dossier */}
-        <svg
-          className="h-4 w-4 mr-2 flex-shrink-0"
-          style={{ color: folderIconColor }}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d={
-              isExpanded
-                ? 'M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z'
-                : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
-            }
-          />
-        </svg>
+        {/* Icône dossier ou cadenas si accès restreint */}
+        {folder.accessType === 'RESTRICTED' ? (
+          <svg
+            className="h-4 w-4 mr-2 flex-shrink-0 text-amber-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            title="Accès restreint"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="h-4 w-4 mr-2 flex-shrink-0"
+            style={{ color: folderIconColor }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={
+                isExpanded
+                  ? 'M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z'
+                  : 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
+              }
+            />
+          </svg>
+        )}
 
         {/* Nom du dossier */}
         <span className="flex-1 truncate text-sm">{folder.name}</span>

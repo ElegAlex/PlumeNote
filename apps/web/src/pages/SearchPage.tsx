@@ -233,25 +233,29 @@ export function SearchPage() {
             {facets.tags.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium mb-2">Tags</h3>
-                <div className="flex flex-wrap gap-1">
+                <div className="space-y-1 max-h-48 overflow-y-auto">
                   {facets.tags.map((tag) => (
-                    <button
+                    <label
                       key={tag.id}
-                      onClick={() => toggleTag(tag.name)}
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs transition-colors ${
-                        filters.tags?.includes(tag.name)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted hover:bg-muted/80'
-                      }`}
-                      style={
-                        tag.color && !filters.tags?.includes(tag.name)
-                          ? { borderLeft: `3px solid ${tag.color}` }
-                          : {}
-                      }
+                      className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted p-1 rounded"
                     >
-                      #{tag.name}
-                      <span className="ml-1 opacity-70">{tag.count}</span>
-                    </button>
+                      <input
+                        type="checkbox"
+                        checked={filters.tags?.includes(tag.name) ?? false}
+                        onChange={() => toggleTag(tag.name)}
+                        className="h-3 w-3"
+                      />
+                      {tag.color && (
+                        <span
+                          className="h-2 w-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                      )}
+                      <span className="truncate flex-1">#{tag.name}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {tag.count}
+                      </span>
+                    </label>
                   ))}
                 </div>
               </div>

@@ -3,7 +3,7 @@
 // ===========================================
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@plumenote/types';
 import { api } from '../lib/api';
 
@@ -12,11 +12,13 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  _hasHydrated: boolean;
 
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +28,11 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       error: null,
+      _hasHydrated: false,
+
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
 
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
@@ -88,10 +95,15 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        user: state.user,
+        // Ne pas persister le user - toujours récupérer depuis le serveur
+        // Cela évite les problèmes de données obsolètes (ex: role manquant)
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

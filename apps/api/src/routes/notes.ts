@@ -210,6 +210,9 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       include: {
         note: {
           include: {
+            author: {
+              select: { id: true, username: true, displayName: true },
+            },
             folder: {
               select: { id: true, name: true, path: true },
             },
@@ -232,6 +235,7 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
         folderPath: fav.note.folder?.path || '/',
         folderId: fav.note.folderId,
         isPinned: true,
+        author: fav.note.author,
       })),
     };
   });

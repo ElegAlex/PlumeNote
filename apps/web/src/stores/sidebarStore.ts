@@ -87,6 +87,7 @@ function convertTreeNodeToSidebar(node: FolderTreeNode): SidebarFolderNode {
       createdAt: n.updatedAt,
     })) ?? [],
     isLoaded: node.notes !== undefined && node.notes.length > 0,
+    accessType: node.accessType,
   };
 }
 

@@ -10,7 +10,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@plumenote/database';
-import type { Folder, FolderTreeNode, CreateFolderRequest } from '@plumenote/types';
+import type { Folder, FolderTreeNode, CreateFolderRequest, FolderAccess } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission, getEffectivePermissions } from '../services/permissions.js';
 
@@ -32,6 +32,16 @@ const updateFolderSchema = z.object({
 
 const moveFolderSchema = z.object({
   parentId: z.string().uuid().nullable(),
+});
+
+// Schéma pour la mise à jour des accès
+const updateFolderAccessSchema = z.object({
+  accessType: z.enum(['OPEN', 'RESTRICTED']),
+  accessList: z.array(z.object({
+    userId: z.string().uuid(),
+    canRead: z.boolean().default(true),
+    canWrite: z.boolean().default(false),
+  })).optional(),
 });
 
 // ----- Helpers -----
@@ -66,6 +76,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
   /**
    * GET /api/v1/folders/tree
    * US-020: Récupérer l'arborescence complète
+   * Filtre les dossiers RESTRICTED selon les accès de l'utilisateur
    */
   app.get('/tree', {
     schema: {
@@ -76,6 +87,8 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     },
   }, async (request) => {
     const userId = request.user.userId;
+    const userRole = request.user.role;
+    const isAdmin = userRole === 'admin';
 
     // Récupérer uniquement les dossiers de l'espace général (pas personnels)
     const folders = await prisma.folder.findMany({
@@ -97,20 +110,33 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
           },
           orderBy: [{ position: 'asc' }, { title: 'asc' }],
         },
+        accessList: {
+          where: { userId },
+          select: { canRead: true, canWrite: true },
+        },
       },
     });
 
     // Récupérer les permissions effectives de l'utilisateur
     const permissions = await getEffectivePermissions(userId, 'FOLDER');
 
-    // Construire l'arbre avec permissions
+    // Construire l'arbre avec permissions et filtrage des dossiers restreints
     const buildTree = (parentId: string | null, level: number): FolderTreeNode[] => {
       return folders
         .filter((f) => f.parentId === parentId)
+        .filter((folder) => {
+          // Les admins voient tous les dossiers
+          if (isAdmin) return true;
+          // Les dossiers OPEN sont visibles par tous
+          if (folder.accessType === 'OPEN') return true;
+          // Les dossiers RESTRICTED ne sont visibles que si l'utilisateur a un accès
+          return folder.accessList.some(access => access.canRead);
+        })
         .map((folder) => {
           const perm = permissions.find((p) => p.resourceId === folder.id);
           const accessLevel = perm?.level || null;
-          const hasAccess = accessLevel !== null && accessLevel !== 'NONE';
+          const hasAccess = isAdmin || accessLevel !== null && accessLevel !== 'NONE' ||
+            (folder.accessType === 'RESTRICTED' && folder.accessList.some(a => a.canRead));
 
           return {
             ...folder,
@@ -126,6 +152,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
             level,
             hasAccess,
             accessLevel,
+            accessList: undefined, // Ne pas exposer accessList dans la réponse
           } as FolderTreeNode;
         });
     };
@@ -264,6 +291,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
    * P0: Lazy loading du contenu d'un dossier (sous-dossiers + notes)
    * Optimisé pour la sidebar avec tri alphabétique
    * Retourne aussi le breadcrumb pour la navigation en page
+   * Filtre les dossiers RESTRICTED selon les accès de l'utilisateur
    */
   app.get('/:id/content', {
     schema: {
@@ -281,19 +309,45 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const userId = request.user.userId;
+    const userRole = request.user.role;
+    const isAdmin = userRole === 'admin';
 
-    const hasPermission = await checkPermission(userId, 'FOLDER', id, 'READ');
-    if (!hasPermission) {
-      return reply.status(403).send({
-        error: 'FORBIDDEN',
-        message: "Vous n'avez pas accès à ce dossier",
+    // Vérifier d'abord si le dossier existe et son type d'accès
+    const folderAccess = await prisma.folder.findUnique({
+      where: { id, isPersonal: false },
+      select: {
+        accessType: true,
+        accessList: {
+          where: { userId },
+          select: { canRead: true },
+        },
+      },
+    });
+
+    if (!folderAccess) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Dossier non trouvé',
       });
     }
+
+    // Vérifier l'accès pour les dossiers restreints
+    // Les dossiers OPEN sont accessibles à tous les utilisateurs authentifiés
+    if (!isAdmin && folderAccess.accessType === 'RESTRICTED') {
+      const hasRestrictedAccess = folderAccess.accessList.some(a => a.canRead);
+      if (!hasRestrictedAccess) {
+        return reply.status(403).send({
+          error: 'FORBIDDEN',
+          message: "Vous n'avez pas accès à ce dossier",
+        });
+      }
+    }
+    // Les dossiers OPEN sont accessibles à tous (pas de vérification supplémentaire)
 
     const folder = await prisma.folder.findUnique({
       where: {
         id,
-        isPersonal: false,  // Uniquement espace général
+        isPersonal: false,
       },
       select: {
         id: true,
@@ -303,8 +357,9 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
         icon: true,
         parentId: true,
         path: true,
+        accessType: true,
         children: {
-          where: { isPersonal: false },  // Filtrer les enfants aussi
+          where: { isPersonal: false },
           orderBy: [{ name: 'asc' }],
           select: {
             id: true,
@@ -313,6 +368,11 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
             color: true,
             icon: true,
             position: true,
+            accessType: true,
+            accessList: {
+              where: { userId },
+              select: { canRead: true },
+            },
             _count: {
               select: {
                 children: true,
@@ -343,6 +403,13 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
+    // Filtrer les sous-dossiers restreints auxquels l'utilisateur n'a pas accès
+    const accessibleChildren = folder.children.filter((child) => {
+      if (isAdmin) return true;
+      if (child.accessType === 'OPEN') return true;
+      return child.accessList.some(a => a.canRead);
+    });
+
     // Construire le breadcrumb en remontant les parents (espace général uniquement)
     const breadcrumb: Array<{ id: string; name: string; slug: string }> = [];
     let currentParentId = folder.parentId;
@@ -370,8 +437,9 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
         icon: folder.icon,
         parentId: folder.parentId,
         path: folder.path,
+        accessType: folder.accessType,
       },
-      children: folder.children.map((child) => ({
+      children: accessibleChildren.map((child) => ({
         id: child.id,
         name: child.name,
         slug: child.slug,
@@ -380,6 +448,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
         position: child.position,
         hasChildren: child._count.children > 0,
         notesCount: child._count.notes,
+        accessType: child.accessType,
       })),
       notes: folder.notes.map((note) => ({
         id: note.id,
@@ -710,5 +779,220 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     });
 
     return { success: true, deleted: { notes: notesCount, folders: subFoldersCount + 1 } };
+  });
+
+  // ===========================================
+  // GESTION DES ACCÈS RESTREINTS
+  // ===========================================
+
+  /**
+   * GET /api/v1/folders/:id/access
+   * Récupérer les paramètres d'accès d'un dossier
+   */
+  app.get('/:id/access', {
+    schema: {
+      tags: ['Folders'],
+      summary: 'Get folder access settings',
+      description: 'Get access type and authorized users list for a folder',
+      security: [{ cookieAuth: [] }],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = request.user.userId;
+    const userRole = request.user.role;
+
+    // Seuls les admins peuvent voir les paramètres d'accès
+    if (userRole !== 'admin') {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: 'Seuls les administrateurs peuvent gérer les accès',
+      });
+    }
+
+    const folder = await prisma.folder.findUnique({
+      where: { id, isPersonal: false },
+      select: {
+        id: true,
+        accessType: true,
+        accessList: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!folder) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Dossier non trouvé',
+      });
+    }
+
+    return {
+      accessType: folder.accessType,
+      accessList: folder.accessList.map((access) => ({
+        id: access.id,
+        userId: access.userId,
+        user: access.user,
+        canRead: access.canRead,
+        canWrite: access.canWrite,
+        createdAt: access.createdAt.toISOString(),
+        updatedAt: access.updatedAt.toISOString(),
+      })),
+    };
+  });
+
+  /**
+   * PATCH /api/v1/folders/:id/access
+   * Modifier les paramètres d'accès d'un dossier
+   */
+  app.patch('/:id/access', {
+    schema: {
+      tags: ['Folders'],
+      summary: 'Update folder access settings',
+      description: 'Change access type and/or authorized users for a folder',
+      security: [{ cookieAuth: [] }],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = request.user.userId;
+    const userRole = request.user.role;
+
+    // Seuls les admins peuvent modifier les accès
+    if (userRole !== 'admin') {
+      return reply.status(403).send({
+        error: 'FORBIDDEN',
+        message: 'Seuls les administrateurs peuvent gérer les accès',
+      });
+    }
+
+    const parseResult = updateFolderAccessSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        message: 'Invalid access data',
+        details: parseResult.error.flatten(),
+      });
+    }
+
+    const { accessType, accessList } = parseResult.data;
+
+    // Vérifier que le dossier existe
+    const folder = await prisma.folder.findUnique({
+      where: { id, isPersonal: false },
+      select: { id: true, name: true, accessType: true },
+    });
+
+    if (!folder) {
+      return reply.status(404).send({
+        error: 'NOT_FOUND',
+        message: 'Dossier non trouvé',
+      });
+    }
+
+    // Transaction pour mettre à jour accessType et accessList
+    const result = await prisma.$transaction(async (tx) => {
+      // Mettre à jour le type d'accès
+      await tx.folder.update({
+        where: { id },
+        data: { accessType },
+      });
+
+      // Si RESTRICTED, mettre à jour la liste des accès
+      if (accessType === 'RESTRICTED' && accessList) {
+        // Supprimer les accès existants
+        await tx.folderAccess.deleteMany({
+          where: { folderId: id },
+        });
+
+        // Créer les nouveaux accès
+        if (accessList.length > 0) {
+          await tx.folderAccess.createMany({
+            data: accessList.map((access) => ({
+              folderId: id,
+              userId: access.userId,
+              canRead: access.canRead,
+              canWrite: access.canWrite,
+            })),
+          });
+        }
+      }
+
+      // Si OPEN, supprimer tous les accès spécifiques
+      if (accessType === 'OPEN') {
+        await tx.folderAccess.deleteMany({
+          where: { folderId: id },
+        });
+      }
+
+      // Récupérer le résultat mis à jour
+      return tx.folder.findUnique({
+        where: { id },
+        select: {
+          accessType: true,
+          accessList: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  email: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // Log d'audit
+    await createAuditLog({
+      userId,
+      action: 'FOLDER_UPDATED',
+      resourceType: 'FOLDER',
+      resourceId: id,
+      details: {
+        accessTypeChanged: folder.accessType !== accessType,
+        newAccessType: accessType,
+        usersCount: accessList?.length ?? 0,
+      },
+      ipAddress: request.ip,
+    });
+
+    return {
+      accessType: result!.accessType,
+      accessList: result!.accessList.map((access) => ({
+        id: access.id,
+        userId: access.userId,
+        user: access.user,
+        canRead: access.canRead,
+        canWrite: access.canWrite,
+        createdAt: access.createdAt.toISOString(),
+        updatedAt: access.updatedAt.toISOString(),
+      })),
+    };
   });
 };

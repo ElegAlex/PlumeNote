@@ -46,10 +46,11 @@ export const NoteTable = memo(function NoteTable({
         <thead>
           <tr className="border-b text-left text-muted-foreground">
             <th className="pb-2 pr-4 font-medium">Titre</th>
-            <th className="pb-2 pr-4 font-medium whitespace-nowrap hidden sm:table-cell">Créée</th>
+            <th className="pb-2 pr-4 font-medium whitespace-nowrap hidden sm:table-cell">Auteur</th>
+            <th className="pb-2 pr-4 font-medium whitespace-nowrap hidden md:table-cell">Créée</th>
             <th className="pb-2 pr-4 font-medium whitespace-nowrap">Modifiée</th>
-            <th className="pb-2 pr-4 font-medium text-center hidden md:table-cell">Vues</th>
-            <th className="pb-2 pr-4 font-medium hidden lg:table-cell">Dossier</th>
+            <th className="pb-2 pr-4 font-medium text-center hidden lg:table-cell">Vues</th>
+            <th className="pb-2 pr-4 font-medium hidden xl:table-cell">Dossier</th>
             {showPinAction && <th className="pb-2 font-medium w-10"></th>}
           </tr>
         </thead>
@@ -80,8 +81,24 @@ export const NoteTable = memo(function NoteTable({
                 </Link>
               </td>
 
-              {/* Date création */}
+              {/* Auteur */}
               <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                {note.author ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0">
+                      {(note.author.displayName || note.author.username).slice(0, 2).toUpperCase()}
+                    </div>
+                    <span className="truncate max-w-[120px]" title={note.author.displayName || note.author.username}>
+                      {note.author.displayName || note.author.username}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground/50">—</span>
+                )}
+              </td>
+
+              {/* Date création */}
+              <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap hidden md:table-cell">
                 <span title={new Date(note.createdAt).toLocaleString('fr-FR')}>
                   {formatRelativeTime(note.createdAt)}
                 </span>
@@ -95,7 +112,7 @@ export const NoteTable = memo(function NoteTable({
               </td>
 
               {/* Nombre de vues */}
-              <td className="py-3 pr-4 text-center hidden md:table-cell">
+              <td className="py-3 pr-4 text-center hidden lg:table-cell">
                 <div className="flex items-center justify-center gap-1 text-muted-foreground">
                   <svg
                     className="h-3 w-3"
@@ -121,7 +138,7 @@ export const NoteTable = memo(function NoteTable({
               </td>
 
               {/* Dossier */}
-              <td className="py-3 pr-4 text-muted-foreground hidden lg:table-cell">
+              <td className="py-3 pr-4 text-muted-foreground hidden xl:table-cell">
                 <div className="flex items-center gap-1 truncate max-w-[200px]">
                   <svg
                     className="h-3 w-3 flex-shrink-0"

@@ -50,6 +50,9 @@ model User {
   personalNotes   Note[]   @relation("PersonalNotes")
   personalFolders Folder[] @relation("PersonalFolders")
 
+  // Relations accès restreint aux dossiers
+  folderAccess    FolderAccess[]
+
   // Relations import (EP-008)
   importJobs      ImportJob[]
 
@@ -116,13 +119,17 @@ model Folder {
   isPersonal Boolean  @default(false) @map("is_personal")
   ownerId    String?  @map("owner_id") @db.Uuid // Obligatoire si isPersonal=true
 
+  // Contrôle d'accès (Feature: Accès restreint)
+  accessType FolderAccessType @default(OPEN) @map("access_type")
+
   // Relations
-  parent      Folder?      @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children    Folder[]     @relation("FolderHierarchy")
+  parent      Folder?        @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[]       @relation("FolderHierarchy")
   notes       Note[]
-  creator     User         @relation("FolderCreatedBy", fields: [createdBy], references: [id])
+  creator     User           @relation("FolderCreatedBy", fields: [createdBy], references: [id])
   permissions Permission[]
-  owner       User?        @relation("PersonalFolders", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner       User?          @relation("PersonalFolders", fields: [ownerId], references: [id], onDelete: Cascade)
+  accessList  FolderAccess[] // Liste des utilisateurs autorisés si accessType = RESTRICTED
 
   // Relations import (EP-008)
   importJobs  ImportJob[]  @relation("ImportTargetFolder")
@@ -133,6 +140,7 @@ model Folder {
   @@index([createdBy])
   @@index([ownerId, isPersonal])
   @@index([isPersonal])
+  @@index([accessType])
   @@map("folders")
 }
 
@@ -307,6 +315,12 @@ model Attachment {
 
 // ----- PERMISSIONS -----
 
+/// Type d'accès au dossier
+enum FolderAccessType {
+  OPEN        // Accès selon rôle global (comportement par défaut)
+  RESTRICTED  // Accès limité aux utilisateurs spécifiés
+}
+
 enum PermissionLevel {
   NONE
   READ
@@ -347,6 +361,27 @@ model Permission {
   @@index([resourceType, resourceId])
   @@index([principalType, principalId])
   @@map("permissions")
+}
+
+/// Accès utilisateur à un dossier restreint
+/// Utilisé uniquement quand accessType = RESTRICTED
+model FolderAccess {
+  id        String   @id @default(uuid()) @db.Uuid
+  folderId  String   @map("folder_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  canRead   Boolean  @default(true) @map("can_read")
+  canWrite  Boolean  @default(false) @map("can_write") // Créer/modifier notes
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, userId])
+  @@index([userId])
+  @@index([folderId])
+  @@map("folder_access")
 }
 
 // ----- FAVORIS ET PRÉFÉRENCES -----

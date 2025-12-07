@@ -287,4 +287,29 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
 
     return { roles };
   });
+
+  // GET /api/v1/users/list - Liste simplifiée des utilisateurs (pour sélection)
+  // Accessible à tous les utilisateurs authentifiés
+  app.get('/list', {
+    schema: {
+      tags: ['Users'],
+      summary: 'List users for selection (simplified)',
+      description: 'Returns a simplified list of users for selection in UI components',
+      security: [{ cookieAuth: [] }],
+    },
+  }, async () => {
+    const users = await prisma.user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+      },
+      orderBy: { displayName: 'asc' },
+    });
+
+    return { users };
+  });
 };

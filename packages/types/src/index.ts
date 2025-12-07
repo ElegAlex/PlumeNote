@@ -84,6 +84,38 @@ export interface AuthError {
 
 // ----- Dossiers -----
 
+export type FolderAccessType = 'OPEN' | 'RESTRICTED';
+
+export interface FolderAccessUser {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    username: string;
+    displayName: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+  canRead: boolean;
+  canWrite: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FolderAccess {
+  accessType: FolderAccessType;
+  accessList: FolderAccessUser[];
+}
+
+export interface UpdateFolderAccessRequest {
+  accessType: FolderAccessType;
+  accessList?: Array<{
+    userId: string;
+    canRead: boolean;
+    canWrite: boolean;
+  }>;
+}
+
 export interface Folder {
   id: string;
   name: string;
@@ -94,12 +126,14 @@ export interface Folder {
   icon: string | null;
   position: number;
   createdBy: string;
+  accessType: FolderAccessType;
   createdAt: string;
   updatedAt: string;
   // Relations chargées conditionnellement
   children?: Folder[];
   notes?: Note[];
   permissions?: Permission[];
+  accessList?: FolderAccessUser[];
 }
 
 export interface FolderTreeNode extends Omit<Folder, 'children' | 'notes'> {
@@ -190,6 +224,7 @@ export interface SidebarFolderNode {
   children: SidebarFolderNode[];
   notes: NotePreview[];
   isLoaded: boolean;
+  accessType?: FolderAccessType;
 }
 
 // ----- Notes -----
