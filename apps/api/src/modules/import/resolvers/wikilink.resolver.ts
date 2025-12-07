@@ -3,7 +3,7 @@
 // EP-008: Résolution des liens [[...]] après import
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 /**
  * Résultat de résolution d'un lien

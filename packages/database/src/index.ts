@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes Database Package
+// PlumeNote Database Package
 // ===========================================
 
 export * from './client';

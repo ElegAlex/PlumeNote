@@ -16,7 +16,7 @@ import { Button } from '../../ui/Button';
 import { PropertyField } from './PropertyField';
 import { AddPropertyPopover } from './AddPropertyPopover';
 import { useMetadataStore } from '../../../stores/metadataStore';
-import type { PropertyType } from '@collabnotes/types';
+import type { PropertyType } from '@plumenote/types';
 
 // ----- Types -----
 

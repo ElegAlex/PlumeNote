@@ -9,7 +9,7 @@ import type {
   ImportJobSummary,
   ImportJobDetail,
   ConflictStrategy,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { importApi } from '../services/importApi';
 
 interface ImportState {

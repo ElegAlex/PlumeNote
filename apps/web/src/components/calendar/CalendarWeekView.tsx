@@ -1,8 +1,10 @@
 // ===========================================
 // CalendarWeekView - Vue hebdomadaire (P3 Calendrier)
+// Supporte les événements autonomes
 // ===========================================
 
 import { useMemo } from 'react';
+import type { CalendarEvent, AutonomousEvent } from '@plumenote/types';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { CalendarEventItem } from './CalendarEventItem';
 import {
@@ -14,6 +16,24 @@ import {
 } from '../../lib/calendarUtils';
 import { Skeleton } from '../ui/Skeleton';
 import { cn } from '../../lib/utils';
+
+/**
+ * Convertit un CalendarEvent en AutonomousEvent pour le modal de détail
+ */
+function toAutonomousEvent(event: CalendarEvent): AutonomousEvent {
+  return {
+    id: event.id.replace('-end', ''),
+    title: event.title,
+    type: event.type === 'period-start' || event.type === 'period-end' ? 'period' : event.type === 'deadline' ? 'deadline' : 'event',
+    startDate: `${event.date}T00:00:00.000Z`,
+    endDate: event.endDate ? `${event.endDate}T23:59:59.000Z` : null,
+    color: event.color || null,
+    allDay: !event.time,
+    createdById: '',
+    createdAt: '',
+    updatedAt: '',
+  };
+}
 
 interface CalendarWeekViewProps {
   onCreateEvent?: (date: Date) => void;
@@ -119,6 +139,8 @@ export function CalendarWeekView({ onCreateEvent }: CalendarWeekViewProps) {
                     key={event.id}
                     event={event}
                     variant="compact"
+                    isAutonomous={true}
+                    autonomousEvent={toAutonomousEvent(event)}
                   />
                 ))}
               </div>
@@ -162,6 +184,8 @@ export function CalendarWeekView({ onCreateEvent }: CalendarWeekViewProps) {
                         key={event.id}
                         event={event}
                         variant="compact"
+                        isAutonomous={true}
+                        autonomousEvent={toAutonomousEvent(event)}
                       />
                     ))}
                   </div>

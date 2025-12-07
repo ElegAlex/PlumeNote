@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '@collabnotes/types';
+import type { User } from '@plumenote/types';
 import { api } from '../lib/api';
 
 interface AuthState {

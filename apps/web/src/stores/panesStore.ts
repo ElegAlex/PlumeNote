@@ -217,7 +217,7 @@ export const usePanesStore = create<PanesState>()(
       },
     }),
     {
-      name: 'collabnotes-panes',
+      name: 'plumenote-panes',
       partialize: (state) => ({
         root: state.root,
         activePaneId: state.activePaneId,

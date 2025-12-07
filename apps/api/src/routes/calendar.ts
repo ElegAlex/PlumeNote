@@ -5,8 +5,8 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
-import type { CalendarEvent, CalendarEventType } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { CalendarEvent, CalendarEventType } from '@plumenote/types';
 
 // Types d'événements extraits
 type EventType = 'event' | 'deadline' | 'task' | 'period-start' | 'period-end';

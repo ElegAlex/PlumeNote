@@ -4,7 +4,7 @@
 
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 declare module 'fastify' {
   interface FastifyInstance {

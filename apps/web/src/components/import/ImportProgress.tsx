@@ -4,7 +4,7 @@
 // ===========================================
 
 import { Loader2, CheckCircle, XCircle, FileText, Folder, Link } from 'lucide-react';
-import type { ImportJobDetail } from '@collabnotes/types';
+import type { ImportJobDetail } from '@plumenote/types';
 
 interface ImportProgressProps {
   job: ImportJobDetail;

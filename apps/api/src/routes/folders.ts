@@ -9,8 +9,8 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
-import type { Folder, FolderTreeNode, CreateFolderRequest } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { Folder, FolderTreeNode, CreateFolderRequest } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission, getEffectivePermissions } from '../services/permissions.js';
 

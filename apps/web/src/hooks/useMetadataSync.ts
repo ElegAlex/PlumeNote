@@ -5,7 +5,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import * as Y from 'yjs';
-import type { NoteMetadata } from '@collabnotes/types';
+import type { NoteMetadata } from '@plumenote/types';
 import { useMetadataStore } from '../stores/metadataStore';
 
 // ----- Types -----

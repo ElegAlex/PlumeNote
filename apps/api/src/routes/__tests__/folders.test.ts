@@ -4,7 +4,7 @@
 // ===========================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { createFolderMock, createNoteMock } from '../../test/prisma-mock';
 
 // Mock des services

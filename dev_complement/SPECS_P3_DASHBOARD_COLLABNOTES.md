@@ -281,7 +281,7 @@ import {
   DistributionItem,
   TopNote,
   UserContribution
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -748,7 +748,7 @@ import {
   DistributionItem,
   TopNote,
   UserContribution
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 import { analyticsApi } from '@/services/analyticsApi';
 
 interface AnalyticsState {
@@ -907,7 +907,7 @@ import {
   DistributionItem,
   TopNote,
   UserContribution
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 export const analyticsApi = {
   async getOverview(): Promise<OverviewStats> {
@@ -1980,7 +1980,7 @@ test.describe('Dashboard', () => {
 
 ```bash
 # 1. Installer Recharts si pas déjà fait
-cd /path/to/collabnotes/apps/web
+cd /path/to/plumenote/apps/web
 npm install recharts
 
 # 2. Types partagés
@@ -2028,7 +2028,7 @@ npm install recharts  # Bibliothèque de graphiques
 ### A. Arborescence des fichiers
 
 ```
-collabnotes/
+plumenote/
 ├── packages/
 │   └── shared-types/
 │       └── src/

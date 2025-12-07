@@ -57,7 +57,7 @@ export function LoginPage() {
               />
             </svg>
           </div>
-          <CardTitle>CollabNotes</CardTitle>
+          <CardTitle>PlumeNote</CardTitle>
           <CardDescription>Connectez-vous pour accéder à vos notes</CardDescription>
         </CardHeader>
 

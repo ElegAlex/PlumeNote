@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes API - Configuration Fastify
+// PlumeNote API - Configuration Fastify
 // ===========================================
 
 import Fastify from 'fastify';
@@ -40,6 +40,7 @@ import { analyticsRoutes } from './routes/analytics.js';
 import { personalRoutes } from './routes/personal.js';
 import { noteMetadataRoutes } from './routes/noteMetadata.js';
 import { noteTagsRoutes } from './routes/noteTags.js';
+import { eventsRoutes, noteEventsRoutes } from './routes/events.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -110,7 +111,7 @@ export async function buildApp() {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: 'CollabNotes API',
+        title: 'PlumeNote API',
         description: 'API de la plateforme de gestion de notes collaboratives',
         version: '0.1.0',
       },
@@ -167,6 +168,8 @@ export async function buildApp() {
   await app.register(personalRoutes, { prefix: '/api/v1/personal' });
   await app.register(noteMetadataRoutes, { prefix: '/api/v1/notes' });
   await app.register(noteTagsRoutes, { prefix: '/api/v1/notes' });
+  await app.register(eventsRoutes, { prefix: '/api/v1/events' });
+  await app.register(noteEventsRoutes, { prefix: '/api/v1/notes' });
 
   // ----- Error Handler global -----
   app.setErrorHandler((error, request, reply) => {

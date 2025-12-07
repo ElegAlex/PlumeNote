@@ -11,7 +11,7 @@ import type {
   DistributionItem,
   TopNote,
   UserContribution,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { analyticsApi } from '../services/analyticsApi';
 
 // ----- Types -----

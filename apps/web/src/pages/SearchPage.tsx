@@ -9,7 +9,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { debounce, formatRelativeTime } from '../lib/utils';
-import type { SearchResult } from '@collabnotes/types';
+import type { SearchResult } from '@plumenote/types';
 
 interface Facets {
   folders: { id: string; name: string; path: string; count: number }[];
@@ -487,8 +487,8 @@ export function SearchPage() {
                 <div className="divide-y rounded-lg border">
                   {results.map((result) => (
                     <Link
-                      key={result.id}
-                      to={`/notes/${result.id}`}
+                      key={result.noteId}
+                      to={`/notes/${result.noteId}`}
                       className="block p-4 hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">

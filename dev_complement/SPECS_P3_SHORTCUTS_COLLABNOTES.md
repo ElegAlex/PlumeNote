@@ -286,7 +286,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategoryInfo[] = [
 ```typescript
 // apps/web/src/config/shortcuts.ts
 
-import { ShortcutDefinition } from '@collabnotes/shared-types';
+import { ShortcutDefinition } from '@plumenote/shared-types';
 
 export const SHORTCUTS: ShortcutDefinition[] = [
   // ========== NAVIGATION ==========
@@ -726,7 +726,7 @@ export function searchShortcuts(query: string): ShortcutDefinition[] {
 // apps/web/src/hooks/useKeyboardShortcuts.ts
 
 import { useEffect, useCallback, useMemo } from 'react';
-import { ShortcutKeys, ModifierKey } from '@collabnotes/shared-types';
+import { ShortcutKeys, ModifierKey } from '@plumenote/shared-types';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
@@ -867,7 +867,7 @@ export function useKeyboardShortcut(
 ```typescript
 // apps/web/src/lib/shortcutUtils.ts
 
-import { ShortcutKeys, ModifierKey, SpecialKey } from '@collabnotes/shared-types';
+import { ShortcutKeys, ModifierKey, SpecialKey } from '@plumenote/shared-types';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
@@ -968,7 +968,7 @@ import { Search, Keyboard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ShortcutCategory } from './ShortcutCategory';
 import { SHORTCUTS, getShortcutsByCategory, searchShortcuts } from '@/config/shortcuts';
-import { SHORTCUT_CATEGORIES } from '@collabnotes/shared-types';
+import { SHORTCUT_CATEGORIES } from '@plumenote/shared-types';
 import { getCmdSymbol } from '@/lib/shortcutUtils';
 
 export function ShortcutsPage() {
@@ -1077,7 +1077,7 @@ export function ShortcutsPage() {
 
 import { memo } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { ShortcutCategoryInfo, ShortcutDefinition } from '@collabnotes/shared-types';
+import { ShortcutCategoryInfo, ShortcutDefinition } from '@plumenote/shared-types';
 import { ShortcutItem } from './ShortcutItem';
 
 interface ShortcutCategoryProps {
@@ -1121,7 +1121,7 @@ export const ShortcutCategory = memo(function ShortcutCategory({
 // apps/web/src/components/shortcuts/ShortcutItem.tsx
 
 import { memo } from 'react';
-import { ShortcutDefinition } from '@collabnotes/shared-types';
+import { ShortcutDefinition } from '@plumenote/shared-types';
 import { KeyboardKey } from './KeyboardKey';
 import { formatShortcut } from '@/lib/shortcutUtils';
 
@@ -1781,7 +1781,7 @@ test.describe('Shortcuts Page', () => {
 
 ```bash
 # 1. Types partagés
-cd /path/to/collabnotes/packages/shared-types
+cd /path/to/plumenote/packages/shared-types
 # Créer src/shortcuts.ts
 npm run build
 
@@ -1818,7 +1818,7 @@ Aucune nouvelle dépendance requise. Utilise les composants UI existants.
 ### A. Arborescence des fichiers
 
 ```
-collabnotes/
+plumenote/
 ├── packages/
 │   └── shared-types/
 │       └── src/

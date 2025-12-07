@@ -12,7 +12,7 @@ import type {
   CalendarViewMode,
   CalendarMonth,
   CalendarEventType,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { calendarApi } from '../services/calendarApi';
 import {
   buildCalendarMonth,

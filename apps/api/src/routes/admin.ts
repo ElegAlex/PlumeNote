@@ -8,7 +8,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { getAuditLogs, createAuditLog } from '../services/audit.js';
 
 const configUpdateSchema = z.object({

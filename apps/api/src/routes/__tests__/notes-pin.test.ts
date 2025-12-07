@@ -4,7 +4,7 @@
 // ===========================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 // Mock des services
 vi.mock('../../services/permissions.js', () => ({
@@ -16,7 +16,7 @@ vi.mock('../../services/audit.js', () => ({
 }));
 
 // Mock Prisma
-vi.mock('@collabnotes/database', () => ({
+vi.mock('@plumenote/database', () => ({
   prisma: {
     note: {
       findFirst: vi.fn(),

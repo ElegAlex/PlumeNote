@@ -2,8 +2,8 @@
 // Service Audit Log (US-112)
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
-import type { AuditAction } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { AuditAction } from '@plumenote/types';
 import { logger } from '../lib/logger.js';
 
 export interface CreateAuditLogParams {

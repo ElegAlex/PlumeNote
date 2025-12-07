@@ -12,7 +12,7 @@ import { UploadDropzone } from './UploadDropzone';
 import { ImportPreview as ImportPreviewComponent } from './ImportPreview';
 import { ImportProgress } from './ImportProgress';
 import { ImportResults } from './ImportResults';
-import type { ConflictStrategy } from '@collabnotes/types';
+import type { ConflictStrategy } from '@plumenote/types';
 import { cn } from '../../lib/utils';
 
 type Step = 'upload' | 'configure' | 'processing' | 'results';

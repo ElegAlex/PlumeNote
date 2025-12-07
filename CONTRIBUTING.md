@@ -1,6 +1,6 @@
-# Contribuer à CollabNotes
+# Contribuer à PlumeNote
 
-Merci de votre intérêt pour contribuer à CollabNotes ! Ce document décrit les conventions et processus à suivre.
+Merci de votre intérêt pour contribuer à PlumeNote ! Ce document décrit les conventions et processus à suivre.
 
 ## Table des matières
 
@@ -23,8 +23,8 @@ Merci de votre intérêt pour contribuer à CollabNotes ! Ce document décrit le
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/votre-org/collabnotes.git
-cd collabnotes
+git clone https://github.com/votre-org/plumenote.git
+cd plumenote
 
 # Copier les variables d'environnement
 cp .env.example .env
@@ -48,7 +48,7 @@ npm run dev
 ## Structure du projet
 
 ```
-collabnotes/
+plumenote/
 ├── apps/
 │   ├── api/          # Backend Fastify
 │   ├── web/          # Frontend React
@@ -127,7 +127,7 @@ docs(api): update swagger documentation
 
 - Typage strict obligatoire
 - Éviter `any`, préférer `unknown`
-- Utiliser les types de `@collabnotes/types`
+- Utiliser les types de `@plumenote/types`
 - Documenter les fonctions publiques avec JSDoc
 
 ```typescript
@@ -180,7 +180,7 @@ export function Button({ variant, children, onClick }: ButtonProps) {
 npm run test
 
 # Tests d'un package spécifique
-npm run test --workspace=@collabnotes/api
+npm run test --workspace=@plumenote/api
 
 # Tests avec couverture
 npm run test:coverage

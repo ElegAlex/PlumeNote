@@ -3,7 +3,7 @@
 // ===========================================
 
 import { memo } from 'react';
-import type { ShortcutDefinition } from '@collabnotes/types';
+import type { ShortcutDefinition } from '@plumenote/types';
 import { KeyboardKey } from './KeyboardKey';
 import { formatShortcut } from '@/lib/shortcutUtils';
 

@@ -11,7 +11,7 @@ import type {
   NoteMetadata,
   CreatePropertyRequest,
   UpdatePropertyRequest,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { metadataApi } from '../services/metadataApi';
 
 // ----- Types -----

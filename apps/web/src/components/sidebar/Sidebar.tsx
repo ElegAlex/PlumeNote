@@ -24,7 +24,7 @@ import { PersonalSidebarSection } from './PersonalSidebarSection';
 import { InlineCreateForm } from '../common';
 import { Button } from '../ui/Button';
 import { toast } from '../ui/Toaster';
-import type { SidebarFolderNode } from '@collabnotes/types';
+import type { SidebarFolderNode } from '@plumenote/types';
 
 // ===========================================
 // Types pour Drag & Drop
@@ -45,7 +45,7 @@ interface DragItem {
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { tree, fetchTree, refreshFolder } = useSidebarStore();
+  const { tree, fetchTree, refreshFolder, addFolderToTree, removeFolderFromTree } = useSidebarStore();
   const { createFolder, moveFolder, moveNote } = useFoldersStore();
   const { createNote } = useNotesStore();
 
@@ -75,16 +75,27 @@ export function Sidebar() {
 
   const handleCreateFolder = async (name: string) => {
     try {
-      await createFolder(name, parentFolderForNew);
+      const newFolder = await createFolder(name, parentFolderForNew);
       setIsCreatingFolder(false);
       setParentFolderForNew(null);
+
+      // Mise à jour optimiste immédiate de l'UI
+      addFolderToTree({
+        id: newFolder.id,
+        name: newFolder.name,
+        slug: newFolder.slug,
+        parentId: parentFolderForNew,
+        color: newFolder.color,
+        icon: newFolder.icon,
+        position: newFolder.position,
+        hasChildren: false,
+        notesCount: 0,
+        children: [],
+        notes: [],
+        isLoaded: true,
+      }, parentFolderForNew);
+
       toast.success('Dossier créé');
-      // Rafraîchir l'arbre complet pour afficher le nouveau dossier
-      await fetchTree();
-      // Si sous-dossier, rafraîchir aussi le cache du parent
-      if (parentFolderForNew) {
-        await refreshFolder(parentFolderForNew);
-      }
     } catch {
       toast.error('Erreur lors de la création');
     }
@@ -123,16 +134,30 @@ export function Sidebar() {
   // Création de sous-dossier depuis FolderItem (nouvelle signature)
   const handleCreateFolderInFolder = useCallback(async (name: string, parentId: string) => {
     try {
-      await createFolder(name, parentId);
+      const newFolder = await createFolder(name, parentId);
+
+      // Mise à jour optimiste immédiate de l'UI
+      addFolderToTree({
+        id: newFolder.id,
+        name: newFolder.name,
+        slug: newFolder.slug,
+        parentId: parentId,
+        color: newFolder.color,
+        icon: newFolder.icon,
+        position: newFolder.position,
+        hasChildren: false,
+        notesCount: 0,
+        children: [],
+        notes: [],
+        isLoaded: true,
+      }, parentId);
+
       toast.success('Dossier créé');
-      // Rafraîchir l'arbre complet puis le cache du parent
-      await fetchTree();
-      await refreshFolder(parentId);
     } catch {
       toast.error('Erreur lors de la création');
       throw new Error('Création échouée');
     }
-  }, [createFolder, fetchTree, refreshFolder]);
+  }, [createFolder, addFolderToTree]);
 
   // ===========================================
   // Handlers Drag & Drop

@@ -13,7 +13,7 @@ import { usePanesStore } from '../../stores/panesStore';
 import { MoveToFolderDialog, type FolderTreeNode } from '../common/MoveToFolderDialog';
 import { toast } from '../ui/Toaster';
 import { cn } from '../../lib/utils';
-import type { NotePreview, SidebarFolderNode } from '@collabnotes/types';
+import type { NotePreview, SidebarFolderNode } from '@plumenote/types';
 
 // Même constante d'indentation que FolderItem
 const INDENT_PER_LEVEL = 16;

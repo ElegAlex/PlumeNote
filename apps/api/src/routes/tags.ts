@@ -6,7 +6,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 const createTagSchema = z.object({
   name: z.string().min(1).max(100),

@@ -61,7 +61,7 @@ jobs:
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: collabnotes_test
+          POSTGRES_DB: plumenote_test
         ports:
           - 5432:5432
         options: >-
@@ -98,12 +98,12 @@ jobs:
       - name: Run database migrations
         run: npm run db:migrate
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/collabnotes_test
+          DATABASE_URL: postgresql://test:test@localhost:5432/plumenote_test
 
       - name: Run tests
         run: npm run test
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/collabnotes_test
+          DATABASE_URL: postgresql://test:test@localhost:5432/plumenote_test
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret-for-ci-minimum-32-chars
           NODE_ENV: test
@@ -163,7 +163,7 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: false
-          tags: collabnotes/api:${{ github.sha }}
+          tags: plumenote/api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -173,6 +173,6 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: false
-          tags: collabnotes/web:${{ github.sha }}
+          tags: plumenote/web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

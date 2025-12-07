@@ -4,19 +4,19 @@ services:
   # Base de données PostgreSQL
   postgres:
     image: postgres:16-alpine
-    container_name: collabnotes-postgres
+    container_name: plumenote-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-collabnotes}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-collabnotes_dev}
-      POSTGRES_DB: ${POSTGRES_DB:-collabnotes}
+      POSTGRES_USER: ${POSTGRES_USER:-plumenote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plumenote_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-plumenote}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-collabnotes} -d ${POSTGRES_DB:-collabnotes}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-plumenote} -d ${POSTGRES_DB:-plumenote}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
   # Redis pour cache et sessions
   redis:
     image: redis:7-alpine
-    container_name: collabnotes-redis
+    container_name: plumenote-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -39,10 +39,10 @@ services:
   # Interface d'administration PostgreSQL (optionnel)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: collabnotes-pgadmin
+    container_name: plumenote-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@collabnotes.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@plumenote.local}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
@@ -58,13 +58,13 @@ services:
   # OpenLDAP pour tests d'authentification
   openldap:
     image: osixia/openldap:1.5.0
-    container_name: collabnotes-ldap
+    container_name: plumenote-ldap
     restart: unless-stopped
     environment:
-      LDAP_ORGANISATION: "CollabNotes Dev"
-      LDAP_DOMAIN: "collabnotes.local"
+      LDAP_ORGANISATION: "PlumeNote Dev"
+      LDAP_DOMAIN: "plumenote.local"
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD:-admin}
-      LDAP_BASE_DN: "dc=collabnotes,dc=local"
+      LDAP_BASE_DN: "dc=plumenote,dc=local"
     ports:
       - "389:389"
       - "636:636"
@@ -77,7 +77,7 @@ services:
   # Interface LDAP (optionnel)
   phpldapadmin:
     image: osixia/phpldapadmin:0.9.0
-    container_name: collabnotes-phpldapadmin
+    container_name: plumenote-phpldapadmin
     restart: unless-stopped
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: openldap
@@ -103,4 +103,4 @@ volumes:
 
 networks:
   default:
-    name: collabnotes-network
+    name: plumenote-network

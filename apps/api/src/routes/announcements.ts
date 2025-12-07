@@ -5,7 +5,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 // Schema de validation
 const createAnnouncementSchema = z.object({

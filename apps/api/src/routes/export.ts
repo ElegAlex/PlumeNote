@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { getEffectivePermissions } from '../services/permissions.js';
 import archiver from 'archiver';
 import { Readable } from 'stream';
@@ -103,7 +103,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
       reply.header('Content-Type', 'application/json');
       reply.header(
         'Content-Disposition',
-        `attachment; filename="collabnotes-export-${Date.now()}.json"`
+        `attachment; filename="plumenote-export-${Date.now()}.json"`
       );
       return exportData;
     }
@@ -125,7 +125,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
     reply.header('Content-Type', 'application/zip');
     reply.header(
       'Content-Disposition',
-      `attachment; filename="collabnotes-export-${Date.now()}.zip"`
+      `attachment; filename="plumenote-export-${Date.now()}.zip"`
     );
 
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -272,7 +272,7 @@ function generateIndexFile(
     updatedAt: Date;
   }[]
 ): string {
-  let content = '# CollabNotes Export\n\n';
+  let content = '# PlumeNote Export\n\n';
   content += `Exported on ${new Date().toISOString()}\n\n`;
   content += `Total notes: ${notes.length}\n\n`;
   content += '## Notes\n\n';

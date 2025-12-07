@@ -20,6 +20,8 @@ import {
 } from '../components/common';
 import type { FolderTreeNode } from '../components/common';
 import { debounce } from '../lib/utils';
+import { useNoteEvents } from '../hooks/useNoteEvents';
+import { EventBadge } from '../components/calendar/EventBadge';
 
 // Icons
 const LockIcon = () => (
@@ -75,6 +77,9 @@ export function PersonalNotePage() {
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
+
+  // Récupérer les événements liés à cette note
+  const { events: linkedEvents } = useNoteEvents(currentNote?.id);
 
   // Rediriger les readers
   useEffect(() => {
@@ -218,6 +223,11 @@ export function PersonalNotePage() {
             className="text-lg font-semibold bg-transparent border-none outline-none flex-1 min-w-0"
             placeholder="Sans titre"
           />
+
+          {/* Badge des événements liés */}
+          {linkedEvents.length > 0 && (
+            <EventBadge events={linkedEvents} />
+          )}
         </div>
 
         <div className="flex items-center gap-2">

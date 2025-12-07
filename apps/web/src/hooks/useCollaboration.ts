@@ -162,7 +162,7 @@ export function useCollaboration({
     setYdoc(newYdoc);
 
     // Récupérer le token JWT
-    const token = localStorage.getItem('collabnotes-token') || '';
+    const token = localStorage.getItem('plumenote-token') || '';
     const roomName = `note:${documentId}`;
 
     console.log('[Collaboration] Connecting to room:', roomName);

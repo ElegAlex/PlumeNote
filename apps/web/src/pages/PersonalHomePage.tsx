@@ -18,7 +18,7 @@ import {
   EmptyState,
 } from '../components/common';
 import { cn } from '../lib/utils';
-import type { PersonalSearchResult } from '@collabnotes/types';
+import type { PersonalSearchResult } from '@plumenote/types';
 
 // Icons
 const LockIcon = ({ className }: { className?: string }) => (

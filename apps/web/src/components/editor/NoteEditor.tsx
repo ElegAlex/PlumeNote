@@ -17,13 +17,15 @@ import { WikilinkSuggestionPopup, useWikilinkSuggestion } from './extensions/wik
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useBeforeUnloadWarning } from '../../hooks/useCollaboration';
 import { useImageUpload, type UploadResult } from '../../hooks/useImageUpload';
+import { useNoteEvents } from '../../hooks/useNoteEvents';
+import { EventBadge } from '../calendar/EventBadge';
 import {
   createEditorExtensions,
   createEditorProps,
   type EditorConfigOptions,
   type EditorFeatureFlags,
 } from './EditorConfig';
-import type { NoteFrontmatter } from '@collabnotes/types';
+import type { NoteFrontmatter } from '@plumenote/types';
 
 interface NoteEditorProps {
   content: string;
@@ -60,6 +62,9 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const navigate = useNavigate();
   const [isPropertiesPanelVisible, setIsPropertiesPanelVisible] = useState(showProperties);
+
+  // Hook pour récupérer les événements liés à cette note
+  const { events: linkedEvents } = useNoteEvents(noteId);
 
   // Hook de sauvegarde automatique avec machine à états
   const {
@@ -259,7 +264,13 @@ export function NoteEditor({
     <div className="flex flex-col h-full">
       {editable && (
         <div className="flex items-center justify-between border-b bg-card">
-          <EditorToolbar editor={editor} />
+          <div className="flex items-center gap-2">
+            <EditorToolbar editor={editor} />
+            {/* Badge des événements liés à cette note */}
+            {linkedEvents.length > 0 && (
+              <EventBadge events={linkedEvents} />
+            )}
+          </div>
           <div className="flex items-center gap-2 px-4 py-2">
             {/* Toggle panneau propriétés (P2) */}
             <button

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
-import type { PropertyDefinition, PropertyType } from '@collabnotes/types';
+import type { PropertyDefinition, PropertyType } from '@plumenote/types';
 
 // ----- Types -----
 

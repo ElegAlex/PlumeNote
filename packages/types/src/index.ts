@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes - Types partagés
+// PlumeNote - Types partagés
 // ===========================================
 
 // ----- Utilisateurs et Auth -----
@@ -885,6 +885,84 @@ export interface CalendarMonth {
   year: number;
   month: number; // 0-11
   weeks: CalendarWeek[];
+}
+
+// ----- ÉVÉNEMENTS AUTONOMES -----
+
+/**
+ * Type d'événement autonome (entité séparée des notes)
+ */
+export type AutonomousEventType = 'deadline' | 'event' | 'period';
+
+/**
+ * Note liée à un événement autonome
+ */
+export interface LinkedNote {
+  id: string;
+  noteId: string;
+  linkedAt: string;
+  note: {
+    id: string;
+    title: string;
+    slug: string;
+    updatedAt: string;
+  };
+}
+
+/**
+ * Événement autonome (entité first-class découplée des notes)
+ */
+export interface AutonomousEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  type: AutonomousEventType;
+  startDate: string; // ISO datetime
+  endDate?: string | null; // ISO datetime
+  color?: string | null;
+  allDay: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  linkedNotes?: LinkedNote[];
+}
+
+/**
+ * Payload pour créer un événement autonome
+ */
+export interface CreateAutonomousEventPayload {
+  title: string;
+  description?: string;
+  type: 'DEADLINE' | 'EVENT' | 'PERIOD';
+  startDate: string;
+  endDate?: string;
+  color?: string;
+  allDay?: boolean;
+}
+
+/**
+ * Payload pour modifier un événement autonome
+ */
+export interface UpdateAutonomousEventPayload {
+  title?: string;
+  description?: string | null;
+  type?: 'DEADLINE' | 'EVENT' | 'PERIOD';
+  startDate?: string;
+  endDate?: string | null;
+  color?: string | null;
+  allDay?: boolean;
+}
+
+/**
+ * Payload pour lier une note à un événement
+ */
+export interface LinkNotePayload {
+  noteId: string;
 }
 
 // ----- NOTES PERSONNELLES -----

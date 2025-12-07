@@ -1,4 +1,4 @@
-# CollabNotes - Document de Synthèse Technique
+# PlumeNote - Document de Synthèse Technique
 
 > **Document de référence pour Claude Code**  
 > Version: 1.0  
@@ -21,9 +21,9 @@
 
 ## 1. Vue d'ensemble du projet
 
-### 1.1 Qu'est-ce que CollabNotes ?
+### 1.1 Qu'est-ce que PlumeNote ?
 
-CollabNotes est une application de prise de notes collaborative inspirée de Notion et Obsidian. Elle permet à des équipes de créer, organiser et collaborer sur des notes en temps réel.
+PlumeNote est une application de prise de notes collaborative inspirée de Notion et Obsidian. Elle permet à des équipes de créer, organiser et collaborer sur des notes en temps réel.
 
 ### 1.2 Fonctionnalités existantes
 
@@ -36,7 +36,7 @@ CollabNotes est une application de prise de notes collaborative inspirée de Not
 
 ### 1.3 Objectif des évolutions
 
-Cette série de modules vise à enrichir CollabNotes avec :
+Cette série de modules vise à enrichir PlumeNote avec :
 
 - **Stabilité** : Correction des bugs critiques (sidebar)
 - **Productivité** : Homepage repensée, épinglage, raccourcis clavier
@@ -86,7 +86,7 @@ Cette série de modules vise à enrichir CollabNotes avec :
 ### 2.2 Structure du monorepo
 
 ```
-collabnotes/
+plumenote/
 ├── apps/
 │   ├── api/                    # Backend Fastify
 │   │   └── src/
@@ -536,7 +536,7 @@ import { SomeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMyStore } from '@/stores/myStore';
 import { someUtil } from '@/lib/utils';
-import { MyType } from '@collabnotes/shared-types';
+import { MyType } from '@plumenote/shared-types';
 
 // Types locaux
 interface MyComponentProps {
@@ -655,7 +655,7 @@ Lors du démarrage d'un module :
 
 ```bash
 # Navigation
-cd /path/to/collabnotes
+cd /path/to/plumenote
 
 # Développement
 npm run dev              # Démarre api + web

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { ShortcutCategory } from './ShortcutCategory';
 import { KeyboardKey } from './KeyboardKey';
 import { SHORTCUTS, getShortcutsByCategory, searchShortcuts } from '@/config/shortcuts';
-import { SHORTCUT_CATEGORIES } from '@collabnotes/types';
+import { SHORTCUT_CATEGORIES } from '@plumenote/types';
 import { getCmdSymbol } from '@/lib/shortcutUtils';
 
 /**

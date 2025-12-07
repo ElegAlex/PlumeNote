@@ -21,6 +21,8 @@ import { TagsPanel } from '../components/editor/metadata/TagsPanel';
 import { NoteActionMenu, MoveToFolderDialog } from '../components/common';
 import type { FolderTreeNode } from '../components/common';
 import { useNoteView } from '../hooks';
+import { useNoteEvents } from '../hooks/useNoteEvents';
+import { EventBadge } from '../components/calendar/EventBadge';
 
 export function NotePage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -45,6 +47,9 @@ export function NotePage() {
 
   // P1: Enregistrer la vue de la note
   useNoteView(currentNote?.id);
+
+  // Récupérer les événements liés à cette note
+  const { events: linkedEvents } = useNoteEvents(currentNote?.id);
 
   useEffect(() => {
     if (noteId) {
@@ -166,6 +171,10 @@ export function NotePage() {
             className="text-xl font-semibold bg-transparent border-none outline-none flex-1 min-w-0"
             placeholder="Sans titre"
           />
+          {/* Badge des événements liés */}
+          {linkedEvents.length > 0 && (
+            <EventBadge events={linkedEvents} />
+          )}
         </div>
 
         <div className="flex items-center gap-2">

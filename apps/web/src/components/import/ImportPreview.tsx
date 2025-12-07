@@ -4,7 +4,7 @@
 // ===========================================
 
 import { FileText, Folder, Image } from 'lucide-react';
-import type { ImportPreview as ImportPreviewType } from '@collabnotes/types';
+import type { ImportPreview as ImportPreviewType } from '@plumenote/types';
 
 interface ImportPreviewProps {
   preview: ImportPreviewType;

@@ -5,7 +5,7 @@
 import { vi } from 'vitest';
 
 // Mock Prisma client
-vi.mock('@collabnotes/database', () => ({
+vi.mock('@plumenote/database', () => ({
   prisma: {
     folder: {
       findMany: vi.fn(),

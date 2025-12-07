@@ -270,7 +270,7 @@ export async function foldersController(fastify: FastifyInstance): Promise<void>
 // apps/api/src/modules/folders/folders.service.ts
 
 import { PrismaClient } from '@prisma/client';
-import { FolderTreeNode, FolderContent, NotePreview } from '@collabnotes/shared-types';
+import { FolderTreeNode, FolderContent, NotePreview } from '@plumenote/shared-types';
 
 export class FoldersService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -455,7 +455,7 @@ export interface FolderContent {
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { FolderTreeNode, FolderContent, NotePreview } from '@collabnotes/shared-types';
+import { FolderTreeNode, FolderContent, NotePreview } from '@plumenote/shared-types';
 import { foldersApi } from '@/services/foldersApi';
 
 interface FolderState {
@@ -570,7 +570,7 @@ export const useFolderStore = create<FolderState>()(
 // apps/web/src/services/foldersApi.ts
 
 import { api } from './api';
-import { FolderTreeNode, FolderContent } from '@collabnotes/shared-types';
+import { FolderTreeNode, FolderContent } from '@plumenote/shared-types';
 
 export const foldersApi = {
   async getTree(): Promise<FolderTreeNode[]> {
@@ -656,7 +656,7 @@ import { ChevronRight, Folder, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFolderStore } from '@/stores/folderStore';
 import { NoteItem } from './NoteItem';
-import type { FolderTreeNode } from '@collabnotes/shared-types';
+import type { FolderTreeNode } from '@plumenote/shared-types';
 
 interface FolderItemProps {
   folder: FolderTreeNode;
@@ -790,7 +790,7 @@ import { memo, useCallback } from 'react';
 import { FileText } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import type { NotePreview } from '@collabnotes/shared-types';
+import type { NotePreview } from '@plumenote/shared-types';
 
 interface NoteItemProps {
   note: NotePreview;
@@ -1281,7 +1281,7 @@ test.describe('Sidebar Navigation', () => {
 
 ```bash
 # 1. Aller dans le répertoire du projet
-cd /path/to/collabnotes
+cd /path/to/plumenote
 
 # 2. Créer les types partagés
 cd packages/shared-types
@@ -1331,7 +1331,7 @@ npm install -D @playwright/test
 ### A. Arborescence des fichiers à créer/modifier
 
 ```
-collabnotes/
+plumenote/
 ├── packages/
 │   └── shared-types/
 │       └── src/

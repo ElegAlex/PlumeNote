@@ -5,7 +5,7 @@
 // US-052: Liens brisés
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 // Regex pour détecter les wikilinks [[titre]] ou [[titre|alias]]
 const WIKILINK_REGEX = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;

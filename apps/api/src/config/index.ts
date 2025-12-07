@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes API - Configuration
+// PlumeNote API - Configuration
 // ===========================================
 
 import 'dotenv/config';

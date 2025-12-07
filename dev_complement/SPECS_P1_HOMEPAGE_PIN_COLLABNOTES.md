@@ -351,7 +351,7 @@ import { PrismaClient } from '@prisma/client';
 import { 
   NoteWithMetadata, 
   PinNoteResult 
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 export class NotesService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -579,7 +579,7 @@ export async function calendarController(fastify: FastifyInstance): Promise<void
 // apps/api/src/modules/calendar/calendar.service.ts
 
 import { PrismaClient } from '@prisma/client';
-import { CalendarEvent } from '@collabnotes/shared-types';
+import { CalendarEvent } from '@plumenote/shared-types';
 
 export class CalendarService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -669,7 +669,7 @@ export interface CalendarEvent {
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { NoteWithMetadata, CalendarEvent } from '@collabnotes/shared-types';
+import { NoteWithMetadata, CalendarEvent } from '@plumenote/shared-types';
 import { notesApi } from '@/services/notesApi';
 import { calendarApi } from '@/services/calendarApi';
 
@@ -795,7 +795,7 @@ export const useHomepageStore = create<HomepageState>()(
 // apps/web/src/services/notesApi.ts (ajouts)
 
 import { api } from './api';
-import { NoteWithMetadata } from '@collabnotes/shared-types';
+import { NoteWithMetadata } from '@plumenote/shared-types';
 
 export const notesApi = {
   // ... existing methods ...
@@ -828,7 +828,7 @@ export const notesApi = {
 // apps/web/src/services/calendarApi.ts
 
 import { api } from './api';
-import { CalendarEvent } from '@collabnotes/shared-types';
+import { CalendarEvent } from '@plumenote/shared-types';
 
 export const calendarApi = {
   async getUpcomingEvents(limit: number = 5): Promise<CalendarEvent[]> {
@@ -993,7 +993,7 @@ import { useHomepageStore } from '@/stores/homepageStore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatRelativeDate } from '@/lib/dateUtils';
-import type { CalendarEvent } from '@collabnotes/shared-types';
+import type { CalendarEvent } from '@plumenote/shared-types';
 
 export function CalendarWidget() {
   const navigate = useNavigate();
@@ -1177,7 +1177,7 @@ import { useHomepageStore } from '@/stores/homepageStore';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDate, formatRelativeDate } from '@/lib/dateUtils';
-import type { NoteWithMetadata } from '@collabnotes/shared-types';
+import type { NoteWithMetadata } from '@plumenote/shared-types';
 
 interface NoteTableProps {
   notes: NoteWithMetadata[];
@@ -1925,7 +1925,7 @@ test.describe('Note metadata display', () => {
 
 ```bash
 # 1. Créer la migration Prisma
-cd /path/to/collabnotes
+cd /path/to/plumenote
 npx prisma migrate dev --name add_pinned_notes_and_view_count
 
 # 2. Générer le client Prisma
@@ -1978,7 +1978,7 @@ npm install date-fns  # Alternative pour les dates si besoin
 ### A. Arborescence des fichiers à créer/modifier
 
 ```
-collabnotes/
+plumenote/
 ├── prisma/
 │   ├── schema.prisma                           # [MODIFIER] Ajouter UserPinnedNote, viewCount
 │   └── migrations/

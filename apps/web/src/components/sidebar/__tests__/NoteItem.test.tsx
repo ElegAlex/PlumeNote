@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, useParams } from 'react-router-dom';
 import { NoteItem } from '../NoteItem';
-import type { NotePreview } from '@collabnotes/types';
+import type { NotePreview } from '@plumenote/types';
 
 // Mock navigation
 const mockNavigate = vi.fn();

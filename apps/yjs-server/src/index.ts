@@ -10,7 +10,7 @@ import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import { Logger } from '@hocuspocus/extension-logger';
 import { Throttle } from '@hocuspocus/extension-throttle';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import jwt from 'jsonwebtoken';
 import * as Y from 'yjs';
 
@@ -317,7 +317,7 @@ server.listen().then(() => {
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
-║   🔄 CollabNotes Yjs Server                                ║
+║   🔄 PlumeNote Yjs Server                                ║
 ║                                                            ║
 ║   WebSocket: ws://localhost:${PORT}                          ║
 ║                                                            ║

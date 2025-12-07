@@ -8,7 +8,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { Prisma } from '@prisma/client';
 import { getEffectivePermissions } from '../services/permissions.js';
 

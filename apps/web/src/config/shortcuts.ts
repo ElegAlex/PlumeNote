@@ -2,7 +2,7 @@
 // Registre des raccourcis clavier - P3
 // ===========================================
 
-import type { ShortcutDefinition } from '@collabnotes/types';
+import type { ShortcutDefinition } from '@plumenote/types';
 
 /**
  * Liste complète des raccourcis de l'application

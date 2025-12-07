@@ -67,13 +67,42 @@ export const useHomepageStore = create<HomepageState>((set, get) => ({
       const [pinnedRes, recentRes, eventsRes] = await Promise.all([
         api.get<{ notes: NoteWithMetadata[] }>('/notes/pinned'),
         api.get<{ notes: NoteWithMetadata[] }>('/notes/recent?limit=10'),
-        api.get<{ events: CalendarEvent[] }>('/calendar/upcoming?limit=5').catch(() => ({ data: { events: [] } })),
+        api.get<{ events: any[] }>('/events/upcoming?limit=5').catch(() => ({ data: { events: [] } })),
       ]);
+
+      // Transformer les événements autonomes en CalendarEvent pour le widget
+      const transformedEvents: CalendarEvent[] = (eventsRes.data.events || []).map((event: any) => {
+        const startDate = new Date(event.startDate);
+        const dateStr = startDate.toISOString().split('T')[0] || '';
+        let timeStr: string | undefined;
+        if (!event.allDay) {
+          const hours = startDate.getUTCHours().toString().padStart(2, '0');
+          const mins = startDate.getUTCMinutes().toString().padStart(2, '0');
+          timeStr = `${hours}:${mins}`;
+        }
+
+        // Mapper le type
+        const typeMap: Record<string, CalendarEvent['type']> = {
+          deadline: 'deadline',
+          event: 'event',
+          period: 'period-start',
+        };
+
+        return {
+          id: event.id,
+          noteId: event.id, // Utiliser l'ID de l'événement
+          noteTitle: event.title,
+          noteSlug: event.id, // Pas de slug pour les événements autonomes
+          date: dateStr,
+          time: timeStr,
+          type: typeMap[event.type] || 'event',
+        } as CalendarEvent;
+      });
 
       set({
         pinnedNotes: pinnedRes.data.notes || [],
         recentNotes: recentRes.data.notes || [],
-        upcomingEvents: eventsRes.data.events || [],
+        upcomingEvents: transformedEvents,
         isLoading: false,
       });
     } catch (err: any) {

@@ -282,7 +282,7 @@ import {
   CalendarEventType,
   GetEventsOptions,
   CreateQuickEventData
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 export class CalendarService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -811,7 +811,7 @@ import {
   CalendarViewMode,
   CalendarMonth,
   CalendarEventType
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 import { calendarApi } from '@/services/calendarApi';
 import { 
   buildCalendarMonth, 
@@ -1081,7 +1081,7 @@ import {
   CalendarEvent,
   CalendarEventDetail,
   CreateQuickEventData
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 interface GetEventsParams {
   start: string;
@@ -1124,7 +1124,7 @@ import {
   CalendarMonth,
   CalendarWeek,
   CalendarDay
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 /**
  * Construit la structure du calendrier pour un mois donné
@@ -2109,7 +2109,7 @@ export function CalendarAgendaView() {
 // apps/web/src/components/calendar/CalendarEventChip.tsx
 
 import { memo } from 'react';
-import { CalendarEvent } from '@collabnotes/shared-types';
+import { CalendarEvent } from '@plumenote/shared-types';
 import { getEventTypeColor, getEventTypeIcon } from '@/lib/calendarUtils';
 import { cn } from '@/lib/utils';
 import {
@@ -2184,7 +2184,7 @@ export const CalendarEventChip = memo(function CalendarEventChip({
 
 import { useNavigate } from 'react-router-dom';
 import { FileText, Calendar, Clock, Folder, User, Tag } from 'lucide-react';
-import { CalendarEventDetail } from '@collabnotes/shared-types';
+import { CalendarEventDetail } from '@plumenote/shared-types';
 import {
   Dialog,
   DialogContent,
@@ -2345,7 +2345,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { CalendarEventType } from '@collabnotes/shared-types';
+import { CalendarEventType } from '@plumenote/shared-types';
 import { formatDateKey } from '@/lib/calendarUtils';
 
 export function QuickEventModal() {
@@ -2910,7 +2910,7 @@ test.describe('Calendar Page', () => {
 
 ```bash
 # 1. Types partagés
-cd /path/to/collabnotes/packages/shared-types
+cd /path/to/plumenote/packages/shared-types
 # Compléter src/calendar.ts
 npm run build
 
@@ -2949,7 +2949,7 @@ Aucune nouvelle dépendance requise. Utilise les composants UI existants (Radix,
 ### A. Arborescence des fichiers
 
 ```
-collabnotes/
+plumenote/
 ├── packages/
 │   └── shared-types/
 │       └── src/

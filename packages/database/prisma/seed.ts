@@ -70,7 +70,7 @@ async function main() {
     update: {},
     create: {
       username: 'admin',
-      email: 'admin@collabnotes.local',
+      email: 'admin@plumenote.local',
       displayName: 'Administrateur',
       password: hashedPassword,
       roleId: adminRole.id,
@@ -88,7 +88,7 @@ async function main() {
     update: {},
     create: {
       username: 'demo',
-      email: 'demo@collabnotes.local',
+      email: 'demo@plumenote.local',
       displayName: 'Utilisateur Demo',
       password: hashedPassword,
       roleId: editorRole.id,
@@ -105,7 +105,7 @@ async function main() {
     update: {},
     create: {
       username: 'guest',
-      email: 'guest@collabnotes.local',
+      email: 'guest@plumenote.local',
       displayName: 'Invité',
       password: hashedPassword,
       roleId: viewerRole.id,
@@ -175,11 +175,11 @@ async function main() {
 
   const welcomeNote = await prisma.note.create({
     data: {
-      title: 'Bienvenue sur CollabNotes',
-      slug: 'bienvenue-sur-collabnotes',
+      title: 'Bienvenue sur PlumeNote',
+      slug: 'bienvenue-sur-plumenote',
       folderId: rootFolder.id,
       content: `
-# Bienvenue sur CollabNotes ! 🎉
+# Bienvenue sur PlumeNote ! 🎉
 
 Votre plateforme de notes collaboratives en Markdown.
 
@@ -222,7 +222,7 @@ Bonne prise de notes ! 📝
 
 ## Notes
 
-Voir aussi [[Bienvenue sur CollabNotes]] pour les instructions.
+Voir aussi [[Bienvenue sur PlumeNote]] pour les instructions.
 
 ## Ressources
 
@@ -313,9 +313,9 @@ Voir aussi [[Bienvenue sur CollabNotes]] pour les instructions.
     data: {
       sourceNoteId: projectNote.id,
       targetNoteId: welcomeNote.id,
-      targetSlug: 'bienvenue-sur-collabnotes',
+      targetSlug: 'bienvenue-sur-plumenote',
       position: 0,
-      context: 'Voir aussi [[Bienvenue sur CollabNotes]] pour les instructions.',
+      context: 'Voir aussi [[Bienvenue sur PlumeNote]] pour les instructions.',
     },
   });
 
@@ -335,7 +335,7 @@ Voir aussi [[Bienvenue sur CollabNotes]] pour les instructions.
         { type: 'quick_search', position: 2 },
       ],
       pinnedNotes: [welcomeNote.id],
-      importantMessage: 'Bienvenue dans CollabNotes ! Explorez les fonctionnalités.',
+      importantMessage: 'Bienvenue dans PlumeNote ! Explorez les fonctionnalités.',
       updatedBy: adminUser.id,
     },
   });
@@ -350,7 +350,7 @@ Voir aussi [[Bienvenue sur CollabNotes]] pour les instructions.
     update: {},
     create: {
       key: 'app.name',
-      value: 'CollabNotes',
+      value: 'PlumeNote',
     },
   });
 

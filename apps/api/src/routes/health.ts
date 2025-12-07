@@ -4,7 +4,7 @@
 // ===========================================
 
 import type { FastifyPluginAsync } from 'fastify';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { isRedisAvailable } from '../services/cache';
 
 export const healthRoutes: FastifyPluginAsync = async (app) => {

@@ -1,5 +1,5 @@
 {
-  "name": "@collabnotes/yjs-server",
+  "name": "@plumenote/yjs-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
-    "@collabnotes/database": "*",
+    "@plumenote/database": "*",
     "@hocuspocus/server": "^2.8.0",
     "@hocuspocus/extension-database": "^2.8.0",
     "@hocuspocus/extension-logger": "^2.8.0",

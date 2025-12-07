@@ -3,7 +3,7 @@
 // Agrégation et calcul des statistiques
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import type {
   OverviewStats,
   ActivityTimeline,
@@ -11,7 +11,7 @@ import type {
   DistributionItem,
   TopNote,
   UserContribution,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { cacheGet, cacheSet } from './cache';
 import { logger } from '../lib/logger';
 

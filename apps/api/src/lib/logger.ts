@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes API - Logger (Pino)
+// PlumeNote API - Logger (Pino)
 // ===========================================
 
 import pino from 'pino';

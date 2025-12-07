@@ -14,7 +14,7 @@ import type {
   UpdatePersonalFolderRequest,
   CreatePersonalNoteRequest,
   UpdatePersonalNoteRequest,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 
 /**
  * Service d'API pour les notes personnelles

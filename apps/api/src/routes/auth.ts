@@ -7,8 +7,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
-import { prisma } from '@collabnotes/database';
-import type { User, LoginResponse } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { User, LoginResponse } from '@plumenote/types';
 import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';
 import { authenticateLdap } from '../services/ldap.js';
@@ -204,7 +204,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         dbUser = await prisma.user.create({
           data: {
             username,
-            email: ldapUser.email || `${username}@collabnotes.local`,
+            email: ldapUser.email || `${username}@plumenote.local`,
             displayName: ldapUser.displayName || username,
             roleId: defaultRole.id,
             isActive: true,

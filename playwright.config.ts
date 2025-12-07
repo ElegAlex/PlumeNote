@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Configuration Playwright pour CollabNotes
+ * Configuration Playwright pour PlumeNote
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({

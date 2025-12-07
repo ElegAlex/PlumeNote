@@ -12,7 +12,7 @@ import { MarkdownEditor } from '../editor/MarkdownEditor';
 import { Spinner } from '../ui/Spinner';
 import { cn, debounce } from '../../lib/utils';
 import { api } from '../../lib/api';
-import type { Note, NoteSummary } from '@collabnotes/types';
+import type { Note, NoteSummary } from '@plumenote/types';
 
 interface EditorPaneProps {
   pane: PaneLeaf;

@@ -1,8 +1,8 @@
-# CollabNotes
+# PlumeNote
 
 **Plateforme de gestion de notes collaboratives on-premise**
 
-CollabNotes est une application de prise de notes Markdown collaborative conçue pour les équipes IT. Elle combine la puissance du Markdown avec une édition temps réel multi-utilisateurs, un système de permissions granulaire et des fonctionnalités avancées type Obsidian (wikilinks, rétroliens, tableaux dynamiques).
+PlumeNote est une application de prise de notes Markdown collaborative conçue pour les équipes IT. Elle combine la puissance du Markdown avec une édition temps réel multi-utilisateurs, un système de permissions granulaire et des fonctionnalités avancées type Obsidian (wikilinks, rétroliens, tableaux dynamiques).
 
 ## Fonctionnalités principales
 
@@ -26,8 +26,8 @@ CollabNotes est une application de prise de notes Markdown collaborative conçue
 
 ```bash
 # Cloner le projet
-git clone https://github.com/votre-org/collabnotes.git
-cd collabnotes
+git clone https://github.com/votre-org/plumenote.git
+cd plumenote
 
 # Configuration
 cp .env.example .env
@@ -115,7 +115,7 @@ docker-compose -f docker/docker-compose.yml up -d
 ## Structure du projet
 
 ```
-collabnotes/
+plumenote/
 ├── apps/
 │   ├── api/              # Backend Fastify
 │   ├── web/              # Frontend React

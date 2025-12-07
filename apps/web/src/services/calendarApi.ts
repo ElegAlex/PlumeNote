@@ -1,5 +1,6 @@
 // ===========================================
 // API Client Calendar (P3 Calendrier)
+// Intégré avec les événements autonomes
 // ===========================================
 
 import { api } from '../lib/api';
@@ -8,7 +9,8 @@ import type {
   CalendarEventDetail,
   CreateQuickEventData,
   CalendarEventType,
-} from '@collabnotes/types';
+  AutonomousEvent,
+} from '@plumenote/types';
 
 interface GetEventsParams {
   start: string;
@@ -20,26 +22,101 @@ interface GetEventsParams {
 }
 
 /**
+ * Transforme un événement autonome en CalendarEvent pour l'affichage
+ */
+function autonomousToCalendarEvent(event: AutonomousEvent): CalendarEvent {
+  const startDate = new Date(event.startDate);
+  const dateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // Extraire l'heure si ce n'est pas un événement toute la journée
+  let timeStr: string | undefined;
+  if (!event.allDay) {
+    const hours = startDate.getUTCHours().toString().padStart(2, '0');
+    const mins = startDate.getUTCMinutes().toString().padStart(2, '0');
+    timeStr = `${hours}:${mins}`;
+  }
+
+  // Mapper le type autonome vers CalendarEventType
+  const typeMap: Record<string, CalendarEventType> = {
+    deadline: 'deadline',
+    event: 'event',
+    period: 'period-start',
+    DEADLINE: 'deadline',
+    EVENT: 'event',
+    PERIOD: 'period-start',
+  };
+
+  return {
+    id: event.id,
+    title: event.title,
+    date: dateStr,
+    time: timeStr,
+    endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : undefined,
+    noteId: event.id, // Utilise l'event ID comme référence
+    noteTitle: event.title,
+    type: typeMap[event.type] || 'event',
+    color: event.color || undefined,
+    // Marquer comme événement autonome via des propriétés additionnelles
+  };
+}
+
+/**
  * Service d'API pour le calendrier
  */
 export const calendarApi = {
   /**
    * Récupère les événements dans une plage de dates
+   * Utilise maintenant l'API des événements autonomes
    */
   async getEvents(params: GetEventsParams): Promise<CalendarEvent[]> {
     const queryParams = new URLSearchParams();
     queryParams.set('from', params.start);
     queryParams.set('to', params.end);
 
-    if (params.types) queryParams.set('type', params.types);
-    if (params.statuses) queryParams.set('status', params.statuses);
-    if (params.tags) queryParams.set('tags', params.tags);
-    if (params.folderId) queryParams.set('folderId', params.folderId);
+    // Mapper les types calendrier vers les types autonomes
+    if (params.types) {
+      const typeMapping: Record<string, string> = {
+        'deadline': 'DEADLINE',
+        'event': 'EVENT',
+        'period-start': 'PERIOD',
+        'period-end': 'PERIOD',
+        'task': 'EVENT',
+      };
+      const types = params.types.split(',');
+      const autonomousTypes = [...new Set(types.map(t => typeMapping[t] || t.toUpperCase()))];
+      queryParams.set('type', autonomousTypes.join(','));
+    }
 
-    const response = await api.get<{ events: CalendarEvent[] }>(
-      `/calendar/events?${queryParams.toString()}`
-    );
-    return response.data.events;
+    try {
+      // Récupérer les événements autonomes
+      const response = await api.get<{ events: AutonomousEvent[] }>(
+        `/events?${queryParams.toString()}`
+      );
+
+      // Transformer en CalendarEvent
+      const events = response.data.events.map(autonomousToCalendarEvent);
+
+      // Pour les périodes, ajouter un événement de fin
+      const eventsWithPeriodEnds: CalendarEvent[] = [];
+      for (const event of events) {
+        eventsWithPeriodEnds.push(event);
+
+        // Si c'est une période avec date de fin différente, ajouter un event period-end
+        if (event.type === 'period-start' && event.endDate && event.endDate !== event.date) {
+          eventsWithPeriodEnds.push({
+            ...event,
+            id: `${event.id}-end`,
+            date: event.endDate,
+            type: 'period-end',
+          });
+        }
+      }
+
+      return eventsWithPeriodEnds;
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      return [];
+    }
   },
 
   /**

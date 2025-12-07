@@ -7,8 +7,8 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
-import type { ResourceType, PermissionLevel } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { ResourceType, PermissionLevel } from '@plumenote/types';
 import { checkPermission, grantPermission, revokePermission } from '../services/permissions.js';
 import { createAuditLog } from '../services/audit.js';
 

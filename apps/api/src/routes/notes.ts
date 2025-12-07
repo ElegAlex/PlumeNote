@@ -10,8 +10,8 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
-import type { Note, CreateNoteRequest, NoteFrontmatter, NoteMetadata } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { Note, CreateNoteRequest, NoteFrontmatter, NoteMetadata } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission } from '../services/permissions.js';
 import { parseLinks, updateLinks } from '../services/links.js';

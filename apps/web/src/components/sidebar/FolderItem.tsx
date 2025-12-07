@@ -13,7 +13,7 @@ import { NoteItem } from './NoteItem';
 import { Spinner } from '../ui/Spinner';
 import { InlineCreateForm } from '../common';
 import { cn } from '../../lib/utils';
-import type { SidebarFolderNode } from '@collabnotes/types';
+import type { SidebarFolderNode } from '@plumenote/types';
 
 // Constante d'indentation par niveau (en pixels)
 const INDENT_PER_LEVEL = 16;

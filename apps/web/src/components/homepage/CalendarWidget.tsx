@@ -4,6 +4,7 @@
 
 import { Link } from 'react-router-dom';
 import { useHomepageStore, type CalendarEvent } from '../../stores/homepage';
+import { useEventStore } from '../../stores/eventStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
 export function CalendarWidget() {
@@ -71,11 +72,17 @@ export function CalendarWidget() {
 
 function CalendarEventItem({ event }: { event: CalendarEvent }) {
   const typeConfig = getEventTypeConfig(event.type);
+  const { openEventDetail } = useEventStore();
+
+  const handleClick = () => {
+    // Ouvrir le détail de l'événement autonome
+    openEventDetail(event.id);
+  };
 
   return (
-    <Link
-      to={`/notes/${event.noteSlug}`}
-      className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 transition-colors"
+    <button
+      onClick={handleClick}
+      className="w-full flex items-center gap-3 p-2 rounded hover:bg-muted/50 transition-colors text-left"
     >
       {/* Indicateur de type */}
       <div className={`w-1 h-10 rounded-full ${typeConfig.color}`} />
@@ -92,7 +99,7 @@ function CalendarEventItem({ event }: { event: CalendarEvent }) {
       <span className={`text-xs px-2 py-0.5 rounded ${typeConfig.badge}`}>
         {typeConfig.label}
       </span>
-    </Link>
+    </button>
   );
 }
 

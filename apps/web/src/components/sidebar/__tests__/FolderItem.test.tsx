@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { FolderItem } from '../FolderItem';
-import type { SidebarFolderNode } from '@collabnotes/types';
+import type { SidebarFolderNode } from '@plumenote/types';
 
 // Mock du store
 const mockToggleFolder = vi.fn();

@@ -10,7 +10,7 @@ import type {
   FolderContent,
   NotePreview,
   SidebarFolderNode,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { api } from '../lib/api';
 
 // ----- Types internes -----
@@ -46,6 +46,10 @@ interface SidebarState {
   // Actions - Sélection
   selectFolder: (folderId: string | null) => void;
   selectNote: (noteId: string | null) => void;
+
+  // Actions - Mutations optimistes
+  addFolderToTree: (folder: SidebarFolderNode, parentId: string | null) => void;
+  removeFolderFromTree: (folderId: string) => void;
 
   // Getters
   getFolderContent: (folderId: string) => FolderCache | undefined;
@@ -293,6 +297,78 @@ export const useSidebarStore = create<SidebarState>()(
         set({ selectedNoteId: noteId });
       },
 
+      // ----- Mutations optimistes -----
+
+      addFolderToTree: (folder: SidebarFolderNode, parentId: string | null) => {
+        const { tree, loadedFolders } = get();
+
+        if (parentId === null) {
+          // Ajouter à la racine
+          set({ tree: [...tree, folder] });
+        } else {
+          // Ajouter dans un dossier parent
+          const addToParent = (nodes: SidebarFolderNode[]): SidebarFolderNode[] => {
+            return nodes.map((node) => {
+              if (node.id === parentId) {
+                return {
+                  ...node,
+                  children: [...node.children, folder],
+                  hasChildren: true,
+                };
+              }
+              if (node.children.length > 0) {
+                return { ...node, children: addToParent(node.children) };
+              }
+              return node;
+            });
+          };
+          set({ tree: addToParent(tree) });
+
+          // Mettre à jour le cache du parent
+          const parentCache = loadedFolders.get(parentId);
+          if (parentCache) {
+            const newLoadedFolders = new Map(loadedFolders);
+            newLoadedFolders.set(parentId, {
+              ...parentCache,
+              children: [...parentCache.children, folder],
+            });
+            set({ loadedFolders: newLoadedFolders });
+          }
+        }
+      },
+
+      removeFolderFromTree: (folderId: string) => {
+        const { tree, loadedFolders } = get();
+
+        const removeFromNodes = (nodes: SidebarFolderNode[]): SidebarFolderNode[] => {
+          return nodes
+            .filter((node) => node.id !== folderId)
+            .map((node) => {
+              if (node.children.length > 0) {
+                return { ...node, children: removeFromNodes(node.children) };
+              }
+              return node;
+            });
+        };
+
+        // Supprimer du cache aussi
+        const newLoadedFolders = new Map(loadedFolders);
+        newLoadedFolders.delete(folderId);
+
+        // Mettre à jour le cache du parent si existant
+        for (const [id, cache] of newLoadedFolders) {
+          const filteredChildren = cache.children.filter((c) => c.id !== folderId);
+          if (filteredChildren.length !== cache.children.length) {
+            newLoadedFolders.set(id, { ...cache, children: filteredChildren });
+          }
+        }
+
+        set({
+          tree: removeFromNodes(tree),
+          loadedFolders: newLoadedFolders,
+        });
+      },
+
       // ----- Getters -----
 
       getFolderContent: (folderId: string) => {
@@ -308,7 +384,7 @@ export const useSidebarStore = create<SidebarState>()(
       },
     }),
     {
-      name: 'collabnotes-sidebar',
+      name: 'plumenote-sidebar',
       storage: createJSONStorage(() => localStorage),
 
       // Ne persister que l'état d'expansion

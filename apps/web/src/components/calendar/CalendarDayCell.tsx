@@ -1,12 +1,31 @@
 // ===========================================
 // CalendarDayCell - Cellule jour du calendrier (P3)
+// Supporte les événements autonomes
 // ===========================================
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import type { CalendarDay } from '@collabnotes/types';
+import type { CalendarDay, AutonomousEvent } from '@plumenote/types';
 import { CalendarEventItem } from './CalendarEventItem';
 import { cn } from '../../lib/utils';
+
+/**
+ * Convertit un CalendarEvent en AutonomousEvent pour le modal de détail
+ */
+function toAutonomousEvent(event: CalendarDay['events'][0]): AutonomousEvent {
+  return {
+    id: event.id.replace('-end', ''), // Retirer le suffixe -end pour les period-end
+    title: event.title,
+    type: event.type === 'period-start' || event.type === 'period-end' ? 'period' : event.type === 'deadline' ? 'deadline' : 'event',
+    startDate: `${event.date}T00:00:00.000Z`,
+    endDate: event.endDate ? `${event.endDate}T23:59:59.000Z` : null,
+    color: event.color || null,
+    allDay: !event.time,
+    createdById: '',
+    createdAt: '',
+    updatedAt: '',
+  };
+}
 
 interface CalendarDayCellProps {
   day: CalendarDay;
@@ -69,7 +88,13 @@ export function CalendarDayCell({ day, onCreateEvent }: CalendarDayCellProps) {
       {/* Événements */}
       <div className="space-y-1">
         {visibleEvents.map((event) => (
-          <CalendarEventItem key={event.id} event={event} variant="compact" />
+          <CalendarEventItem
+            key={event.id}
+            event={event}
+            variant="compact"
+            isAutonomous={true}
+            autonomousEvent={toAutonomousEvent(event)}
+          />
         ))}
 
         {!showAll && hiddenCount > 0 && (

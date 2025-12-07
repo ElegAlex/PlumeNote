@@ -8,7 +8,7 @@ import type {
   NoteMetadata,
   CreatePropertyRequest,
   UpdatePropertyRequest,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 
 /**
  * Service d'API pour les métadonnées

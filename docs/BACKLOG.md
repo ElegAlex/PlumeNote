@@ -1,4 +1,4 @@
-# BACKLOG PRODUIT — CollabNotes
+# BACKLOG PRODUIT — PlumeNote
 
 ## Document de suivi du développement
 

@@ -6,8 +6,8 @@
 // US-052: Cache Redis pour les permissions
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
-import type { PermissionLevel, ResourceType, EffectivePermission } from '@collabnotes/types';
+import { prisma } from '@plumenote/database';
+import type { PermissionLevel, ResourceType, EffectivePermission } from '@plumenote/types';
 import {
   getCachedPermission,
   setCachedPermission,

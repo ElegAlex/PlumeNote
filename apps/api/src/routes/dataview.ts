@@ -7,7 +7,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { getEffectivePermissions } from '../services/permissions.js';
 
 // Schema pour les requêtes Dataview

@@ -13,7 +13,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { toast } from '../components/ui/Toaster';
 import { useAuthStore } from '../stores/auth';
 import { FileText, Edit3, ChevronUp, ChevronDown } from 'lucide-react';
-import type { Role, UserWithStats, AdminUsersResponse } from '@collabnotes/types';
+import type { Role, UserWithStats, AdminUsersResponse } from '@plumenote/types';
 
 type Tab = 'users' | 'roles' | 'audit' | 'system';
 type SortField = 'displayName' | 'lastLoginAt' | 'createdAt' | 'notesCreated' | 'notesModified';

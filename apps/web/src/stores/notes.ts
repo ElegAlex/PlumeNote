@@ -3,7 +3,7 @@
 // ===========================================
 
 import { create } from 'zustand';
-import type { Note, NoteSummary, CreateNoteRequest } from '@collabnotes/types';
+import type { Note, NoteSummary, CreateNoteRequest } from '@plumenote/types';
 import { api } from '../lib/api';
 
 interface NotesState {

@@ -3,7 +3,7 @@
 // EP-008: Orchestration de l'import Markdown/ZIP
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import type { ImportStatus, ConflictStrategy } from '@prisma/client';
 import { tempStorageService } from '../../services/storage/temp-storage.service.js';
 import { zipExtractor, type ExtractedFile, type ZipAnalysis } from './extractors/index.js';

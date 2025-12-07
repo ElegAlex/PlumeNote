@@ -101,7 +101,7 @@ export async function authenticateLdap(
 
             const ldapUser: LdapUser = {
               username: getAttribute('uid') || username,
-              email: getAttribute('mail') || `${username}@collabnotes.local`,
+              email: getAttribute('mail') || `${username}@plumenote.local`,
               displayName:
                 getAttribute('displayName') ||
                 getAttribute('cn') ||

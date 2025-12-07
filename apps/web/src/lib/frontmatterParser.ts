@@ -3,7 +3,7 @@
 // Parse et sérialise le YAML frontmatter des notes
 // ===========================================
 
-import type { NoteMetadata } from '@collabnotes/types';
+import type { NoteMetadata } from '@plumenote/types';
 
 // Regex pour détecter le frontmatter
 const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?/;

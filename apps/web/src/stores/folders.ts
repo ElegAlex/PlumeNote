@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { FolderTreeNode } from '@collabnotes/types';
+import type { FolderTreeNode } from '@plumenote/types';
 import { api } from '../lib/api';
 
 interface FoldersState {
@@ -117,7 +117,7 @@ export const useFoldersStore = create<FoldersState>()(
       },
     }),
     {
-      name: 'collabnotes-folders',
+      name: 'plumenote-folders',
       storage: createJSONStorage(() => localStorage),
 
       // Ne persister que l'état d'expansion et la sélection

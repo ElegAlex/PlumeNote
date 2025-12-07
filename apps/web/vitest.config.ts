@@ -24,7 +24,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@collabnotes/types': resolve(__dirname, '../../packages/types/src'),
+      '@plumenote/types': resolve(__dirname, '../../packages/types/src'),
     },
   },
 });

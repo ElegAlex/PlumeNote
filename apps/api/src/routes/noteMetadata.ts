@@ -5,7 +5,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { prisma, MetadataType } from '@collabnotes/database';
+import { prisma, MetadataType } from '@plumenote/database';
 import { checkPermission } from '../services/permissions.js';
 import { createAuditLog } from '../services/audit.js';
 

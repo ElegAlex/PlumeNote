@@ -10,7 +10,7 @@ import type {
   TopNote,
   UserContribution,
   DistributionField,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 
 /**
  * Service d'API pour les analytics du dashboard

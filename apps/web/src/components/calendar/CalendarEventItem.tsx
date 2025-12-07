@@ -1,19 +1,24 @@
 // ===========================================
 // CalendarEventItem - Item d'événement (P3 Calendrier)
+// Supporte les événements autonomes (ouvre EventDetailModal)
 // ===========================================
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Calendar, Play, Trash2, X } from 'lucide-react';
-import type { CalendarEvent, CalendarEventType } from '@collabnotes/types';
+import { Target, Calendar, Play, CalendarRange, Trash2, X } from 'lucide-react';
+import type { CalendarEvent, CalendarEventType, AutonomousEvent } from '@plumenote/types';
 import { cn } from '../../lib/utils';
 import { useCalendarStore } from '../../stores/calendarStore';
+import { useEventStore } from '../../stores/eventStore';
 
 interface CalendarEventItemProps {
   event: CalendarEvent;
   variant?: 'compact' | 'full';
   onClick?: () => void;
   showDelete?: boolean;
+  // Si l'event est un événement autonome (pas lié à une note via frontmatter)
+  isAutonomous?: boolean;
+  autonomousEvent?: AutonomousEvent;
 }
 
 const EVENT_CONFIG: Record<
@@ -52,9 +57,12 @@ export function CalendarEventItem({
   variant = 'compact',
   onClick,
   showDelete = true,
+  isAutonomous = false,
+  autonomousEvent,
 }: CalendarEventItemProps) {
   const navigate = useNavigate();
-  const { deleteEvent } = useCalendarStore();
+  const { deleteEvent: deleteCalendarEvent } = useCalendarStore();
+  const { openEventDetail, deleteEvent: deleteAutonomousEvent } = useEventStore();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const config = EVENT_CONFIG[event.type] || EVENT_CONFIG.event;
@@ -63,7 +71,11 @@ export function CalendarEventItem({
   const handleClick = () => {
     if (onClick) {
       onClick();
+    } else if (isAutonomous && autonomousEvent) {
+      // Événement autonome : ouvrir le modal de détail
+      openEventDetail(autonomousEvent.id);
     } else {
+      // Événement basé sur note (legacy) : naviguer vers la note
       navigate(`/notes/${event.noteId}`);
     }
   };
@@ -75,7 +87,11 @@ export function CalendarEventItem({
       return;
     }
     setIsDeleting(true);
-    await deleteEvent(event.id);
+    if (isAutonomous && autonomousEvent) {
+      await deleteAutonomousEvent(autonomousEvent.id);
+    } else {
+      await deleteCalendarEvent(event.id);
+    }
     setIsDeleting(false);
     setConfirmDelete(false);
   };

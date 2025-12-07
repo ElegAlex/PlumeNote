@@ -145,7 +145,7 @@ export function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full overflow-auto bg-background">
       {/* Bannière Annonces */}
       {visibleAnnouncements.length > 0 && (
         <div className="border-b">

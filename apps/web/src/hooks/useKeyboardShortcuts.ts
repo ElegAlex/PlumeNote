@@ -3,7 +3,7 @@
 // ===========================================
 
 import { useEffect, useCallback } from 'react';
-import type { ShortcutKeys } from '@collabnotes/types';
+import type { ShortcutKeys } from '@plumenote/types';
 
 /**
  * Détection du système d'exploitation

@@ -23,7 +23,7 @@ import {
   ActionMenu,
 } from '../components/common';
 import type { ActionMenuItem, BreadcrumbItem } from '../components/common';
-import type { FolderContent } from '@collabnotes/types';
+import type { FolderContent } from '@plumenote/types';
 
 // Icons
 const FolderIcon = ({ color }: { color?: string }) => (
@@ -85,7 +85,7 @@ export function FolderPage() {
   const navigate = useNavigate();
   const { createFolder, updateFolder, deleteFolder } = useFoldersStore();
   const { createNote } = useNotesStore();
-  const { refreshFolder } = useSidebarStore();
+  const { refreshFolder, removeFolderFromTree } = useSidebarStore();
 
   // État local
   const [folderContent, setFolderContent] = useState<FolderContent | null>(null);
@@ -172,6 +172,8 @@ export function FolderPage() {
       setIsSaving(true);
       try {
         await deleteFolder(folderId);
+        // Mise à jour optimiste immédiate de l'UI
+        removeFolderFromTree(folderId);
         toast.success('Dossier supprimé');
         navigate('/');
       } catch {

@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-L'éditeur Markdown de CollabNotes est basé sur **CodeMirror 6** et offre une expérience d'édition similaire à Obsidian, avec un mode édition (syntaxe visible) et un mode aperçu (rendu HTML).
+L'éditeur Markdown de PlumeNote est basé sur **CodeMirror 6** et offre une expérience d'édition similaire à Obsidian, avec un mode édition (syntaxe visible) et un mode aperçu (rendu HTML).
 
 **Fichier principal** : `apps/web/src/components/editor/MarkdownEditor.tsx`
 

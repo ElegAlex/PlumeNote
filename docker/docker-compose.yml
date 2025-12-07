@@ -5,7 +5,7 @@ services:
   # Reverse Proxy Nginx
   nginx:
     image: nginx:alpine
-    container_name: collabnotes-nginx
+    container_name: plumenote-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -20,28 +20,28 @@ services:
       - web
       - yjs
     networks:
-      - collabnotes-net
+      - plumenote-net
 
   # Application Web (React)
   web:
     build:
       context: ../
       dockerfile: apps/web/Dockerfile
-    container_name: collabnotes-web
+    container_name: plumenote-web
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - VITE_API_URL=${API_URL:-http://localhost:3001}
       - VITE_WS_URL=${WS_URL:-ws://localhost:3002}
     networks:
-      - collabnotes-net
+      - plumenote-net
 
   # API Backend (Fastify)
   api:
     build:
       context: ../
       dockerfile: apps/api/Dockerfile
-    container_name: collabnotes-api
+    container_name: plumenote-api
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -58,14 +58,14 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - collabnotes-net
+      - plumenote-net
 
   # Serveur Yjs (Hocuspocus)
   yjs:
     build:
       context: ../
       dockerfile: apps/yjs-server/Dockerfile
-    container_name: collabnotes-yjs
+    container_name: plumenote-yjs
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -78,12 +78,12 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - collabnotes-net
+      - plumenote-net
 
   # PostgreSQL
   postgres:
     image: postgres:16-alpine
-    container_name: collabnotes-postgres
+    container_name: plumenote-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -98,12 +98,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - collabnotes-net
+      - plumenote-net
 
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: collabnotes-redis
+    container_name: plumenote-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
@@ -114,7 +114,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - collabnotes-net
+      - plumenote-net
 
 volumes:
   postgres_data:
@@ -122,5 +122,5 @@ volumes:
   static_files:
 
 networks:
-  collabnotes-net:
+  plumenote-net:
     driver: bridge

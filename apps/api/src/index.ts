@@ -1,5 +1,5 @@
 // ===========================================
-// CollabNotes API - Point d'entrée
+// PlumeNote API - Point d'entrée
 // ===========================================
 
 import { buildApp } from './app.js';

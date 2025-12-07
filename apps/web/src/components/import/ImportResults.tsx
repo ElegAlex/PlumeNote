@@ -5,7 +5,7 @@
 
 import { CheckCircle, XCircle, AlertTriangle, FileText, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { ImportJobDetail, ImportFileResult } from '@collabnotes/types';
+import type { ImportJobDetail, ImportFileResult } from '@plumenote/types';
 import { Button } from '../ui/Button';
 
 interface ImportResultsProps {

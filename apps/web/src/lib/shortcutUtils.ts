@@ -2,7 +2,7 @@
 // Utilitaires d'affichage des raccourcis - P3
 // ===========================================
 
-import type { ShortcutKeys, ModifierKey } from '@collabnotes/types';
+import type { ShortcutKeys, ModifierKey } from '@plumenote/types';
 
 /**
  * Détection du système d'exploitation

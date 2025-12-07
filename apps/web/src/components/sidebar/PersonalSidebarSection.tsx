@@ -12,7 +12,7 @@ import { Button } from '../ui/Button';
 import { InlineCreateForm } from '../common';
 import { toast } from '../ui/Toaster';
 import { cn } from '../../lib/utils';
-import type { PersonalTreeNode, PersonalNotePreview } from '@collabnotes/types';
+import type { PersonalTreeNode, PersonalNotePreview } from '@plumenote/types';
 
 // Icons
 const LockIcon = () => (
@@ -80,6 +80,7 @@ export function PersonalSidebarSection() {
     toggleFolderExpanded,
     createFolder,
     createNote,
+    addFolderToTree,
   } = usePersonalStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,10 +122,22 @@ export function PersonalSidebarSection() {
 
   const handleCreateFolder = async (name: string) => {
     try {
-      await createFolder({ name });
+      const newFolder = await createFolder({ name });
       setIsCreatingFolder(false);
+
+      // Mise à jour optimiste immédiate de l'UI
+      addFolderToTree({
+        id: newFolder.id,
+        name: newFolder.name,
+        slug: newFolder.slug,
+        color: newFolder.color,
+        icon: newFolder.icon,
+        hasChildren: false,
+        children: [],
+        notes: [],
+      }, null);
+
       toast.success('Dossier créé');
-      await fetchTree();
     } catch {
       toast.error('Erreur lors de la création');
     }

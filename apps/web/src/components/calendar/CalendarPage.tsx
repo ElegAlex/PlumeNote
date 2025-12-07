@@ -1,5 +1,6 @@
 // ===========================================
 // CalendarPage - Page principale calendrier (P3)
+// Intègre les événements autonomes avec EventDetailModal
 // ===========================================
 
 import { useEffect, useState } from 'react';
@@ -10,6 +11,7 @@ import { CalendarMonthView } from './CalendarMonthView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarAgendaView } from './CalendarAgendaView';
 import { QuickEventModal } from './QuickEventModal';
+import { EventDetailModal } from './EventDetailModal';
 
 export function CalendarPage() {
   const { viewMode, loadEvents, error } = useCalendarStore();
@@ -63,6 +65,9 @@ export function CalendarPage() {
           onClose={handleCloseQuickEvent}
         />
       )}
+
+      {/* Modal détail événement autonome */}
+      <EventDetailModal />
     </div>
   );
 }

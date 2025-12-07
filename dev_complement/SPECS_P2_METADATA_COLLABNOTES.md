@@ -88,7 +88,7 @@ assignee: "[[John Doe]]"
 # Contenu de la note...
 ```
 
-#### Approche CollabNotes
+#### Approche PlumeNote
 
 Nous adoptons une approche **hybride** :
 
@@ -511,7 +511,7 @@ import {
   GetPropertiesOptions,
   NoteMetadata,
   MetadataValidationResult
-} from '@collabnotes/shared-types';
+} from '@plumenote/shared-types';
 
 export class MetadataService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -966,7 +966,7 @@ export class NotesService {
 // apps/api/src/modules/calendar/calendar.service.ts
 
 import { PrismaClient } from '@prisma/client';
-import { CalendarEvent, DateRange } from '@collabnotes/shared-types';
+import { CalendarEvent, DateRange } from '@plumenote/shared-types';
 
 export class CalendarService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -1273,7 +1273,7 @@ export interface DateRange {
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { PropertyDefinition, NoteMetadata } from '@collabnotes/shared-types';
+import { PropertyDefinition, NoteMetadata } from '@plumenote/shared-types';
 import { metadataApi } from '@/services/metadataApi';
 
 interface MetadataState {
@@ -1424,7 +1424,7 @@ export const useMetadataStore = create<MetadataState>()(
 // apps/web/src/services/metadataApi.ts
 
 import { api } from './api';
-import { PropertyDefinition, NoteMetadata } from '@collabnotes/shared-types';
+import { PropertyDefinition, NoteMetadata } from '@plumenote/shared-types';
 
 export const metadataApi = {
   async getPropertyDefinitions(workspaceId?: string): Promise<PropertyDefinition[]> {
@@ -1641,7 +1641,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { PropertyDefinition } from '@collabnotes/shared-types';
+import type { PropertyDefinition } from '@plumenote/shared-types';
 
 interface PropertyFieldProps {
   name: string;
@@ -2003,7 +2003,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import type { PropertyDefinition, PropertyType } from '@collabnotes/shared-types';
+import type { PropertyDefinition, PropertyType } from '@plumenote/shared-types';
 
 interface AddPropertyPopoverProps {
   suggestedProperties: PropertyDefinition[];
@@ -2132,7 +2132,7 @@ export function AddPropertyPopover({
 // apps/web/src/features/collaboration/metadataSync.ts
 
 import * as Y from 'yjs';
-import { NoteMetadata } from '@collabnotes/shared-types';
+import { NoteMetadata } from '@plumenote/shared-types';
 
 /**
  * Gère la synchronisation des métadonnées via Y.Map
@@ -2246,7 +2246,7 @@ export class MetadataSyncService {
 // apps/web/src/lib/frontmatterParser.ts
 
 import * as yaml from 'yaml';
-import { NoteMetadata } from '@collabnotes/shared-types';
+import { NoteMetadata } from '@plumenote/shared-types';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
@@ -2850,7 +2850,7 @@ test.describe('Metadata System', () => {
 npm install yaml  # Pour le parsing YAML
 
 # 2. Créer les migrations
-cd /path/to/collabnotes
+cd /path/to/plumenote
 npx prisma migrate dev --name add_metadata_system
 
 # 3. Générer le client Prisma
@@ -2907,7 +2907,7 @@ npm install yaml  # Parser YAML léger et moderne
 ### A. Arborescence des fichiers
 
 ```
-collabnotes/
+plumenote/
 ├── prisma/
 │   ├── schema.prisma                           # [MODIFIER] Ajouter PropertyDefinition, metadata
 │   └── migrations/

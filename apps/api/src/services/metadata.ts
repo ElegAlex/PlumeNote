@@ -3,7 +3,7 @@
 // Gestion des définitions de propriétés et validation
 // ===========================================
 
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import type {
   PropertyDefinition,
   PropertyType,
@@ -11,7 +11,7 @@ import type {
   MetadataValidationResult,
   CreatePropertyRequest,
   UpdatePropertyRequest,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { PropertyType as PrismaPropertyType } from '@prisma/client';
 
 // ----- Conversion Types -----

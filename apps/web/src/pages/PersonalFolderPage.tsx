@@ -93,6 +93,8 @@ export function PersonalFolderPage() {
     createNote,
     updateFolder,
     deleteFolder,
+    addFolderToTree,
+    removeFolderFromTree,
   } = usePersonalStore();
 
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -125,7 +127,20 @@ export function PersonalFolderPage() {
   const handleCreateFolder = async (name: string) => {
     if (!folderId) return;
     try {
-      await createFolder({ name, parentId: folderId });
+      const newFolder = await createFolder({ name, parentId: folderId });
+
+      // Mise à jour optimiste immédiate de l'UI
+      addFolderToTree({
+        id: newFolder.id,
+        name: newFolder.name,
+        slug: newFolder.slug,
+        color: newFolder.color,
+        icon: newFolder.icon,
+        hasChildren: false,
+        children: [],
+        notes: [],
+      }, folderId);
+
       toast.success('Sous-dossier créé');
       setIsCreatingFolder(false);
     } catch {
@@ -159,6 +174,8 @@ export function PersonalFolderPage() {
     if (window.confirm('Voulez-vous vraiment supprimer ce dossier et tout son contenu ?')) {
       try {
         await deleteFolder(folderId);
+        // Mise à jour optimiste immédiate de l'UI
+        removeFolderFromTree(folderId);
         toast.success('Dossier supprimé');
         navigate('/personal');
       } catch {

@@ -6,7 +6,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission } from '../services/permissions.js';
 import { config } from '../config/index.js';

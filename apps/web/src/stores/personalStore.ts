@@ -16,7 +16,7 @@ import type {
   CreatePersonalNoteRequest,
   UpdatePersonalFolderRequest,
   UpdatePersonalNoteRequest,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 import { personalApi } from '../services/personalApi';
 
 // ----- Types -----
@@ -65,6 +65,8 @@ interface PersonalState {
   // Actions - Arborescence
   fetchTree: () => Promise<void>;
   toggleFolderExpanded: (folderId: string) => void;
+  addFolderToTree: (folder: PersonalTreeNode, parentId: string | null) => void;
+  removeFolderFromTree: (folderId: string) => void;
 
   // Actions - Navigation
   navigateToFolder: (folderId: string | null) => Promise<void>;
@@ -363,6 +365,50 @@ export const usePersonalStore = create<PersonalState>()(
           newSet.add(folderId);
         }
         set({ expandedFolderIds: newSet });
+      },
+
+      addFolderToTree: (folder: PersonalTreeNode, parentId: string | null) => {
+        const { tree } = get();
+
+        if (parentId === null) {
+          // Ajouter à la racine
+          set({ tree: [...tree, folder] });
+        } else {
+          // Ajouter dans un dossier parent
+          const addToParent = (nodes: PersonalTreeNode[]): PersonalTreeNode[] => {
+            return nodes.map((node) => {
+              if (node.id === parentId) {
+                return {
+                  ...node,
+                  children: [...node.children, folder],
+                  hasChildren: true,
+                };
+              }
+              if (node.children.length > 0) {
+                return { ...node, children: addToParent(node.children) };
+              }
+              return node;
+            });
+          };
+          set({ tree: addToParent(tree) });
+        }
+      },
+
+      removeFolderFromTree: (folderId: string) => {
+        const { tree } = get();
+
+        const removeFromNodes = (nodes: PersonalTreeNode[]): PersonalTreeNode[] => {
+          return nodes
+            .filter((node) => node.id !== folderId)
+            .map((node) => {
+              if (node.children.length > 0) {
+                return { ...node, children: removeFromNodes(node.children) };
+              }
+              return node;
+            });
+        };
+
+        set({ tree: removeFromNodes(tree) });
       },
 
       // ===============================

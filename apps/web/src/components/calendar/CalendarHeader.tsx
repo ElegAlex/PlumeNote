@@ -3,7 +3,7 @@
 // ===========================================
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { CalendarViewMode } from '@collabnotes/types';
+import type { CalendarViewMode } from '@plumenote/types';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { formatMonthYear, formatWeekRange } from '../../lib/calendarUtils';
 import { Button } from '../ui/Button';

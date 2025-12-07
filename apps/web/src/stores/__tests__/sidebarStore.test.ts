@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { api } from '../../lib/api';
-import type { FolderContent, SidebarFolderNode } from '@collabnotes/types';
+import type { FolderContent, SidebarFolderNode } from '@plumenote/types';
 
 // Mock de l'API
 vi.mock('../../lib/api', () => ({

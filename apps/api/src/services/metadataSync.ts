@@ -4,7 +4,7 @@
 // ===========================================
 
 import { parse, stringify } from 'yaml';
-import { prisma, MetadataType } from '@collabnotes/database';
+import { prisma, MetadataType } from '@plumenote/database';
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 

@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { ShortcutsModal } from '../components/shortcuts/ShortcutsModal';
 import { ImportWizard } from '../components/import';
+import { EventDetailModal } from '../components/calendar/EventDetailModal';
 import { cn } from '../lib/utils';
 
 export function MainLayout() {
@@ -38,7 +39,7 @@ export function MainLayout() {
         <div className="h-14 flex items-center justify-between px-4 border-b">
           {!isSidebarCollapsed && (
             <NavLink to="/" className="font-semibold text-lg">
-              CollabNotes
+              PlumeNote
             </NavLink>
           )}
           <Button
@@ -241,6 +242,9 @@ export function MainLayout() {
         open={isWizardOpen}
         onClose={closeWizard}
       />
+
+      {/* Modal détail événement (disponible partout) */}
+      <EventDetailModal />
     </div>
   );
 }

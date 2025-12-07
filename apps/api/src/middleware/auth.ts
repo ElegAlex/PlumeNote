@@ -3,7 +3,7 @@
 // ===========================================
 
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
-import { prisma } from '@collabnotes/database';
+import { prisma } from '@plumenote/database';
 
 declare module 'fastify' {
   interface FastifyRequest {

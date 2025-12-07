@@ -4,7 +4,7 @@
 
 import { memo } from 'react';
 import * as LucideIcons from 'lucide-react';
-import type { ShortcutCategoryInfo, ShortcutDefinition } from '@collabnotes/types';
+import type { ShortcutCategoryInfo, ShortcutDefinition } from '@plumenote/types';
 import { ShortcutItem } from './ShortcutItem';
 
 interface ShortcutCategoryProps {

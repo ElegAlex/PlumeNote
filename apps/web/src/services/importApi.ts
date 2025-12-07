@@ -8,7 +8,7 @@ import type {
   ImportJobSummary,
   ImportJobDetail,
   StartImportOptions,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 
 const API_BASE = '/api/v1';
 

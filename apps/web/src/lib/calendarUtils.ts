@@ -7,7 +7,7 @@ import type {
   CalendarMonth,
   CalendarWeek,
   CalendarDay,
-} from '@collabnotes/types';
+} from '@plumenote/types';
 
 // ===========================================
 // Construction du calendrier
