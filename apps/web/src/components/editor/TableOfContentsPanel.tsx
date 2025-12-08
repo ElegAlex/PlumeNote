@@ -32,8 +32,8 @@ function parseHeadings(content: string): TocItem[] {
     // Match les headings Markdown (# à ######)
     const match = line.match(/^(#{1,6})\s+(.+)$/);
     if (match) {
-      const level = match[1].length as 1 | 2 | 3 | 4 | 5 | 6;
-      const text = match[2].trim();
+      const level = match[1]!.length as 1 | 2 | 3 | 4 | 5 | 6;
+      const text = match[2]!.trim();
       const id = text
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
@@ -63,7 +63,7 @@ export function TableOfContentsPanel({
 
   // Reset l'état actif quand le contenu change
   useEffect(() => {
-    if (toc.length > 0) {
+    if (toc.length > 0 && toc[0]) {
       setActiveId(toc[0].id);
     } else {
       setActiveId(null);

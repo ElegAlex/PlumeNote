@@ -234,7 +234,7 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
               while ((match = wikilinkRegex.exec(text)) !== null) {
                 const start = pos + match.index;
                 const end = start + match[0].length;
-                const parsed = parseWikilink(match[1]);
+                const parsed = parseWikilink(match[1]!);
 
                 decorations.push(
                   Decoration.inline(start, end, {

@@ -4,7 +4,8 @@
 
 // Éditeurs
 export { NoteEditor, NoteEditorLegacy } from './NoteEditor';
-export { CollaborativeEditor, type CollaboratorInfo } from './CollaborativeEditor';
+export { CollaborativeEditor } from './CollaborativeEditor';
+export type { CollaboratorInfo } from '../../hooks/useCollaboration';
 export { EditorToolbar } from './EditorToolbar';
 export { SaveIndicator } from './SaveIndicator';
 

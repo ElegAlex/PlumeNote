@@ -26,7 +26,7 @@ interface GetEventsParams {
  */
 function autonomousToCalendarEvent(event: AutonomousEvent): CalendarEvent {
   const startDate = new Date(event.startDate);
-  const dateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  const dateStr = startDate.toISOString().split('T')[0] ?? ''; // YYYY-MM-DD
 
   // Extraire l'heure si ce n'est pas un événement toute la journée
   let timeStr: string | undefined;

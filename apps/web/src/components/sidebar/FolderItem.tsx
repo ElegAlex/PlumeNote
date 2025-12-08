@@ -227,7 +227,7 @@ export const FolderItem = memo(function FolderItem({
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            title="Accès restreint"
+            aria-label="Accès restreint"
           >
             <path
               strokeLinecap="round"

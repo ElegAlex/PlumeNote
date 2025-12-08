@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useCalendarStore } from '../calendarStore';
 import { calendarApi } from '../../services/calendarApi';
+import type { CalendarEvent } from '@plumenote/types';
 
 // Mock de l'API
 vi.mock('../../services/calendarApi', () => ({
@@ -231,7 +232,10 @@ describe('calendarStore', () => {
         type: 'event' as const,
       };
 
-      vi.mocked(calendarApi.createQuickEvent).mockResolvedValue(mockCreatedEvent);
+      vi.mocked(calendarApi.createQuickEvent).mockResolvedValue({
+        note: { id: 'note-new', title: 'New Note' },
+        event: mockCreatedEvent,
+      });
       vi.mocked(calendarApi.getEvents).mockResolvedValue([mockCreatedEvent]);
 
       await useCalendarStore.getState().createQuickEvent('New Event', '2024-03-15', 'event');
@@ -252,7 +256,7 @@ describe('calendarStore', () => {
 
   describe('updateEventDate', () => {
     it('should update event date via API', async () => {
-      vi.mocked(calendarApi.updateEventDate).mockResolvedValue(undefined);
+      vi.mocked(calendarApi.updateEventDate).mockResolvedValue({} as CalendarEvent);
       vi.mocked(calendarApi.getEvents).mockResolvedValue([]);
 
       await useCalendarStore.getState().updateEventDate('event-1', '2024-03-20');

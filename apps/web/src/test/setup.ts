@@ -2,7 +2,7 @@
 // Test Setup - Vitest + React Testing Library
 // ===========================================
 
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
 // Mock react-router-dom

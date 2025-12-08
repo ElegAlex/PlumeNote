@@ -123,7 +123,10 @@ export function DistributionCharts({
                 fill="hsl(var(--primary))"
                 radius={[0, 4, 4, 0]}
                 cursor="pointer"
-                onClick={(barData) => handleClick(barData.label)}
+                onClick={(barData) => {
+                  const item = barData as { label?: string };
+                  if (item.label) handleClick(item.label);
+                }}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -132,7 +135,7 @@ export function DistributionCharts({
             <ResponsiveContainer width="60%" height={180}>
               <PieChart>
                 <Pie
-                  data={data}
+                  data={data as Array<{ label: string; count: number; [key: string]: unknown }>}
                   dataKey="count"
                   nameKey="label"
                   cx="50%"
@@ -141,7 +144,7 @@ export function DistributionCharts({
                   outerRadius={70}
                   paddingAngle={2}
                   cursor="pointer"
-                  onClick={(_, index) => handleClick(data[index].label)}
+                  onClick={(_, index) => data[index] && handleClick(data[index].label)}
                 >
                   {data.map((_, index) => (
                     <Cell

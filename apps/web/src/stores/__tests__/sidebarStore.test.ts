@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { api } from '../../lib/api';
-import type { FolderContent, SidebarFolderNode } from '@plumenote/types';
+import type { SidebarFolderNode } from '@plumenote/types';
 
 // Mock de l'API
 vi.mock('../../lib/api', () => ({
@@ -75,7 +75,7 @@ describe('sidebarStore', () => {
         ],
       };
 
-      vi.mocked(api.get).mockResolvedValue({ data: mockTree });
+      vi.mocked(api.get).mockResolvedValue({ data: mockTree, status: 200 });
 
       await act(async () => {
         await useSidebarStore.getState().fetchTree();
@@ -83,7 +83,7 @@ describe('sidebarStore', () => {
 
       const state = useSidebarStore.getState();
       expect(state.tree).toHaveLength(1);
-      expect(state.tree[0].name).toBe('Test Folder');
+      expect(state.tree[0]!.name).toBe('Test Folder');
       expect(state.isLoading).toBe(false);
     });
 
@@ -91,7 +91,7 @@ describe('sidebarStore', () => {
       vi.mocked(api.get).mockImplementation(
         () =>
           new Promise((resolve) =>
-            setTimeout(() => resolve({ data: { tree: [] } }), 100)
+            setTimeout(() => resolve({ data: { tree: [] }, status: 200 }), 100)
           )
       );
 
@@ -122,14 +122,12 @@ describe('sidebarStore', () => {
 
   describe('toggleFolder', () => {
     it('should expand folder when collapsed', async () => {
-      const mockContent: FolderContent = {
-        id: 'folder-1',
-        name: 'Test',
+      const mockContent = {
         children: [],
         notes: [],
       };
 
-      vi.mocked(api.get).mockResolvedValue({ data: mockContent });
+      vi.mocked(api.get).mockResolvedValue({ data: mockContent, status: 200 });
 
       await act(async () => {
         await useSidebarStore.getState().toggleFolder('folder-1');
@@ -154,9 +152,7 @@ describe('sidebarStore', () => {
 
   describe('loadFolderContent', () => {
     it('should fetch and cache folder content', async () => {
-      const mockContent: FolderContent = {
-        id: 'folder-1',
-        name: 'Test Folder',
+      const mockContent = {
         children: [
           {
             id: 'child-1',
@@ -181,7 +177,7 @@ describe('sidebarStore', () => {
         ],
       };
 
-      vi.mocked(api.get).mockResolvedValue({ data: mockContent });
+      vi.mocked(api.get).mockResolvedValue({ data: mockContent, status: 200 });
 
       await act(async () => {
         await useSidebarStore.getState().loadFolderContent('folder-1');
@@ -234,7 +230,8 @@ describe('sidebarStore', () => {
       });
 
       vi.mocked(api.get).mockResolvedValue({
-        data: { id: 'folder-expired', name: 'Test', children: [], notes: [] },
+        data: { children: [], notes: [] },
+        status: 200,
       });
 
       await act(async () => {
@@ -262,7 +259,8 @@ describe('sidebarStore', () => {
       });
 
       vi.mocked(api.get).mockResolvedValue({
-        data: { id: 'folder-refresh', name: 'Refreshed', children: [], notes: [] },
+        data: { children: [], notes: [] },
+        status: 200,
       });
 
       await act(async () => {

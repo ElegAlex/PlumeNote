@@ -161,7 +161,7 @@ export function CalendarWeekView({ onCreateEvent }: CalendarWeekViewProps) {
               {weekDays.map((day) => {
                 const dayEvents = eventsByDay.get(day.dateStr) ?? [];
                 const hourEvents = dayEvents.filter(
-                  (e) => e.time && e.time.startsWith(hour.split(':')[0])
+                  (e) => e.time && e.time.startsWith(hour.split(':')[0] ?? '')
                 );
 
                 return (
@@ -174,7 +174,7 @@ export function CalendarWeekView({ onCreateEvent }: CalendarWeekViewProps) {
                     onDoubleClick={() => {
                       if (onCreateEvent) {
                         const eventDate = new Date(day.date);
-                        eventDate.setHours(parseInt(hour.split(':')[0]), 0, 0);
+                        eventDate.setHours(parseInt(hour.split(':')[0] ?? '0'), 0, 0);
                         onCreateEvent(eventDate);
                       }
                     }}

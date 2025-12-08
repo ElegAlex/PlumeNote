@@ -24,7 +24,7 @@ export const ShortcutCategory = memo(function ShortcutCategory({
 }: ShortcutCategoryProps) {
   // Récupérer l'icône dynamiquement depuis lucide-react
   const IconComponent =
-    (LucideIcons as Record<string, LucideIcon>)[category.icon] ??
+    (LucideIcons as unknown as Record<string, LucideIcon>)[category.icon] ??
     LucideIcons.HelpCircle;
 
   return (

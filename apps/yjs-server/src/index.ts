@@ -35,8 +35,9 @@ const CURSOR_COLORS = [
 
 // Generate deterministic color based on user ID
 function generateColor(userId: string): string {
+  const defaultColor = '#2196F3';
   if (!userId || userId === 'anonymous') {
-    return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)];
+    return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)] ?? defaultColor;
   }
   // Hash simple pour couleur déterministe par utilisateur
   let hash = 0;
@@ -44,7 +45,7 @@ function generateColor(userId: string): string {
     hash = ((hash << 5) - hash) + userId.charCodeAt(i);
     hash = hash & hash;
   }
-  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length];
+  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length] ?? defaultColor;
 }
 
 // Extract note ID from document name (format: "note:UUID")
@@ -226,9 +227,9 @@ const server = new Hocuspocus({
     }
   },
 
-  // Connection handling (US-031: tracking des collaborateurs, US-034: permissions)
+  // Connection handling (US-031: tracking des collaborateurs)
   async onConnect(data) {
-    const { documentName, context, connection } = data;
+    const { documentName, context } = data;
 
     // Valider le format du nom de document
     const noteId = extractNoteId(documentName);
@@ -250,6 +251,11 @@ const server = new Hocuspocus({
         }
       }
     }
+  },
+
+  // Called after connection is established (US-034: permissions)
+  async connected(data) {
+    const { documentName, context, socketId, connectionInstance } = data;
 
     // Initialiser la map des utilisateurs pour ce document
     if (!documentUsers.has(documentName)) {
@@ -259,7 +265,7 @@ const server = new Hocuspocus({
     const users = documentUsers.get(documentName)!;
     const color = generateColor(context.userId);
 
-    users.set(connection.id, {
+    users.set(socketId, {
       userId: context.userId || 'anonymous',
       username: context.username || 'Anonymous',
       color,
@@ -269,7 +275,7 @@ const server = new Hocuspocus({
     console.log(`[Connect] ${context.username || 'Anonymous'} joined ${documentName} (canWrite: ${context.canWrite}, personal: ${context.isPersonalNote}, ${userCount} users)`);
 
     // US-034: Envoyer les permissions au client via stateless message
-    connection.sendStateless(JSON.stringify({
+    connectionInstance.sendStateless(JSON.stringify({
       type: 'permissions',
       canWrite: context.canWrite ?? true,
       userId: context.userId,
@@ -280,14 +286,14 @@ const server = new Hocuspocus({
 
   // Disconnection handling (US-035: gestion déconnexion)
   async onDisconnect(data) {
-    const { documentName, context, connection } = data;
+    const { documentName, context, socketId } = data;
 
     const noteId = extractNoteId(documentName);
     if (!noteId) return;
 
     const users = documentUsers.get(documentName);
     if (users) {
-      users.delete(connection.id);
+      users.delete(socketId);
       const userCount = users.size;
 
       if (userCount === 0) {

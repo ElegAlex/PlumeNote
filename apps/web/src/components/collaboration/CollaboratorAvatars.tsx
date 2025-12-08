@@ -23,9 +23,9 @@ function getInitials(name: string): string {
 
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
+    return parts[0]!.charAt(0).toUpperCase();
   }
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase();
 }
 
 /**
@@ -121,7 +121,7 @@ export function CollaboratorAvatars({
       </div>
 
       {/* Texte optionnel */}
-      {collaborators.length === 1 && (
+      {collaborators.length === 1 && collaborators[0] && (
         <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">
           {collaborators[0].name} édite
         </span>

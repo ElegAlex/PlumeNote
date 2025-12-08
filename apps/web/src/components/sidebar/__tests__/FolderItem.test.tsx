@@ -78,7 +78,7 @@ describe('FolderItem', () => {
 
       // Le chevron doit être présent
       const buttons = screen.getAllByRole('button');
-      const chevronButton = buttons[0];
+      const chevronButton = buttons[0]!;
       expect(chevronButton.querySelector('svg')).toBeInTheDocument();
     });
 
@@ -88,7 +88,7 @@ describe('FolderItem', () => {
       renderWithRouter(<FolderItem folder={folder} level={0} />);
 
       const buttons = screen.getAllByRole('button');
-      const chevronButton = buttons[0];
+      const chevronButton = buttons[0]!;
       expect(chevronButton.querySelector('svg')).toBeInTheDocument();
     });
 

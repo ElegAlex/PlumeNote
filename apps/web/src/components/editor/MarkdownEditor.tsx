@@ -293,8 +293,8 @@ function parseCallout(text: string): { type: string; title: string; content: str
   const match = cleanText.match(/^\[!(\w+)\](?:\s+(.+))?\n?([\s\S]*)/);
   if (!match) return null;
   return {
-    type: match[1].toUpperCase(),
-    title: match[2] || match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase(),
+    type: match[1]!.toUpperCase(),
+    title: match[2] || match[1]!.charAt(0).toUpperCase() + match[1]!.slice(1).toLowerCase(),
     content: match[3]?.trim() || '',
   };
 }
@@ -321,7 +321,7 @@ function CalloutBlock({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const colors = CALLOUT_COLORS[callout.type] || CALLOUT_COLORS.NOTE;
+  const colors = CALLOUT_COLORS[callout.type] ?? CALLOUT_COLORS.NOTE;
   const iconKey = CALLOUT_ICON_MAP[callout.type] || 'NOTE';
   const icon = calloutIcons[iconKey] || calloutIcons.NOTE;
 
@@ -329,14 +329,14 @@ function CalloutBlock({ children }: { children: React.ReactNode }) {
     <div
       className="my-4 rounded-md overflow-hidden"
       style={{
-        backgroundColor: colors.bg,
-        borderLeft: `4px solid ${colors.accent}`,
+        backgroundColor: colors?.bg,
+        borderLeft: `4px solid ${colors?.accent}`,
       }}
     >
       {/* Header style Obsidian */}
       <div
         className="flex items-center gap-2 px-4 py-2 font-medium text-sm"
-        style={{ color: colors.text }}
+        style={{ color: colors?.text }}
       >
         <span className="flex-shrink-0">{icon}</span>
         <span className="flex-1 font-semibold">{callout.title}</span>
@@ -514,7 +514,7 @@ function renderTextWithWikilinks(
       parts.push(text.substring(lastIndex, match.index));
     }
 
-    const parsed = parseWikilink(match[1]);
+    const parsed = parseWikilink(match[1]!);
 
     // Add clickable wikilink
     parts.push(
@@ -770,7 +770,7 @@ export function MarkdownEditor({
     // Trouver la position de la checkbox à l'index donné
     while ((match = checkboxRegex.exec(localContent)) !== null) {
       if (currentIndex === index) {
-        const isChecked = match[1].toLowerCase() === 'x';
+        const isChecked = match[1]!.toLowerCase() === 'x';
         const newCheckbox = isChecked ? '- [ ]' : '- [x]';
         const newContent =
           localContent.substring(0, match.index) +
@@ -1049,7 +1049,7 @@ export function MarkdownEditor({
                   {CALLOUT_TYPES.map(({ type, label }) => {
                     const iconKey = CALLOUT_ICON_MAP[type] || 'NOTE';
                     const icon = calloutIcons[iconKey];
-                    const colors = CALLOUT_COLORS[type] || CALLOUT_COLORS.NOTE;
+                    const colors = CALLOUT_COLORS[type] ?? CALLOUT_COLORS.NOTE;
                     return (
                       <button
                         key={type}
@@ -1057,7 +1057,7 @@ export function MarkdownEditor({
                         className="w-full px-3 py-1.5 text-left text-sm hover:bg-muted flex items-center gap-2"
                         onClick={() => insertCallout(type)}
                       >
-                        <span style={{ color: colors.accent }}>{icon}</span>
+                        <span style={{ color: colors?.accent }}>{icon}</span>
                         <span>{label}</span>
                       </button>
                     );

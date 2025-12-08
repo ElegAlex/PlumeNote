@@ -11,7 +11,7 @@ import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { useAuthStore } from '../stores/auth';
 
-const YJS_URL = import.meta.env.VITE_YJS_URL || 'ws://localhost:1234';
+const YJS_URL = (import.meta as unknown as { env: Record<string, string> }).env.VITE_YJS_URL || 'ws://localhost:1234';
 
 // ===========================================
 // Types
@@ -76,15 +76,16 @@ const CURSOR_COLORS = [
 
 // Génère une couleur déterministe basée sur l'ID utilisateur
 function generateUserColor(userId: string): string {
+  const defaultColor = '#2196F3';
   if (!userId || userId === 'anonymous') {
-    return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)];
+    return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)] ?? defaultColor;
   }
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = ((hash << 5) - hash) + userId.charCodeAt(i);
     hash = hash & hash;
   }
-  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length];
+  return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length] ?? defaultColor;
 }
 
 // ===========================================
@@ -174,8 +175,6 @@ export function useCollaboration({
       name: roomName,
       document: newYdoc,
       token,
-      connect: true,
-      preserveConnection: true,
 
       onConnect: () => {
         if (!isMountedRef.current) return;
@@ -225,12 +224,14 @@ export function useCollaboration({
           const currentUserId = userInfoRef.current.id;
           const users: CollaboratorInfo[] = [];
 
-          states.forEach((state: { user?: { name: string; color: string; id: string } }) => {
-            if (state.user && state.user.id !== currentUserId) {
+          // states est un tableau d'objets avec des propriétés arbitraires
+          (states as Array<Record<string, unknown>>).forEach((state) => {
+            const user = state.user as { name: string; color: string; id: string } | undefined;
+            if (user && user.id !== currentUserId) {
               users.push({
-                id: state.user.id,
-                name: state.user.name,
-                color: state.user.color,
+                id: user.id,
+                name: user.name,
+                color: user.color,
               });
             }
           });

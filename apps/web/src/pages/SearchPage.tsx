@@ -306,8 +306,8 @@ export function SearchPage() {
                         const [year, month] = date.month.split('-');
                         const startDate = `${year}-${month}-01`;
                         const endDate = new Date(
-                          parseInt(year),
-                          parseInt(month),
+                          parseInt(year ?? '0'),
+                          parseInt(month ?? '0'),
                           0
                         )
                           .toISOString()
@@ -501,9 +501,9 @@ export function SearchPage() {
                             {highlightMatch(result.title, query)}
                           </h3>
 
-                          {result.excerpt && (
+                          {result.snippet && (
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {highlightMatch(result.excerpt, query)}
+                              {highlightMatch(result.snippet, query)}
                             </p>
                           )}
 

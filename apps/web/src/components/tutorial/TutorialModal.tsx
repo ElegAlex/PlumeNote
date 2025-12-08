@@ -140,9 +140,11 @@ interface TutorialModalProps {
 export function TutorialModal({ open, onOpenChange, onComplete }: TutorialModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = tutorialSteps.length;
-  const step = tutorialSteps[currentStep];
+  const step = tutorialSteps[currentStep]!;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
+
+  if (!step) return null;
 
   const handleNext = () => {
     if (isLastStep) {
