@@ -199,9 +199,9 @@ export const usePreferencesStore = create<PreferencesState>()(
       },
 
       shouldShowTutorial: (currentVersion) => {
-        const { onboarding } = get().preferences;
+        const onboarding = get().preferences?.onboarding;
         // Afficher si jamais complété OU si nouvelle version du tutoriel
-        return !onboarding.tutorialCompleted || onboarding.tutorialVersion < currentVersion;
+        return !onboarding?.tutorialCompleted || (onboarding?.tutorialVersion ?? 0) < currentVersion;
       },
 
       setTheme: async (theme) => {
