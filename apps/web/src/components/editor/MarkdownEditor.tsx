@@ -444,6 +444,8 @@ interface MarkdownEditorProps {
   autoFocus?: boolean;
   /** Callback when a wikilink is clicked in preview mode */
   onWikilinkClick?: (target: string, section?: string) => void;
+  /** Whether the user can edit (for checkbox interaction in preview) */
+  canWrite?: boolean;
 }
 
 // ===========================================
@@ -741,6 +743,7 @@ export function MarkdownEditor({
   className,
   autoFocus = true,
   onWikilinkClick,
+  canWrite = true,
 }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -748,6 +751,39 @@ export function MarkdownEditor({
   const [fullWidth, setFullWidth] = useState(false);
   const [localContent, setLocalContent] = useState(content);
   const [showCalloutMenu, setShowCalloutMenu] = useState(false);
+
+  // Compteur pour identifier les checkboxes en mode preview
+  // On utilise un compteur qui se reset à chaque changement de contenu
+  const checkboxCounterRef = useRef({ value: 0, contentHash: '' });
+
+  /**
+   * Toggle une checkbox dans le contenu markdown
+   * Trouve la N-ième checkbox (- [ ] ou - [x]) et inverse son état
+   */
+  const toggleCheckbox = useCallback((index: number) => {
+    if (!canWrite || readOnly) return;
+
+    const checkboxRegex = /- \[([ xX])\]/g;
+    let currentIndex = 0;
+    let match;
+
+    // Trouver la position de la checkbox à l'index donné
+    while ((match = checkboxRegex.exec(localContent)) !== null) {
+      if (currentIndex === index) {
+        const isChecked = match[1].toLowerCase() === 'x';
+        const newCheckbox = isChecked ? '- [ ]' : '- [x]';
+        const newContent =
+          localContent.substring(0, match.index) +
+          newCheckbox +
+          localContent.substring(match.index + match[0].length);
+
+        setLocalContent(newContent);
+        onChange(newContent);
+        break;
+      }
+      currentIndex++;
+    }
+  }, [localContent, onChange, canWrite, readOnly]);
 
   // Sync content from props
   useEffect(() => {
@@ -1102,9 +1138,44 @@ export function MarkdownEditor({
               fullWidth ? 'w-full' : 'max-w-[65ch]'
             )}
           >
+            {/* Reset checkbox counter before each render using content hash */}
+            {(() => {
+              const contentHash = localContent.length + ':' + localContent.substring(0, 50);
+              if (checkboxCounterRef.current.contentHash !== contentHash) {
+                checkboxCounterRef.current = { value: 0, contentHash };
+              } else {
+                checkboxCounterRef.current.value = 0;
+              }
+              return null;
+            })()}
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
+                // Interactive checkboxes in preview mode
+                input: (inputProps) => {
+                  // Extract and IGNORE the default disabled from remarkGfm
+                  const { type, checked, disabled: _ignored, node, ...props } = inputProps;
+                  if (type === 'checkbox') {
+                    // Use modulo to handle React StrictMode double rendering
+                    const totalCheckboxes = (localContent.match(/- \[[ xX]\]/g) || []).length;
+                    const rawIndex = checkboxCounterRef.current.value++;
+                    const currentIndex = rawIndex % totalCheckboxes;
+                    const isInteractive = canWrite && !readOnly;
+                    return (
+                      <input
+                        type="checkbox"
+                        checked={checked || false}
+                        onChange={() => toggleCheckbox(currentIndex)}
+                        disabled={!isInteractive}
+                        className={cn(
+                          'h-4 w-4 rounded border-primary text-primary focus:ring-primary mr-2',
+                          isInteractive && 'cursor-pointer hover:scale-110 transition-transform'
+                        )}
+                      />
+                    );
+                  }
+                  return <input type={type} checked={checked} {...props} />;
+                },
                 blockquote: ({ children }) => <CalloutBlock>{children}</CalloutBlock>,
                 // Render paragraphs with wikilinks support
                 p: ({ children }) => {
