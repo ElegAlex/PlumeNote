@@ -21,6 +21,11 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
 // ----- Rate limiting pour auth -----
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
 const MAX_ATTEMPTS = 5;
@@ -425,6 +430,121 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
       },
+    };
+  });
+
+  /**
+   * POST /api/v1/auth/change-password
+   * Changer le mot de passe de l'utilisateur connecté
+   */
+  app.post('/change-password', {
+    schema: {
+      tags: ['Authentication'],
+      summary: 'Change password',
+      description: 'Change current user password',
+      security: [{ cookieAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['currentPassword', 'newPassword'],
+        properties: {
+          currentPassword: { type: 'string' },
+          newPassword: { type: 'string', minLength: 8 },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: [app.authenticate],
+  }, async (request, reply) => {
+    const parseResult = changePasswordSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        message: parseResult.error.errors[0]?.message || 'Invalid input',
+      });
+    }
+
+    const { currentPassword, newPassword } = parseResult.data;
+    const userId = request.user.userId;
+
+    // Récupérer l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return reply.status(401).send({
+        error: 'USER_NOT_FOUND',
+        message: 'Utilisateur non trouvé',
+      });
+    }
+
+    // Vérifier que l'utilisateur a un mot de passe local (pas LDAP uniquement)
+    if (!user.password) {
+      return reply.status(400).send({
+        error: 'NO_LOCAL_PASSWORD',
+        message: 'Impossible de changer le mot de passe (authentification externe)',
+      });
+    }
+
+    // Vérifier le mot de passe actuel
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      await createAuditLog({
+        userId,
+        action: 'PASSWORD_CHANGE_FAILED',
+        resourceType: 'USER',
+        resourceId: userId,
+        details: { reason: 'INVALID_CURRENT_PASSWORD' },
+        ipAddress: request.ip,
+      });
+
+      return reply.status(401).send({
+        error: 'INVALID_PASSWORD',
+        message: 'Mot de passe actuel incorrect',
+      });
+    }
+
+    // Hasher et enregistrer le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Log d'audit
+    await createAuditLog({
+      userId,
+      action: 'PASSWORD_CHANGED',
+      resourceType: 'USER',
+      resourceId: userId,
+      ipAddress: request.ip,
+    });
+
+    return {
+      success: true,
+      message: 'Mot de passe modifié avec succès',
     };
   });
 };

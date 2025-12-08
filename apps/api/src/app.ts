@@ -41,6 +41,8 @@ import { personalRoutes } from './routes/personal.js';
 import { noteMetadataRoutes } from './routes/noteMetadata.js';
 import { noteTagsRoutes } from './routes/noteTags.js';
 import { eventsRoutes, noteEventsRoutes } from './routes/events.js';
+import { preferencesRoutes } from './routes/preferences.js';
+import { templatesRoutes } from './routes/templates.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -170,6 +172,8 @@ export async function buildApp() {
   await app.register(noteTagsRoutes, { prefix: '/api/v1/notes' });
   await app.register(eventsRoutes, { prefix: '/api/v1/events' });
   await app.register(noteEventsRoutes, { prefix: '/api/v1/notes' });
+  await app.register(preferencesRoutes, { prefix: '/api/v1/preferences' });
+  await app.register(templatesRoutes, { prefix: '/api/v1/templates' });
 
   // ----- Error Handler global -----
   app.setErrorHandler((error, request, reply) => {

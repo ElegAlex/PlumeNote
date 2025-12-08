@@ -276,3 +276,227 @@
 .tiptap .toggle-inner > *:last-child {
   @apply mb-0;
 }
+
+/* ===================================
+   DARK MODE - Editor specific styles
+   =================================== */
+
+/* Editor base colors */
+.dark .tiptap {
+  @apply text-foreground;
+}
+
+/* Editor placeholder */
+.dark .tiptap p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground;
+}
+
+/* Editor code blocks */
+.dark .tiptap pre {
+  @apply bg-[hsl(217.2,32.6%,12%)];
+}
+
+.dark .tiptap code {
+  @apply bg-muted;
+}
+
+/* Editor blockquotes */
+.dark .tiptap blockquote {
+  @apply border-border text-muted-foreground;
+}
+
+/* Editor tables */
+.dark .tiptap table th {
+  @apply bg-muted;
+}
+
+.dark .tiptap table td,
+.dark .tiptap table th {
+  @apply border-border;
+}
+
+/* Editor selection */
+.dark .tiptap ::selection {
+  @apply bg-primary/30;
+}
+
+/* Wikilink dark mode */
+.dark .wikilink {
+  @apply text-primary decoration-primary/40;
+}
+
+.dark .wikilink.broken {
+  @apply text-destructive decoration-destructive/40;
+}
+
+/* Task list dark mode - checkbox */
+.dark .tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+  @apply border-border bg-background;
+}
+
+.dark .tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  @apply bg-primary border-primary;
+}
+
+/* Callout dark mode */
+.dark .tiptap .callout {
+  @apply border-border;
+}
+
+/* Math dark mode */
+.dark .tiptap .math-inline,
+.dark .tiptap .math-block {
+  @apply bg-muted/30;
+}
+
+/* Mermaid dark mode - text adjustments */
+.dark .tiptap .mermaid-svg {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+/* ===================================
+   DARK MODE - Sidebar styles
+   =================================== */
+
+/* Sidebar container */
+.dark .sidebar,
+.dark [data-sidebar] {
+  @apply bg-[hsl(222.2,84%,3%)] border-border;
+}
+
+/* Sidebar items */
+.dark .sidebar-item,
+.dark [data-sidebar-item] {
+  @apply hover:bg-muted/50;
+}
+
+.dark .sidebar-item.active,
+.dark [data-sidebar-item].active {
+  @apply bg-primary/10 text-primary;
+}
+
+/* Sidebar section headers */
+.dark .sidebar-section-header {
+  @apply text-muted-foreground;
+}
+
+/* Sidebar folder icons */
+.dark .folder-icon {
+  @apply text-muted-foreground;
+}
+
+/* Sidebar note items */
+.dark .note-item {
+  @apply text-foreground/80;
+}
+
+.dark .note-item:hover {
+  @apply text-foreground bg-muted/30;
+}
+
+/* ===================================
+   DARK MODE - Dialog/Modal styles
+   =================================== */
+
+.dark [role="dialog"],
+.dark [data-radix-dialog-content] {
+  @apply bg-card border-border;
+}
+
+/* ===================================
+   DARK MODE - Form elements
+   =================================== */
+
+.dark input,
+.dark textarea,
+.dark select {
+  @apply bg-background border-input text-foreground;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  @apply text-muted-foreground;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  @apply ring-ring border-ring;
+}
+
+/* ===================================
+   DARK MODE - Dropdown menus
+   =================================== */
+
+.dark [data-radix-menu-content],
+.dark [role="menu"] {
+  @apply bg-popover border-border;
+}
+
+.dark [data-radix-menu-item],
+.dark [role="menuitem"] {
+  @apply text-popover-foreground;
+}
+
+.dark [data-radix-menu-item]:hover,
+.dark [role="menuitem"]:hover {
+  @apply bg-accent text-accent-foreground;
+}
+
+/* ===================================
+   DARK MODE - Tooltips
+   =================================== */
+
+.dark [role="tooltip"],
+.dark [data-radix-tooltip-content] {
+  @apply bg-popover text-popover-foreground border-border;
+}
+
+/* ===================================
+   DARK MODE - Prose (rendered markdown)
+   =================================== */
+
+.dark .prose {
+  @apply text-foreground;
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose h5,
+.dark .prose h6 {
+  @apply text-foreground;
+}
+
+.dark .prose a {
+  @apply text-primary;
+}
+
+.dark .prose strong {
+  @apply text-foreground;
+}
+
+.dark .prose code {
+  @apply bg-muted text-foreground;
+}
+
+.dark .prose pre {
+  @apply bg-[hsl(217.2,32.6%,12%)];
+}
+
+.dark .prose blockquote {
+  @apply border-border text-muted-foreground;
+}
+
+.dark .prose hr {
+  @apply border-border;
+}
+
+.dark .prose thead {
+  @apply border-border;
+}
+
+.dark .prose tbody tr {
+  @apply border-border;
+}

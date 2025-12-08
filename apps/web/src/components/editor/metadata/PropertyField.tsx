@@ -3,7 +3,7 @@
 // Champ d'édition adaptatif selon le type de propriété
 // ===========================================
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   Calendar,
   Clock,
@@ -15,9 +15,11 @@ import {
   Type,
   ChevronDown,
   Trash2,
+  FileText,
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
+import { cn } from '../../../lib/utils';
 import type { PropertyDefinition, PropertyType } from '@plumenote/types';
 
 // ----- Types -----
@@ -428,6 +430,13 @@ function MultiSelectField({
 
 // ----- LINK -----
 
+interface NoteSuggestion {
+  id: string;
+  title: string;
+  slug: string;
+  folderPath?: string;
+}
+
 function LinkField({
   value,
   onChange,
@@ -437,19 +446,161 @@ function LinkField({
   onChange: (v: unknown) => void;
   readOnly: boolean;
 }) {
-  // TODO: Implémenter l'autocomplétion des notes
+  const [query, setQuery] = useState(String(value || ''));
+  const [suggestions, setSuggestions] = useState<NoteSuggestion[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync with external value
+  useEffect(() => {
+    setQuery(String(value || ''));
+  }, [value]);
+
+  // Search notes
+  const searchNotes = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/v1/notes/search?q=${encodeURIComponent(searchQuery)}&limit=5`,
+        { credentials: 'include' }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestions(data.notes || []);
+        setSelectedIndex(0);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSuggestions([]);
+    }
+  }, []);
+
+  // Handle input change with debounce
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuery(newValue);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      searchNotes(newValue);
+    }, 200);
+
+    setIsOpen(true);
+  };
+
+  // Select a suggestion
+  const selectSuggestion = (note: NoteSuggestion) => {
+    setQuery(note.title);
+    onChange(note.title);
+    setIsOpen(false);
+    setSuggestions([]);
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen || suggestions.length === 0) {
+      if (e.key === 'Enter') {
+        onChange(query);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % suggestions.length);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (suggestions[selectedIndex]) {
+          selectSuggestion(suggestions[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsOpen(false);
+        break;
+    }
+  };
+
+  // Handle blur
+  const handleBlur = () => {
+    // Delay to allow click on suggestions
+    setTimeout(() => {
+      setIsOpen(false);
+      onChange(query);
+    }, 200);
+  };
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="flex items-center gap-1" data-testid="property-link">
-      <span className="text-muted-foreground">[[</span>
-      <Input
-        type="text"
-        value={String(value || '')}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Note title or ID"
-        className="h-7 text-sm"
-        disabled={readOnly}
-      />
-      <span className="text-muted-foreground">]]</span>
+    <div ref={containerRef} className="relative" data-testid="property-link">
+      <div className="flex items-center gap-1">
+        <span className="text-muted-foreground">[[</span>
+        <Input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => query && setIsOpen(true)}
+          onBlur={handleBlur}
+          placeholder="Rechercher une note..."
+          className="h-7 text-sm"
+          disabled={readOnly}
+        />
+        <span className="text-muted-foreground">]]</span>
+      </div>
+
+      {/* Suggestions dropdown */}
+      {isOpen && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+          <ul className="max-h-48 overflow-auto py-1">
+            {suggestions.map((note, index) => (
+              <li
+                key={note.id}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2 cursor-pointer text-sm',
+                  index === selectedIndex ? 'bg-accent' : 'hover:bg-accent/50'
+                )}
+                onMouseDown={() => selectSuggestion(note)}
+                onMouseEnter={() => setSelectedIndex(index)}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{note.title}</div>
+                  {note.folderPath && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {note.folderPath}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

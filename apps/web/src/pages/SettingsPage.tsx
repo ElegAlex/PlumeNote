@@ -1,95 +1,198 @@
 // ===========================================
 // Page Paramètres (Settings)
-// Accès aux préférences utilisateur et administration
+// Sprint 3: US-054 Préférences utilisateur
 // ===========================================
 
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Shield, User, Bell, Palette } from 'lucide-react';
+import { usePreferencesStore } from '../stores/preferencesStore';
+import { useAuthStore } from '../stores/auth';
+import { DisplaySettings, EditorSettings, NotificationSettings, ProfileSettings } from '../components/settings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Spinner } from '../components/ui/Spinner';
+import { toast } from 'sonner';
+import {
+  Palette,
+  FileEdit,
+  Bell,
+  Shield,
+  RotateCcw,
+  User,
+} from 'lucide-react';
+
+type Tab = 'display' | 'editor' | 'notifications' | 'profile';
 
 export function SettingsPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const {
+    loadPreferences,
+    resetPreferences,
+    isLoading,
+    isInitialized,
+    error,
+    clearError,
+  } = usePreferencesStore();
+
+  const [activeTab, setActiveTab] = useState<Tab>('display');
+  const [isResetting, setIsResetting] = useState(false);
+
+  // Chargement initial des préférences
+  useEffect(() => {
+    if (!isInitialized) {
+      loadPreferences();
+    }
+  }, [isInitialized, loadPreferences]);
+
+  // Gestion des erreurs
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, clearError]);
+
+  const handleReset = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?')) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetPreferences();
+      toast.success('Paramètres réinitialisés');
+    } catch {
+      toast.error('Erreur lors de la réinitialisation');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  if (isLoading && !isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Paramètres</h1>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Administration */}
-        <div
-          className="rounded-lg border bg-card text-card-foreground shadow-sm h-full hover:border-primary transition-colors cursor-pointer"
-          onClick={() => navigate('/admin')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate('/admin')}
-        >
-          <div className="flex flex-col space-y-1.5 p-6">
-            <h3 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-3">
-              <Shield className="h-5 w-5 text-primary" />
-              Administration
-            </h3>
-          </div>
-          <div className="p-6 pt-0">
-            <p className="text-sm text-muted-foreground">
-              Gérer les utilisateurs, les rôles et les paramètres système.
-            </p>
-          </div>
+    <div className="container mx-auto py-6 max-w-4xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Paramètres</h1>
+          <p className="text-muted-foreground">
+            Personnalisez votre expérience PlumeNote.
+          </p>
         </div>
-
-        {/* Profil */}
-        <Card className="h-full opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <User className="h-5 w-5" />
-              Profil
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Modifier votre nom d'affichage, avatar et informations personnelles.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 italic">
-              Bientôt disponible
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card className="h-full opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Bell className="h-5 w-5" />
-              Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Configurer vos préférences de notifications.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 italic">
-              Bientôt disponible
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Apparence */}
-        <Card className="h-full opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Palette className="h-5 w-5" />
-              Apparence
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Personnaliser le thème et l'affichage de l'application.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 italic">
-              Bientôt disponible
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex gap-2">
+          {user?.role.name === 'admin' && (
+            <Button variant="outline" onClick={() => navigate('/admin')}>
+              <Shield className="mr-2 h-4 w-4" />
+              Administration
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={isResetting}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Réinitialiser
+          </Button>
+        </div>
       </div>
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
+          <TabsTrigger value="display" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">Affichage</span>
+          </TabsTrigger>
+          <TabsTrigger value="editor" className="flex items-center gap-2">
+            <FileEdit className="h-4 w-4" />
+            <span className="hidden sm:inline">Éditeur</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Profil</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="display" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Affichage
+              </CardTitle>
+              <CardDescription>
+                Personnalisez le thème, la langue et le format d'affichage.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DisplaySettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="editor" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileEdit className="h-5 w-5" />
+                Éditeur
+              </CardTitle>
+              <CardDescription>
+                Configurez le comportement et l'apparence de l'éditeur de notes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EditorSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notifications
+              </CardTitle>
+              <CardDescription>
+                Gérez vos préférences de notifications et alertes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NotificationSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profil
+              </CardTitle>
+              <CardDescription>
+                Gérez vos informations personnelles et votre compte.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

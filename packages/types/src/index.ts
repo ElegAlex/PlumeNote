@@ -64,6 +64,191 @@ export interface AdminUsersResponse {
   totalPages: number;
 }
 
+// ----- Administration (Sprint 2) -----
+
+/**
+ * Payload pour créer un utilisateur
+ */
+export interface CreateUserRequest {
+  username: string;
+  email: string;
+  displayName: string;
+  password?: string;
+  roleId: string;
+  isActive?: boolean;
+  mustChangePassword?: boolean;
+}
+
+/**
+ * Payload pour modifier un utilisateur (admin)
+ */
+export interface UpdateUserAdminRequest {
+  displayName?: string;
+  email?: string;
+  roleId?: string;
+  isActive?: boolean;
+}
+
+/**
+ * Payload pour réinitialiser un mot de passe
+ */
+export interface ResetPasswordRequest {
+  generateTemporary?: boolean;
+  newPassword?: string;
+  mustChangePassword?: boolean;
+}
+
+/**
+ * Réponse de création d'utilisateur
+ */
+export interface CreateUserResponse {
+  user: User;
+  temporaryPassword?: string;
+}
+
+/**
+ * Réponse de réinitialisation de mot de passe
+ */
+export interface ResetPasswordResponse {
+  temporaryPassword?: string;
+}
+
+/**
+ * Filtres pour les logs d'audit
+ */
+export interface AuditLogFilters {
+  userId?: string;
+  action?: AuditAction;
+  resourceType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Réponse paginée des logs d'audit
+ */
+export interface AuditLogsResponse {
+  logs: AuditLog[];
+  total: number;
+}
+
+/**
+ * Statistiques système (admin dashboard)
+ */
+export interface AdminStats {
+  users: {
+    total: number;
+    activeDay: number;
+    activeWeek: number;
+    activeMonth: number;
+  };
+  content: {
+    totalNotes: number;
+    totalFolders: number;
+    notesCreatedWeek: number;
+    notesModifiedWeek: number;
+  };
+  topNotes: Array<{
+    id: string;
+    title: string;
+    versionsCount: number;
+    updatedAt: string;
+  }>;
+  generated: string;
+}
+
+/**
+ * Configuration système
+ */
+export interface SystemConfig {
+  [key: string]: unknown;
+}
+
+/**
+ * Note dans la corbeille
+ */
+export interface TrashedNote {
+  id: string;
+  title: string;
+  folderPath: string;
+  authorName: string;
+  deletedBy?: string;
+  deletedAt?: string;
+}
+
+// ----- Préférences utilisateur (Sprint 3) -----
+
+export type Theme = 'light' | 'dark' | 'system';
+export type EditorMode = 'wysiwyg' | 'markdown' | 'split';
+export type EditorWidth = 'narrow' | 'medium' | 'wide' | 'full';
+export type Language = 'fr' | 'en';
+export type TimeFormat = '12h' | '24h';
+export type StartOfWeek = 'monday' | 'sunday';
+
+/**
+ * Préférences d'affichage
+ */
+export interface DisplayPreferences {
+  theme: Theme;
+  language: Language;
+  dateFormat: string;
+  timeFormat: TimeFormat;
+  startOfWeek: StartOfWeek;
+}
+
+/**
+ * Préférences de l'éditeur
+ */
+export interface EditorPreferences {
+  defaultMode: EditorMode;
+  width: EditorWidth;
+  showLineNumbers: boolean;
+  spellCheck: boolean;
+  autoSave: boolean;
+  autoSaveInterval: number;
+}
+
+/**
+ * Préférences de la sidebar
+ */
+export interface SidebarPreferences {
+  collapsed: boolean;
+  width: number;
+  showFavorites: boolean;
+  showRecent: boolean;
+}
+
+/**
+ * Préférences de notification
+ */
+export interface NotificationPreferences {
+  emailDigest: boolean;
+  browserNotifications: boolean;
+  mentionNotifications: boolean;
+}
+
+/**
+ * Préférences utilisateur complètes
+ */
+export interface UserPreferences {
+  display: DisplayPreferences;
+  editor: EditorPreferences;
+  sidebar: SidebarPreferences;
+  notifications: NotificationPreferences;
+}
+
+/**
+ * Payload pour mise à jour partielle des préférences
+ */
+export interface UpdatePreferencesRequest {
+  display?: Partial<DisplayPreferences>;
+  editor?: Partial<EditorPreferences>;
+  sidebar?: Partial<SidebarPreferences>;
+  notifications?: Partial<NotificationPreferences>;
+}
+
 // ----- Auth -----
 
 export interface LoginRequest {
@@ -472,8 +657,10 @@ export interface AuditLog {
   action: AuditAction;
   resourceType: string;
   resourceId: string | null;
+  targetName: string | null; // Nom/titre de la cible (utile si supprimée)
   details: Record<string, unknown> | null;
   ipAddress: string | null;
+  userAgent: string | null;
   createdAt: string;
   user?: User;
 }
@@ -484,9 +671,12 @@ export type AuditAction =
   | 'AUTH_FAILED'
   | 'USER_CREATED'
   | 'USER_UPDATED'
+  | 'USER_DELETED'
   | 'USER_DISABLED'
   | 'USER_ENABLED'
   | 'ROLE_CHANGED'
+  | 'PASSWORD_RESET'
+  | 'PASSWORD_CHANGED'
   | 'NOTE_CREATED'
   | 'NOTE_UPDATED'
   | 'NOTE_DELETED'

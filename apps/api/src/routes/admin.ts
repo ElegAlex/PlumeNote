@@ -9,7 +9,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@plumenote/database';
-import { getAuditLogs, createAuditLog } from '../services/audit.js';
+import { getAuditLogs, createAuditLog, exportAuditLogsCsv } from '../services/audit.js';
 
 const configUpdateSchema = z.object({
   key: z.string(),
@@ -117,6 +117,57 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       })),
       total: result.total,
     };
+  });
+
+  /**
+   * GET /api/v1/admin/audit/export
+   * US-112: Exporter les logs d'audit en CSV
+   */
+  app.get('/audit/export', {
+    schema: {
+      tags: ['Admin'],
+      summary: 'Export audit logs as CSV',
+      security: [{ cookieAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          userId: { type: 'string' },
+          action: { type: 'string' },
+          resourceType: { type: 'string' },
+          dateFrom: { type: 'string', format: 'date' },
+          dateTo: { type: 'string', format: 'date' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const {
+      userId,
+      action,
+      resourceType,
+      dateFrom,
+      dateTo,
+    } = request.query as {
+      userId?: string;
+      action?: string;
+      resourceType?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    };
+
+    const csv = await exportAuditLogsCsv({
+      userId,
+      action: action as any,
+      resourceType,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+    });
+
+    const filename = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="${filename}"`)
+      .send(csv);
   });
 
   /**

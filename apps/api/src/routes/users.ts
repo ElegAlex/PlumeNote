@@ -9,6 +9,17 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@plumenote/database';
 import { createAuditLog } from '../services/audit.js';
+import {
+  createUser,
+  updateUserAdmin,
+  deleteUser,
+  resetUserPassword,
+} from '../services/admin.js';
+import {
+  createUserSchema,
+  updateUserAdminSchema,
+  resetPasswordSchema,
+} from '../schemas/admin.schema.js';
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(100).optional(),
@@ -311,5 +322,99 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
     });
 
     return { users };
+  });
+
+  // POST /api/v1/users - Créer un utilisateur (Admin)
+  app.post('/', {
+    schema: {
+      tags: ['Users'],
+      summary: 'Create a new user (Admin only)',
+      security: [{ cookieAuth: [] }],
+    },
+    preHandler: [app.authorizeAdmin],
+  }, async (request, reply) => {
+    const parseResult = createUserSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parseResult.error.flatten(),
+      });
+    }
+
+    try {
+      const result = await createUser(
+        parseResult.data,
+        request.user.userId,
+        request.ip
+      );
+
+      return reply.status(201).send(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur lors de la création';
+      return reply.status(400).send({
+        error: 'CREATE_FAILED',
+        message,
+      });
+    }
+  });
+
+  // DELETE /api/v1/users/:id - Supprimer un utilisateur (Admin)
+  app.delete('/:id', {
+    schema: {
+      tags: ['Users'],
+      summary: 'Delete a user (Admin only)',
+      security: [{ cookieAuth: [] }],
+    },
+    preHandler: [app.authorizeAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      await deleteUser(id, request.user.userId, request.ip);
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur lors de la suppression';
+      return reply.status(400).send({
+        error: 'DELETE_FAILED',
+        message,
+      });
+    }
+  });
+
+  // POST /api/v1/users/:id/reset-password - Réinitialiser le mot de passe (Admin)
+  app.post('/:id/reset-password', {
+    schema: {
+      tags: ['Users'],
+      summary: 'Reset user password (Admin only)',
+      security: [{ cookieAuth: [] }],
+    },
+    preHandler: [app.authorizeAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const parseResult = resetPasswordSchema.safeParse(request.body);
+
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parseResult.error.flatten(),
+      });
+    }
+
+    try {
+      const result = await resetUserPassword(
+        id,
+        parseResult.data,
+        request.user.userId,
+        request.ip
+      );
+
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur lors du reset';
+      return reply.status(400).send({
+        error: 'RESET_FAILED',
+        message,
+      });
+    }
   });
 };

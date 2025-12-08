@@ -23,6 +23,7 @@ import type { FolderTreeNode } from '../components/common';
 import { useNoteView } from '../hooks';
 import { useNoteEvents } from '../hooks/useNoteEvents';
 import { EventBadge } from '../components/calendar/EventBadge';
+import { ExportDialog } from '../components/export';
 
 export function NotePage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -38,10 +39,11 @@ export function NotePage() {
     deleteNote,
   } = useNotesStore();
 
-  const { folders } = useFoldersStore();
+  const { tree: folders } = useFoldersStore();
   const [title, setTitle] = useState('');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const { isOpen: isRightPanelOpen, togglePanel, closePanel } = useRightPanelStore();
 
@@ -108,7 +110,7 @@ export function NotePage() {
   const handleMove = async (folderId: string | null) => {
     if (!noteId) return;
     try {
-      await updateNote(noteId, { folderId });
+      await updateNote(noteId, { folderId: folderId ?? undefined });
       toast.success('Note déplacée');
       setShowMoveDialog(false);
     } catch {
@@ -213,6 +215,7 @@ export function NotePage() {
             onShowToc={() => togglePanel('toc')}
             onShowLinks={() => togglePanel('links')}
             onShowHistory={() => setShowVersionHistory(true)}
+            onExport={() => setShowExportDialog(true)}
             onMoveClick={() => setShowMoveDialog(true)}
             onSplitView={() => navigate(`/split/${noteId}`)}
             onDelete={handleDelete}
@@ -321,6 +324,24 @@ export function NotePage() {
           currentFolderId={currentNote.folderId}
           onMove={handleMove}
           onClose={() => setShowMoveDialog(false)}
+        />
+      )}
+
+      {/* Export Dialog */}
+      {currentNote && (
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          note={{
+            id: currentNote.id,
+            title: currentNote.title,
+            slug: currentNote.slug,
+            content: currentNote.content || '',
+            author: currentNote.author,
+            createdAt: currentNote.createdAt,
+            updatedAt: currentNote.updatedAt,
+            tags: currentNote.tags?.map((t) => ({ tag: { name: t.name } })),
+          }}
         />
       )}
     </div>

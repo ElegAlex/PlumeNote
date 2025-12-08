@@ -19,6 +19,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   clearError: () => void;
   setHasHydrated: (state: boolean) => void;
+  setUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -92,6 +93,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+
+      setUser: (user: User) => set({ user }),
     }),
     {
       name: 'auth-storage',

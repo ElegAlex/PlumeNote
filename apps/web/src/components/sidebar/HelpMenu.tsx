@@ -32,7 +32,7 @@ export function HelpMenu({ isCollapsed = false }: HelpMenuProps) {
       icon: Settings,
       onClick: () => {
         setIsOpen(false);
-        // TODO: Navigate to settings page when available
+        navigate('/settings');
       },
     },
     {

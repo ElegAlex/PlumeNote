@@ -22,9 +22,11 @@ import { useNotesStore } from '../../stores/notes';
 import { FolderTree } from './FolderTree';
 import { PersonalSidebarSection } from './PersonalSidebarSection';
 import { InlineCreateForm } from '../common';
+import { TemplatePickerDialog } from '../templates';
 import { Button } from '../ui/Button';
 import { toast } from '../ui/Toaster';
 import type { SidebarFolderNode } from '@plumenote/types';
+import type { NoteTemplate } from '../../services/templatesApi';
 
 // ===========================================
 // Types pour Drag & Drop
@@ -52,8 +54,11 @@ export function Sidebar() {
   // État section dossiers
   const [isFoldersExpanded, setIsFoldersExpanded] = useState(true);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isCreatingRootNote, setIsCreatingRootNote] = useState(false);
   const [parentFolderForNew, setParentFolderForNew] = useState<string | null>(null);
+
+  // État Template Picker
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [templateTargetFolderId, setTemplateTargetFolderId] = useState<string | null>(null);
 
   // État Drag & Drop
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
@@ -106,16 +111,48 @@ export function Sidebar() {
     setParentFolderForNew(null);
   };
 
-  // Création note racine (sans dossier)
-  const handleCreateRootNote = async (title: string) => {
+  // Handler sélection template
+  const handleTemplateSelect = useCallback(async (template: NoteTemplate | null) => {
     try {
-      const note = await createNote({ title });
-      setIsCreatingRootNote(false);
+      // Préparer le contenu avec substitution de date
+      let content = template?.content || '';
+      if (content) {
+        const today = new Date().toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        content = content.replace(/\{\{date\}\}/g, today);
+      }
+
+      const note = await createNote({
+        title: template?.name || 'Sans titre',
+        content,
+        folderId: templateTargetFolderId || undefined,
+      });
+
       navigate(`/notes/${note.id}`);
+
+      // Rafraîchir le dossier si nécessaire
+      if (templateTargetFolderId) {
+        await refreshFolder(templateTargetFolderId);
+      }
+
+      toast.success('Note créée');
     } catch {
       toast.error('Erreur lors de la création');
+    } finally {
+      setShowTemplatePicker(false);
+      setTemplateTargetFolderId(null);
     }
-  };
+  }, [createNote, navigate, refreshFolder, templateTargetFolderId]);
+
+  // Ouvrir le picker de template
+  const handleOpenTemplatePicker = useCallback((folderId?: string) => {
+    setTemplateTargetFolderId(folderId || null);
+    setShowTemplatePicker(true);
+  }, []);
 
   const handleCreateNote = useCallback(async (folderId: string) => {
     try {
@@ -332,7 +369,7 @@ export function Sidebar() {
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
               </Button>
-              <Button variant="ghost" size="sm" className="h-6 flex-1 text-xs gap-1" onClick={() => setIsCreatingRootNote(true)} title="Nouvelle note">
+              <Button variant="ghost" size="sm" className="h-6 flex-1 text-xs gap-1" onClick={() => handleOpenTemplatePicker()} title="Nouvelle note">
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </Button>
@@ -345,12 +382,6 @@ export function Sidebar() {
               </div>
             )}
 
-            {/* Formulaire création note */}
-            {isCreatingRootNote && (
-              <div className="px-1 py-1">
-                <InlineCreateForm onSubmit={handleCreateRootNote} onCancel={() => setIsCreatingRootNote(false)} placeholder="Titre de la note" compact />
-              </div>
-            )}
 
             {/* Folder Tree */}
             <FolderTree onCreateNote={handleCreateNote} onCreateFolder={handleCreateFolderInFolder} />
@@ -363,6 +394,13 @@ export function Sidebar() {
 
       {/* Drag Overlay */}
       <DragOverlay>{renderDragOverlay()}</DragOverlay>
+
+      {/* Template Picker Dialog */}
+      <TemplatePickerDialog
+        open={showTemplatePicker}
+        onOpenChange={setShowTemplatePicker}
+        onSelect={handleTemplateSelect}
+      />
     </DndContext>
   );
 }

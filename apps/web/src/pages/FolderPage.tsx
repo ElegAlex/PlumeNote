@@ -24,6 +24,7 @@ import {
   ActionMenu,
 } from '../components/common';
 import { FolderAccessModal } from '../components/folders/FolderAccessModal';
+import { FolderExportDialog } from '../components/export';
 import type { ActionMenuItem, BreadcrumbItem } from '../components/common';
 import type { FolderContent } from '@plumenote/types';
 
@@ -100,6 +101,17 @@ const ShieldIcon = () => (
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+    />
+  </svg>
+);
+
 // ===========================================
 // Composant Principal
 // ===========================================
@@ -124,6 +136,7 @@ export function FolderPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   // Charger le contenu du dossier
   const fetchContent = useCallback(async () => {
@@ -235,18 +248,24 @@ export function FolderPage() {
       icon: <PencilIcon />,
       onClick: () => setIsEditing(true),
     },
+    {
+      label: 'Exporter...',
+      icon: <DownloadIcon />,
+      onClick: () => setIsExportDialogOpen(true),
+    },
     // "Gérer les accès" uniquement pour les admins
     ...(isAdmin ? [{
       label: 'Gérer les accès',
       icon: <ShieldIcon />,
       onClick: () => setIsAccessModalOpen(true),
+      dividerBefore: true,
     }] : []),
     {
       label: 'Supprimer',
       icon: <TrashIcon />,
       onClick: handleDelete,
       variant: 'destructive' as const,
-      dividerBefore: true,
+      dividerBefore: !isAdmin,
     },
   ];
 
@@ -439,6 +458,19 @@ export function FolderPage() {
           }}
           folderId={folderId}
           folderName={folder.name}
+        />
+      )}
+
+      {/* Dialog d'export du dossier */}
+      {folder && (
+        <FolderExportDialog
+          open={isExportDialogOpen}
+          onOpenChange={setIsExportDialogOpen}
+          folder={{
+            id: folder.id,
+            name: folder.name,
+            slug: folder.slug,
+          }}
         />
       )}
     </div>

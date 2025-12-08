@@ -11,6 +11,7 @@ export interface CreateAuditLogParams {
   action: AuditAction;
   resourceType: string;
   resourceId?: string;
+  targetName?: string; // Nom/titre de la cible (conservé même si la ressource est supprimée)
   details?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
@@ -27,6 +28,7 @@ export async function createAuditLog(params: CreateAuditLogParams): Promise<void
         action: params.action,
         resourceType: params.resourceType,
         resourceId: params.resourceId,
+        targetName: params.targetName,
         details: params.details ?? null,
         ipAddress: params.ipAddress,
         userAgent: params.userAgent,
@@ -95,4 +97,101 @@ export async function getAuditLogs(params: {
   ]);
 
   return { logs, total };
+}
+
+/**
+ * Labels lisibles pour les actions d'audit
+ */
+const ACTION_LABELS: Record<string, string> = {
+  AUTH_LOGIN: 'Connexion',
+  AUTH_LOGOUT: 'Déconnexion',
+  AUTH_FAILED: 'Échec de connexion',
+  USER_CREATED: 'Utilisateur créé',
+  USER_UPDATED: 'Utilisateur modifié',
+  USER_DELETED: 'Utilisateur supprimé',
+  USER_DISABLED: 'Utilisateur désactivé',
+  USER_ENABLED: 'Utilisateur activé',
+  ROLE_CHANGED: 'Rôle modifié',
+  PASSWORD_RESET: 'Mot de passe réinitialisé',
+  PASSWORD_CHANGED: 'Mot de passe modifié',
+  NOTE_CREATED: 'Note créée',
+  NOTE_UPDATED: 'Note modifiée',
+  NOTE_DELETED: 'Note supprimée',
+  NOTE_RESTORED: 'Note restaurée',
+  FOLDER_CREATED: 'Dossier créé',
+  FOLDER_UPDATED: 'Dossier modifié',
+  FOLDER_DELETED: 'Dossier supprimé',
+  PERMISSION_GRANTED: 'Permission accordée',
+  PERMISSION_REVOKED: 'Permission révoquée',
+  BACKUP_CREATED: 'Sauvegarde créée',
+  BACKUP_RESTORED: 'Sauvegarde restaurée',
+};
+
+/**
+ * Échappe une valeur pour l'inclure dans un CSV
+ */
+function escapeCsvValue(value: string | null | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  // Si la valeur contient des guillemets, virgules ou retours à la ligne, l'entourer de guillemets
+  if (value.includes('"') || value.includes(',') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
+ * Exporte les logs d'audit en CSV
+ */
+export async function exportAuditLogsCsv(params: {
+  userId?: string;
+  action?: AuditAction;
+  resourceType?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  maxRows?: number;
+}): Promise<string> {
+  const { maxRows = 10000, ...queryParams } = params;
+
+  const { logs } = await getAuditLogs({
+    ...queryParams,
+    limit: maxRows,
+    offset: 0,
+  });
+
+  // En-têtes CSV
+  const headers = [
+    'Date',
+    'Heure',
+    'Action',
+    'Utilisateur',
+    'Type cible',
+    'ID cible',
+    'Nom cible',
+    'Détails',
+    'Adresse IP',
+  ];
+
+  // Lignes de données
+  const rows = logs.map((log) => {
+    const date = new Date(log.createdAt);
+    return [
+      date.toISOString().split('T')[0], // Date YYYY-MM-DD
+      date.toISOString().split('T')[1]?.split('.')[0] || '', // Heure HH:mm:ss
+      ACTION_LABELS[log.action] || log.action,
+      log.user?.displayName || log.user?.username || 'N/A',
+      log.resourceType,
+      log.resourceId || '',
+      log.targetName || '',
+      log.details ? JSON.stringify(log.details) : '',
+      log.ipAddress || '',
+    ].map(escapeCsvValue);
+  });
+
+  // Assemblage du CSV
+  return [
+    headers.join(','),
+    ...rows.map((row) => row.join(',')),
+  ].join('\n');
 }
