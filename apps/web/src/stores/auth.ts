@@ -48,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
             user,
             isAuthenticated: true,
             isLoading: false,
+            isInitialized: true,
           });
         } catch (err: any) {
           const message = err.response?.data?.message || 'Erreur de connexion';
