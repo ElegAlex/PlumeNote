@@ -11,6 +11,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean; // true après le premier checkAuth()
   error: string | null;
   _hasHydrated: boolean;
 
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      isInitialized: false,
       error: null,
       _hasHydrated: false,
 
@@ -82,12 +84,14 @@ export const useAuthStore = create<AuthState>()(
             user,
             isAuthenticated: true,
             isLoading: false,
+            isInitialized: true,
           });
         } catch {
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            isInitialized: true,
           });
         }
       },

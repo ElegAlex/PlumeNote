@@ -20,9 +20,10 @@ import { DashboardPage } from './components/dashboard/DashboardPage';
 import { CalendarPage } from './components/calendar/CalendarPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, isInitialized } = useAuthStore();
 
-  if (isLoading) {
+  // Attendre que checkAuth() ait terminé pour avoir le user complet
+  if (isLoading || !isInitialized) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
