@@ -42,6 +42,12 @@ export const notificationPreferencesSchema = z.object({
   mentionNotifications: z.boolean().default(true),
 });
 
+// Préférences d'onboarding/tutoriel
+export const onboardingPreferencesSchema = z.object({
+  tutorialCompleted: z.boolean().default(false),
+  tutorialVersion: z.number().default(0),
+});
+
 // Préférences d'affichage
 export const displayPreferencesSchema = z.object({
   theme: themeSchema.default('system'),
@@ -57,6 +63,7 @@ export const userPreferencesSchema = z.object({
   editor: editorPreferencesSchema.default({}),
   sidebar: sidebarPreferencesSchema.default({}),
   notifications: notificationPreferencesSchema.default({}),
+  onboarding: onboardingPreferencesSchema.default({}),
 });
 
 // Schéma pour mise à jour partielle
@@ -65,6 +72,7 @@ export const updatePreferencesSchema = z.object({
   editor: editorPreferencesSchema.partial().optional(),
   sidebar: sidebarPreferencesSchema.partial().optional(),
   notifications: notificationPreferencesSchema.partial().optional(),
+  onboarding: onboardingPreferencesSchema.partial().optional(),
 });
 
 // Types exportés
@@ -75,6 +83,7 @@ export type Language = z.infer<typeof languageSchema>;
 export type EditorPreferences = z.infer<typeof editorPreferencesSchema>;
 export type SidebarPreferences = z.infer<typeof sidebarPreferencesSchema>;
 export type NotificationPreferences = z.infer<typeof notificationPreferencesSchema>;
+export type OnboardingPreferences = z.infer<typeof onboardingPreferencesSchema>;
 export type DisplayPreferences = z.infer<typeof displayPreferencesSchema>;
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;

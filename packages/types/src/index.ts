@@ -230,6 +230,14 @@ export interface NotificationPreferences {
 }
 
 /**
+ * Préférences d'onboarding/tutoriel
+ */
+export interface OnboardingPreferences {
+  tutorialCompleted: boolean;
+  tutorialVersion: number;
+}
+
+/**
  * Préférences utilisateur complètes
  */
 export interface UserPreferences {
@@ -237,6 +245,7 @@ export interface UserPreferences {
   editor: EditorPreferences;
   sidebar: SidebarPreferences;
   notifications: NotificationPreferences;
+  onboarding: OnboardingPreferences;
 }
 
 /**
@@ -247,6 +256,7 @@ export interface UpdatePreferencesRequest {
   editor?: Partial<EditorPreferences>;
   sidebar?: Partial<SidebarPreferences>;
   notifications?: Partial<NotificationPreferences>;
+  onboarding?: Partial<OnboardingPreferences>;
 }
 
 // ----- Auth -----

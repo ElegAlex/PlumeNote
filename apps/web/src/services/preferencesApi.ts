@@ -11,6 +11,7 @@ import type {
   EditorPreferences,
   SidebarPreferences,
   NotificationPreferences,
+  OnboardingPreferences,
 } from '@plumenote/types';
 
 const BASE_URL = '/preferences';
@@ -92,4 +93,10 @@ export async function updateNotificationPreferences(
   data: Partial<NotificationPreferences>
 ): Promise<UserPreferences> {
   return updatePreferenceSection('notifications', data);
+}
+
+export async function updateOnboardingPreferences(
+  data: Partial<OnboardingPreferences>
+): Promise<UserPreferences> {
+  return updatePreferenceSection('onboarding', data);
 }

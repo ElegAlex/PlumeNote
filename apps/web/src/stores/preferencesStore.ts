@@ -13,6 +13,7 @@ import type {
   EditorPreferences,
   SidebarPreferences,
   NotificationPreferences,
+  OnboardingPreferences,
 } from '@plumenote/types';
 import * as preferencesApi from '../services/preferencesApi';
 
@@ -44,6 +45,10 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     browserNotifications: false,
     mentionNotifications: true,
   },
+  onboarding: {
+    tutorialCompleted: false,
+    tutorialVersion: 0,
+  },
 };
 
 interface PreferencesState {
@@ -59,6 +64,9 @@ interface PreferencesState {
   updateEditor: (updates: Partial<EditorPreferences>) => Promise<void>;
   updateSidebar: (updates: Partial<SidebarPreferences>) => Promise<void>;
   updateNotifications: (updates: Partial<NotificationPreferences>) => Promise<void>;
+  updateOnboarding: (updates: Partial<OnboardingPreferences>) => Promise<void>;
+  markTutorialCompleted: (version: number) => Promise<void>;
+  shouldShowTutorial: (currentVersion: number) => boolean;
   setTheme: (theme: Theme) => Promise<void>;
   setEditorMode: (mode: EditorMode) => Promise<void>;
   setEditorWidth: (width: EditorWidth) => Promise<void>;
@@ -156,6 +164,44 @@ export const usePreferencesStore = create<PreferencesState>()(
         } finally {
           set({ isLoading: false });
         }
+      },
+
+      updateOnboarding: async (updates) => {
+        // Mise à jour optimiste
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            onboarding: { ...state.preferences.onboarding, ...updates },
+          },
+        }));
+
+        try {
+          await preferencesApi.updateOnboardingPreferences(updates);
+        } catch (error) {
+          // Silencieux, déjà appliqué localement
+        }
+      },
+
+      markTutorialCompleted: async (version) => {
+        const updates = { tutorialCompleted: true, tutorialVersion: version };
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            onboarding: { ...state.preferences.onboarding, ...updates },
+          },
+        }));
+
+        try {
+          await preferencesApi.updateOnboardingPreferences(updates);
+        } catch (error) {
+          // Silencieux, déjà appliqué localement
+        }
+      },
+
+      shouldShowTutorial: (currentVersion) => {
+        const { onboarding } = get().preferences;
+        // Afficher si jamais complété OU si nouvelle version du tutoriel
+        return !onboarding.tutorialCompleted || onboarding.tutorialVersion < currentVersion;
       },
 
       setTheme: async (theme) => {

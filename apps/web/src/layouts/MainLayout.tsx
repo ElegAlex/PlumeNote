@@ -2,24 +2,41 @@
 // Layout Principal avec Sidebar (US-020 à US-024)
 // ===========================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 import { useImportStore } from '../stores/importStore';
+import { usePreferencesStore } from '../stores/preferencesStore';
 import { Button } from '../components/ui/Button';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { ShortcutsModal } from '../components/shortcuts/ShortcutsModal';
 import { ImportWizard } from '../components/import';
 import { EventDetailModal } from '../components/calendar/EventDetailModal';
+import { TutorialModal, TUTORIAL_VERSION } from '../components/tutorial';
 import { cn } from '../lib/utils';
 
 export function MainLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { isWizardOpen, openWizard, closeWizard } = useImportStore();
+  const { shouldShowTutorial, markTutorialCompleted, isInitialized } = usePreferencesStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Afficher le tutoriel à la première connexion
+  useEffect(() => {
+    if (isInitialized && shouldShowTutorial(TUTORIAL_VERSION)) {
+      // Petit délai pour laisser l'UI se charger
+      const timer = setTimeout(() => setShowTutorial(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, shouldShowTutorial]);
+
+  const handleTutorialComplete = () => {
+    markTutorialCompleted(TUTORIAL_VERSION);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -201,6 +218,15 @@ export function MainLayout() {
                     >
                       Raccourcis
                     </button>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setShowTutorial(true);
+                      }}
+                    >
+                      Tutoriel
+                    </button>
                     <NavLink
                       to="/settings"
                       className="block px-4 py-2 text-sm hover:bg-muted"
@@ -245,6 +271,13 @@ export function MainLayout() {
 
       {/* Modal détail événement (disponible partout) */}
       <EventDetailModal />
+
+      {/* Modal Tutoriel */}
+      <TutorialModal
+        open={showTutorial}
+        onOpenChange={setShowTutorial}
+        onComplete={handleTutorialComplete}
+      />
     </div>
   );
 }
