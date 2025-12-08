@@ -8,7 +8,6 @@ COPY apps/web ./apps/web
 
 RUN pnpm install || npm install
 RUN cd packages/types && npm run build
-RUN cd packages/types/dist && mv index.js index.mjs 2>/dev/null || true
 RUN cd apps/web && npm run build
 
 FROM nginx:alpine
