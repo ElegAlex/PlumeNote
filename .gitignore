@@ -56,3 +56,8 @@ packages/database/.env
 
 # TypeScript
 *.tsbuildinfo
+
+# Docker
+docker/.env
+docker/ssl/*.pem
+!docker/ssl/.gitkeep
