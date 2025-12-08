@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { useSidebarStore } from '../../stores/sidebarStore';
+import { usePersonalStore } from '../../stores/personalStore';
 import { useFoldersStore } from '../../stores/folders';
 import { useNotesStore } from '../../stores/notes';
 import { FolderTree } from './FolderTree';
@@ -39,6 +40,7 @@ interface DragItem {
   id: string;
   name: string;
   parentId?: string | null;
+  isPersonal?: boolean;
 }
 
 // ===========================================
@@ -48,6 +50,7 @@ interface DragItem {
 export function Sidebar() {
   const navigate = useNavigate();
   const { tree, fetchTree, refreshFolder, addFolderToTree, removeFolderFromTree } = useSidebarStore();
+  const { moveNote: movePersonalNote } = usePersonalStore();
   const { createFolder, moveFolder, moveNote } = useFoldersStore();
   const { createNote } = useNotesStore();
 
@@ -221,6 +224,7 @@ export function Sidebar() {
 
       const draggedItem = active.data.current as DragItem;
       const dropTarget = over.id as string;
+      const dropTargetData = over.data.current as DragItem | undefined;
 
       // Extraire l'ID du dossier cible
       const targetFolderId = dropTarget.startsWith('folder:')
@@ -229,13 +233,21 @@ export function Sidebar() {
 
       if (!targetFolderId) return;
 
+      // Vérifier cohérence personnel/général
+      // On ne peut pas mixer les éléments personnels et généraux
+      const isTargetPersonal = dropTargetData?.isPersonal ?? false;
+      if (draggedItem.isPersonal !== isTargetPersonal) {
+        toast.error('Impossible de déplacer entre l\'espace personnel et l\'espace partagé');
+        return;
+      }
+
       // Vérifier qu'on ne dépose pas sur soi-même
       if (draggedItem.type === 'folder' && draggedItem.id === targetFolderId) {
         return;
       }
 
-      // Vérifier descendance (dossier dans son enfant)
-      if (draggedItem.type === 'folder') {
+      // Vérifier descendance (dossier dans son enfant) - seulement pour les dossiers généraux
+      if (draggedItem.type === 'folder' && !draggedItem.isPersonal) {
         const isDescendant = checkIsDescendant(tree, draggedItem.id, targetFolderId);
         if (isDescendant) {
           toast.error('Impossible de déplacer un dossier dans un de ses sous-dossiers');
@@ -249,23 +261,35 @@ export function Sidebar() {
       }
 
       try {
-        if (draggedItem.type === 'folder') {
-          await moveFolder(draggedItem.id, targetFolderId);
-          toast.success(`Dossier "${draggedItem.name}" déplacé`);
+        if (draggedItem.isPersonal) {
+          // Espace personnel
+          if (draggedItem.type === 'note') {
+            await movePersonalNote(draggedItem.id, targetFolderId);
+            toast.success(`Note "${draggedItem.name}" déplacée`);
+          } else {
+            // TODO: Implémenter movePersonalFolder si nécessaire
+            toast.info('Le déplacement de dossiers personnels sera disponible prochainement');
+          }
         } else {
-          await moveNote(draggedItem.id, targetFolderId);
-          toast.success(`Note "${draggedItem.name}" déplacée`);
+          // Espace général
+          if (draggedItem.type === 'folder') {
+            await moveFolder(draggedItem.id, targetFolderId);
+            toast.success(`Dossier "${draggedItem.name}" déplacé`);
+          } else {
+            await moveNote(draggedItem.id, targetFolderId);
+            toast.success(`Note "${draggedItem.name}" déplacée`);
+          }
+          // Rafraîchir les dossiers concernés
+          if (draggedItem.parentId) {
+            await refreshFolder(draggedItem.parentId);
+          }
+          await refreshFolder(targetFolderId);
         }
-        // Rafraîchir les dossiers concernés
-        if (draggedItem.parentId) {
-          await refreshFolder(draggedItem.parentId);
-        }
-        await refreshFolder(targetFolderId);
       } catch {
         toast.error('Erreur lors du déplacement');
       }
     },
-    [tree, moveFolder, moveNote, refreshFolder]
+    [tree, moveFolder, moveNote, movePersonalNote, refreshFolder]
   );
 
   // Vérifier si targetId est un descendant de folderId

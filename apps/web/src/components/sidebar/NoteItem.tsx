@@ -22,6 +22,8 @@ interface NoteItemProps {
   note: NotePreview;
   level: number;
   folderId?: string | null;
+  /** Mode espace personnel (navigation vers /personal/note/) */
+  isPersonal?: boolean;
 }
 
 // Convertir SidebarFolderNode en FolderTreeNode pour MoveToFolderDialog
@@ -33,7 +35,7 @@ function convertToFolderTreeNode(node: SidebarFolderNode): FolderTreeNode {
   };
 }
 
-export const NoteItem = memo(function NoteItem({ note, level, folderId }: NoteItemProps) {
+export const NoteItem = memo(function NoteItem({ note, level, folderId, isPersonal = false }: NoteItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { noteId: currentNoteId } = useParams<{ noteId: string }>();
@@ -46,7 +48,9 @@ export const NoteItem = memo(function NoteItem({ note, level, folderId }: NoteIt
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [showMoveDialog, setShowMoveDialog] = useState(false);
 
-  const isActive = currentNoteId === note.id;
+  // Chemins de navigation selon le mode
+  const notePath = isPersonal ? `/personal/note/${note.id}` : `/notes/${note.id}`;
+  const isActive = currentNoteId === note.id || location.pathname === notePath;
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
   const isSplitView = location.pathname.startsWith('/split');
 
@@ -58,17 +62,20 @@ export const NoteItem = memo(function NoteItem({ note, level, folderId }: NoteIt
       id: note.id,
       name: note.title,
       parentId: folderId,
+      isPersonal,
     },
   });
 
   const handleClick = useCallback(() => {
-    selectNote(note.id);
+    if (!isPersonal) {
+      selectNote(note.id);
+    }
     if (isSplitView) {
       openNoteInActivePane(note.id);
     } else {
-      navigate(`/notes/${note.id}`);
+      navigate(notePath);
     }
-  }, [navigate, note.id, selectNote, isSplitView, openNoteInActivePane]);
+  }, [navigate, note.id, notePath, selectNote, isSplitView, openNoteInActivePane, isPersonal]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -208,7 +215,7 @@ export const NoteItem = memo(function NoteItem({ note, level, folderId }: NoteIt
             <button
               onClick={() => {
                 setShowContextMenu(false);
-                navigate(`/notes/${note.id}`);
+                navigate(notePath);
               }}
               className="w-full px-3 py-1.5 text-sm text-left hover:bg-accent flex items-center gap-2"
             >

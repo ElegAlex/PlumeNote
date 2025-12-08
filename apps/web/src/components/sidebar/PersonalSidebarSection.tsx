@@ -1,20 +1,22 @@
 // ===========================================
 // Section Notes Personnelles dans la Sidebar
 // Espace privé isolé pour chaque utilisateur
+// Réutilise FolderItem/NoteItem avec isPersonal=true
 // ===========================================
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersonalStore } from '../../stores/personalStore';
 import { useAuthStore } from '../../stores/auth';
-import { usePanesStore } from '../../stores/panesStore';
 import { Button } from '../ui/Button';
 import { InlineCreateForm } from '../common';
+import { FolderItem } from './FolderItem';
+import { NoteItem } from './NoteItem';
 import { toast } from '../ui/Toaster';
 import { cn } from '../../lib/utils';
-import type { PersonalTreeNode, PersonalNotePreview } from '@plumenote/types';
+import type { PersonalTreeNode, PersonalNotePreview, SidebarFolderNode, NotePreview } from '@plumenote/types';
 
-// Icons
+// Icons (seuls ceux utilisés dans ce composant)
 const LockIcon = () => (
   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
@@ -67,6 +69,44 @@ const PlusIcon = () => (
 );
 
 // ===========================================
+// Fonctions de conversion de types
+// ===========================================
+
+/**
+ * Convertit PersonalNotePreview en NotePreview (format attendu par NoteItem)
+ */
+function convertToNotePreview(note: PersonalNotePreview): NotePreview {
+  return {
+    id: note.id,
+    title: note.title,
+    slug: note.slug,
+    position: 0,
+    updatedAt: note.updatedAt,
+    createdAt: note.createdAt,
+  };
+}
+
+/**
+ * Convertit PersonalTreeNode en SidebarFolderNode (format attendu par FolderItem)
+ */
+function convertToSidebarFolderNode(node: PersonalTreeNode): SidebarFolderNode {
+  return {
+    id: node.id,
+    name: node.name,
+    slug: node.slug,
+    parentId: null,
+    color: node.color,
+    icon: node.icon,
+    position: 0,
+    hasChildren: node.hasChildren || node.children.length > 0,
+    notesCount: node.notes.length,
+    children: node.children.map(convertToSidebarFolderNode),
+    notes: node.notes.map(convertToNotePreview),
+    isLoaded: true,
+  };
+}
+
+// ===========================================
 // Composant Principal
 // ===========================================
 
@@ -75,9 +115,7 @@ export function PersonalSidebarSection() {
   const {
     tree,
     rootNotes,
-    expandedFolderIds,
     fetchTree,
-    toggleFolderExpanded,
     createFolder,
     createNote,
     addFolderToTree,
@@ -144,13 +182,39 @@ export function PersonalSidebarSection() {
   };
 
   // Handlers pour création dans un dossier spécifique
-  const handleCreateNoteInFolder = (folderId: string) => {
+  const handleCreateNoteInFolder = useCallback((folderId: string) => {
     navigate(`/personal/folder/${folderId}?action=new-note`);
-  };
+  }, [navigate]);
 
-  const handleCreateFolderInFolder = (folderId: string) => {
-    navigate(`/personal/folder/${folderId}?action=new-folder`);
-  };
+  const handleCreateSubfolder = useCallback(async (name: string, parentId: string) => {
+    try {
+      const newFolder = await createFolder({ name, parentId });
+      addFolderToTree({
+        id: newFolder.id,
+        name: newFolder.name,
+        slug: newFolder.slug,
+        color: newFolder.color,
+        icon: newFolder.icon,
+        hasChildren: false,
+        children: [],
+        notes: [],
+      }, parentId);
+      toast.success('Sous-dossier créé');
+    } catch {
+      toast.error('Erreur lors de la création');
+    }
+  }, [createFolder, addFolderToTree]);
+
+  // Conversion des données pour les composants FolderItem/NoteItem
+  const convertedTree = useMemo(
+    () => tree.map(convertToSidebarFolderNode),
+    [tree]
+  );
+
+  const convertedRootNotes = useMemo(
+    () => rootNotes.map(convertToNotePreview),
+    [rootNotes]
+  );
 
   return (
     <div className="border-t border-border pt-3 mt-3">
@@ -229,189 +293,42 @@ export function PersonalSidebarSection() {
             </div>
           )}
 
-          {/* Arborescence */}
+          {/* Arborescence - utilise FolderItem/NoteItem avec isPersonal=true */}
           {!isLoading && (
-            <div className="space-y-0.5">
+            <ul role="tree" className="space-y-0.5">
               {/* Dossiers */}
-              {tree.map((folder) => (
-                <PersonalFolderItem
+              {convertedTree.map((folder) => (
+                <FolderItem
                   key={folder.id}
                   folder={folder}
                   level={0}
-                  expandedIds={expandedFolderIds}
-                  onToggle={toggleFolderExpanded}
                   onCreateNote={handleCreateNoteInFolder}
-                  onCreateFolder={handleCreateFolderInFolder}
+                  onCreateFolder={handleCreateSubfolder}
+                  isPersonal
                 />
               ))}
 
               {/* Notes à la racine */}
-              {rootNotes.map((note) => (
-                <PersonalNoteItem key={note.id} note={note} level={0} />
+              {convertedRootNotes.map((note) => (
+                <NoteItem
+                  key={note.id}
+                  note={note}
+                  level={0}
+                  folderId={null}
+                  isPersonal
+                />
               ))}
 
               {/* État vide */}
               {tree.length === 0 && rootNotes.length === 0 && (
-                <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                <li className="px-2 py-3 text-xs text-muted-foreground text-center">
                   Aucune note personnelle
-                </div>
+                </li>
               )}
-            </div>
+            </ul>
           )}
         </div>
       )}
     </div>
-  );
-}
-
-// ===========================================
-// Composant Dossier
-// ===========================================
-
-interface PersonalFolderItemProps {
-  folder: PersonalTreeNode;
-  level: number;
-  expandedIds: Set<string>;
-  onToggle: (id: string) => void;
-  onCreateNote?: (folderId: string) => void;
-  onCreateFolder?: (folderId: string) => void;
-}
-
-function PersonalFolderItem({
-  folder,
-  level,
-  expandedIds,
-  onToggle,
-  onCreateNote,
-  onCreateFolder,
-}: PersonalFolderItemProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const isExpanded = expandedIds.has(folder.id);
-  const isActive = location.pathname === `/personal/folder/${folder.id}`;
-  const hasContent = folder.hasChildren || folder.notes.length > 0;
-
-  const handleClick = () => {
-    navigate(`/personal/folder/${folder.id}`);
-    if (hasContent) {
-      onToggle(folder.id);
-    }
-  };
-
-  return (
-    <>
-      <button
-        onClick={handleClick}
-        className={cn(
-          'group w-full flex items-center gap-1.5 px-2 py-1 text-sm rounded transition-colors',
-          isActive
-            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-            : 'text-foreground hover:bg-muted'
-        )}
-        style={{ paddingLeft: `${level * 12 + 8}px` }}
-      >
-        {/* Chevron */}
-        <span className="w-3 h-3 flex items-center justify-center">
-          {hasContent && (isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />)}
-        </span>
-
-        {/* Icon dossier */}
-        <span
-          className="flex-shrink-0"
-          style={{ color: folder.color ?? 'currentColor' }}
-        >
-          <FolderIcon />
-        </span>
-
-        {/* Nom */}
-        <span className="truncate flex-1 text-left">{folder.name}</span>
-
-        {/* Actions (visibles au hover) */}
-        <div className="hidden group-hover:flex items-center gap-0.5">
-          {onCreateNote && (
-            <span onClick={(e) => { e.stopPropagation(); onCreateNote(folder.id); }} className="h-5 w-5 rounded hover:bg-purple-200 dark:hover:bg-purple-800 flex items-center justify-center cursor-pointer" title="Nouvelle note">
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            </span>
-          )}
-          {onCreateFolder && (
-            <span onClick={(e) => { e.stopPropagation(); onCreateFolder(folder.id); }} className="h-5 w-5 rounded hover:bg-purple-200 dark:hover:bg-purple-800 flex items-center justify-center cursor-pointer" title="Nouveau sous-dossier">
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            </span>
-          )}
-        </div>
-
-        {/* Compteur (caché au hover) */}
-        {folder.notes.length > 0 && (
-          <span className="text-xs text-muted-foreground group-hover:hidden">
-            {folder.notes.length}
-          </span>
-        )}
-      </button>
-
-      {/* Enfants */}
-      {isExpanded && (
-        <>
-          {folder.children.map((child) => (
-            <PersonalFolderItem
-              key={child.id}
-              folder={child}
-              level={level + 1}
-              expandedIds={expandedIds}
-              onToggle={onToggle}
-              onCreateNote={onCreateNote}
-              onCreateFolder={onCreateFolder}
-            />
-          ))}
-          {folder.notes.map((note) => (
-            <PersonalNoteItem key={note.id} note={note} level={level + 1} />
-          ))}
-        </>
-      )}
-    </>
-  );
-}
-
-// ===========================================
-// Composant Note
-// ===========================================
-
-interface PersonalNoteItemProps {
-  note: PersonalNotePreview;
-  level: number;
-}
-
-function PersonalNoteItem({ note, level }: PersonalNoteItemProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { openNoteInActivePane } = usePanesStore();
-
-  const isActive = location.pathname === `/personal/note/${note.id}`;
-  const isSplitView = location.pathname.startsWith('/split');
-
-  const handleClick = () => {
-    if (isSplitView) {
-      openNoteInActivePane(note.id);
-    } else {
-      navigate(`/personal/note/${note.id}`);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        'w-full flex items-center gap-1.5 px-2 py-1 text-sm rounded transition-colors',
-        isActive
-          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-          : 'text-foreground hover:bg-muted'
-      )}
-      style={{ paddingLeft: `${level * 12 + 8 + 12}px` }}
-    >
-      <span className="text-muted-foreground flex-shrink-0">
-        <FileTextIcon />
-      </span>
-      <span className="truncate flex-1 text-left">{note.title}</span>
-    </button>
   );
 }

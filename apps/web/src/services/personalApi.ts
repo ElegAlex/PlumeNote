@@ -123,6 +123,17 @@ export const personalApi = {
     await api.delete(`/personal/notes/${id}`);
   },
 
+  /**
+   * Déplace une note personnelle vers un autre dossier
+   */
+  async moveNote(noteId: string, targetFolderId: string | null): Promise<PersonalNote> {
+    const response = await api.patch<{ note: PersonalNote }>(
+      `/personal/notes/${noteId}`,
+      { folderId: targetFolderId }
+    );
+    return response.data.note;
+  },
+
   // ===============================
   // SEARCH
   // ===============================

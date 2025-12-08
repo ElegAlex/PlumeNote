@@ -6,9 +6,10 @@
 // ===========================================
 
 import { memo, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDroppable } from '@dnd-kit/core';
 import { useSidebarStore } from '../../stores/sidebarStore';
+import { usePersonalStore } from '../../stores/personalStore';
 import { NoteItem } from './NoteItem';
 import { Spinner } from '../ui/Spinner';
 import { InlineCreateForm } from '../common';
@@ -23,6 +24,8 @@ interface FolderItemProps {
   level: number;
   onCreateNote?: (folderId: string) => void;
   onCreateFolder?: (name: string, parentId: string) => Promise<void>;
+  /** Mode espace personnel (navigation vers /personal/folder/) */
+  isPersonal?: boolean;
 }
 
 export const FolderItem = memo(function FolderItem({
@@ -30,21 +33,34 @@ export const FolderItem = memo(function FolderItem({
   level,
   onCreateNote,
   onCreateFolder,
+  isPersonal = false,
 }: FolderItemProps) {
   const navigate = useNavigate();
-  const {
-    expandedIds,
-    loadedFolders,
-    isLoadingFolder,
-    selectedFolderId,
-    toggleFolder,
-    selectFolder,
-  } = useSidebarStore();
+  const location = useLocation();
 
+  // Stores selon le mode (personnel ou général)
+  const sidebarStore = useSidebarStore();
+  const personalStore = usePersonalStore();
+
+  // Sélection du store approprié
+  const expandedIds = isPersonal ? personalStore.expandedFolderIds : sidebarStore.expandedIds;
+  const toggleFolder = isPersonal ? personalStore.toggleFolderExpanded : sidebarStore.toggleFolder;
+
+  // Ces valeurs ne sont utilisées qu'en mode général
+  const loadedFolders = sidebarStore.loadedFolders;
+  const isLoadingFolder = sidebarStore.isLoadingFolder;
+  const selectedFolderId = sidebarStore.selectedFolderId;
+  const selectFolder = sidebarStore.selectFolder;
+
+  // Chemins de navigation selon le mode
+  const folderPath = isPersonal ? `/personal/folder/${folder.id}` : `/folders/${folder.id}`;
   const isExpanded = expandedIds.has(folder.id);
-  const isSelected = selectedFolderId === folder.id;
-  const isLoading = isLoadingFolder === folder.id;
-  const cache = loadedFolders.get(folder.id);
+  const isSelected = isPersonal
+    ? location.pathname === folderPath
+    : selectedFolderId === folder.id;
+  const isLoading = !isPersonal && isLoadingFolder === folder.id;
+  // En mode personnel, pas de cache car les données sont déjà chargées dans folder
+  const cache = isPersonal ? null : loadedFolders.get(folder.id);
 
   // État local pour création de sous-dossier
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
@@ -57,6 +73,7 @@ export const FolderItem = memo(function FolderItem({
       type: 'folder',
       id: folder.id,
       name: folder.name,
+      isPersonal,
     },
   });
 
@@ -70,12 +87,14 @@ export const FolderItem = memo(function FolderItem({
   // Handlers
   // Clic sur toute la ligne = navigation + toggle expand/collapse
   const handleRowClick = useCallback(() => {
-    navigate(`/folders/${folder.id}`);
+    navigate(folderPath);
     if (hasContent) {
       toggleFolder(folder.id);
     }
-    selectFolder(folder.id);
-  }, [folder.id, hasContent, toggleFolder, selectFolder, navigate]);
+    if (!isPersonal) {
+      selectFolder(folder.id);
+    }
+  }, [folder.id, folderPath, hasContent, toggleFolder, selectFolder, navigate, isPersonal]);
 
   // Handler séparé pour le chevron (même comportement mais avec stopPropagation)
   const handleChevronClick = useCallback(
@@ -322,12 +341,13 @@ export const FolderItem = memo(function FolderItem({
               level={level + 1}
               onCreateNote={onCreateNote}
               onCreateFolder={onCreateFolder}
+              isPersonal={isPersonal}
             />
           ))}
 
           {/* Ensuite les notes (tri alphabétique déjà fait côté API) */}
           {notes.map((note) => (
-            <NoteItem key={note.id} note={note} level={level + 1} folderId={folder.id} />
+            <NoteItem key={note.id} note={note} level={level + 1} folderId={folder.id} isPersonal={isPersonal} />
           ))}
 
           {/* État vide */}

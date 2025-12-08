@@ -57,6 +57,7 @@ interface PersonalState {
   createNote: (data: CreatePersonalNoteRequest) => Promise<PersonalNote>;
   updateNote: (id: string, data: UpdatePersonalNoteRequest) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
+  moveNote: (noteId: string, targetFolderId: string | null) => Promise<void>;
 
   // Actions - Recherche
   search: (query: string) => Promise<void>;
@@ -301,6 +302,22 @@ export const usePersonalStore = create<PersonalState>()(
           }
 
           await get().fetchNotes(currentFolder?.folder.id);
+          set({ isSaving: false });
+        } catch (error) {
+          set({
+            error: (error as Error).message,
+            isSaving: false,
+          });
+          throw error;
+        }
+      },
+
+      moveNote: async (noteId: string, targetFolderId: string | null) => {
+        set({ isSaving: true, error: null });
+        try {
+          await personalApi.moveNote(noteId, targetFolderId);
+          // Rafraîchir l'arborescence complète pour mettre à jour les compteurs
+          await get().fetchTree();
           set({ isSaving: false });
         } catch (error) {
           set({
