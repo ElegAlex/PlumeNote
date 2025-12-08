@@ -3,14 +3,39 @@
 // Modification du profil utilisateur
 // ===========================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../stores/auth';
 import { api } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { toast } from 'sonner';
-import { Save, User, Mail, AtSign, Shield } from 'lucide-react';
+import { Save, User, Mail, AtSign, Shield, Upload, Check } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+// 20 avatars prédéfinis (utilisant DiceBear API)
+const PRESET_AVATARS = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Leo',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Maya',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Max',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Robot1',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Robot2',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Robot3',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Robot4',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Robot5',
+  'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy',
+  'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Cool',
+  'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Love',
+  'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Star',
+  'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Fire',
+];
 
 export function ProfileSettings() {
   const { user, setUser } = useAuthStore();
@@ -18,15 +43,54 @@ export function ProfileSettings() {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDisplayNameChange = (value: string) => {
     setDisplayName(value);
     setHasChanges(value !== user?.displayName || avatarUrl !== (user?.avatarUrl || ''));
   };
 
-  const handleAvatarUrlChange = (value: string) => {
-    setAvatarUrl(value);
-    setHasChanges(displayName !== user?.displayName || value !== (user?.avatarUrl || ''));
+  const handleAvatarSelect = (url: string) => {
+    setAvatarUrl(url);
+    setHasChanges(displayName !== user?.displayName || url !== (user?.avatarUrl || ''));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+
+    // Vérifier la taille (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 2 Mo');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Convertir en base64 pour l'aperçu et le stockage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setAvatarUrl(base64);
+        setHasChanges(true);
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error('Erreur lors de la lecture du fichier');
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error('Erreur lors du chargement de l\'image');
+      setIsUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -119,57 +183,97 @@ export function ProfileSettings() {
         <h3 className="text-sm font-medium text-muted-foreground">
           Informations personnelles
         </h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="displayName" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Nom d'affichage
-            </Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => handleDisplayNameChange(e.target.value)}
-              placeholder="Votre nom"
-            />
-            <p className="text-xs text-muted-foreground">
-              Ce nom sera affiché dans l'application.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatarUrl">URL de l'avatar</Label>
-            <Input
-              id="avatarUrl"
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => handleAvatarUrlChange(e.target.value)}
-              placeholder="https://example.com/avatar.jpg"
-            />
-            <p className="text-xs text-muted-foreground">
-              URL d'une image pour votre avatar.
-            </p>
-          </div>
+        {/* Nom d'affichage */}
+        <div className="space-y-2">
+          <Label htmlFor="displayName" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Nom d'affichage
+          </Label>
+          <Input
+            id="displayName"
+            value={displayName}
+            onChange={(e) => handleDisplayNameChange(e.target.value)}
+            placeholder="Votre nom"
+          />
+          <p className="text-xs text-muted-foreground">
+            Ce nom sera affiché dans l'application.
+          </p>
         </div>
 
-        {/* Aperçu de l'avatar */}
-        {avatarUrl && (
-          <div className="space-y-2">
-            <Label>Aperçu</Label>
-            <div className="flex items-center gap-4">
-              <img
-                src={avatarUrl}
-                alt="Avatar preview"
-                className="h-16 w-16 rounded-full object-cover border"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '';
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              <span className="text-sm text-muted-foreground">
-                {displayName || user.username}
-              </span>
+        {/* Sélection d'avatar */}
+        <div className="space-y-4">
+          <Label>Avatar</Label>
+
+          {/* Aperçu actuel */}
+          <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/30">
+            <img
+              src={avatarUrl || PRESET_AVATARS[0]}
+              alt="Avatar actuel"
+              className="h-20 w-20 rounded-full object-cover border-2 border-primary"
+            />
+            <div>
+              <p className="font-medium">{displayName || user.username}</p>
+              <p className="text-sm text-muted-foreground">Avatar actuel</p>
             </div>
           </div>
-        )}
+
+          {/* Upload personnalisé */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Image personnalisée</Label>
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploading ? 'Chargement...' : 'Télécharger une image'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG ou GIF. Max 2 Mo.
+              </p>
+            </div>
+          </div>
+
+          {/* Avatars prédéfinis */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Ou choisissez un avatar</Label>
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+              {PRESET_AVATARS.map((url, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleAvatarSelect(url)}
+                  className={cn(
+                    'relative h-12 w-12 rounded-full overflow-hidden border-2 transition-all hover:scale-110',
+                    avatarUrl === url
+                      ? 'border-primary ring-2 ring-primary ring-offset-2'
+                      : 'border-muted hover:border-primary/50'
+                  )}
+                >
+                  <img
+                    src={url}
+                    alt={`Avatar ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                  {avatarUrl === url && (
+                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Actions */}

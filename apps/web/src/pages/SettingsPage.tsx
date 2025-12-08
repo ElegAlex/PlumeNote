@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePreferencesStore } from '../stores/preferencesStore';
 import { useAuthStore } from '../stores/auth';
-import { DisplaySettings, EditorSettings, NotificationSettings, ProfileSettings } from '../components/settings';
+import { DisplaySettings, EditorSettings, ProfileSettings } from '../components/settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -16,13 +16,12 @@ import { toast } from 'sonner';
 import {
   Palette,
   FileEdit,
-  Bell,
   Shield,
   RotateCcw,
   User,
 } from 'lucide-react';
 
-type Tab = 'display' | 'editor' | 'notifications' | 'profile';
+type Tab = 'display' | 'editor' | 'profile';
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -106,7 +105,7 @@ export function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
           <TabsTrigger value="display" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">Affichage</span>
@@ -114,10 +113,6 @@ export function SettingsPage() {
           <TabsTrigger value="editor" className="flex items-center gap-2">
             <FileEdit className="h-4 w-4" />
             <span className="hidden sm:inline">Éditeur</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -155,23 +150,6 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <EditorSettings />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notifications
-              </CardTitle>
-              <CardDescription>
-                Gérez vos préférences de notifications et alertes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationSettings />
             </CardContent>
           </Card>
         </TabsContent>
