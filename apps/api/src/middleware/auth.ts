@@ -40,6 +40,19 @@ export function createAdminMiddleware() {
     request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
+    // D'abord authentifier l'utilisateur via JWT
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' });
+      throw err;
+    }
+
+    if (!request.user?.userId) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'User not authenticated' });
+      throw new Error('User not authenticated');
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: request.user.userId },
       include: { role: true },
@@ -60,6 +73,19 @@ export function createEditorMiddleware() {
     request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
+    // D'abord authentifier l'utilisateur via JWT
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' });
+      throw err;
+    }
+
+    if (!request.user?.userId) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'User not authenticated' });
+      throw new Error('User not authenticated');
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: request.user.userId },
       include: { role: true },

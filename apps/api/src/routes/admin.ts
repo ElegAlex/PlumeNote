@@ -88,17 +88,21 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       resourceType,
       dateFrom,
       dateTo,
-      limit = 50,
-      offset = 0,
+      limit: limitStr,
+      offset: offsetStr,
     } = request.query as {
       userId?: string;
       action?: string;
       resourceType?: string;
       dateFrom?: string;
       dateTo?: string;
-      limit?: number;
-      offset?: number;
+      limit?: string;
+      offset?: string;
     };
+
+    // Parse query params to numbers (they come as strings from URL)
+    const limit = limitStr ? parseInt(limitStr, 10) : 50;
+    const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
 
     const result = await getAuditLogs({
       userId,

@@ -13,7 +13,7 @@ import type {
   NotificationPreferences,
 } from '@plumenote/types';
 
-const BASE_URL = '/api/v1/preferences';
+const BASE_URL = '/preferences';
 
 /**
  * Récupère les préférences de l'utilisateur courant

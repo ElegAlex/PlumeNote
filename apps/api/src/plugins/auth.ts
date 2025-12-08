@@ -31,9 +31,15 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // Décorateur d'autorisation admin
+  // Décorateur d'autorisation admin (inclut l'authentification)
   fastify.decorate('authorizeAdmin', async function(request: FastifyRequest, reply: FastifyReply) {
-    console.log('[authorizeAdmin] request.user:', request.user);
+    // D'abord authentifier l'utilisateur via JWT
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' });
+      throw err;
+    }
 
     if (!request.user?.userId) {
       reply.status(401).send({ error: 'UNAUTHORIZED', message: 'User not authenticated' });
@@ -44,8 +50,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       where: { id: request.user.userId },
       include: { role: true },
     });
-
-    console.log('[authorizeAdmin] DB user:', user?.username, 'role:', user?.role?.name);
 
     if (!user || user.role.name !== 'admin') {
       reply.status(403).send({ error: 'FORBIDDEN', message: 'Admin access required' });
