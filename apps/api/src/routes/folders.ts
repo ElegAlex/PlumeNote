@@ -10,9 +10,11 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@plumenote/database';
-import type { Folder, FolderTreeNode, CreateFolderRequest, FolderAccess } from '@plumenote/types';
+import type { Folder, FolderTreeNode, CreateFolderRequest, FolderAccess, FolderEventPayload } from '@plumenote/types';
+import { SyncEventType } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission, getEffectivePermissions } from '../services/permissions.js';
+import { getEventBus } from '../infrastructure/events/index.js';
 
 // ----- Schémas de validation -----
 
@@ -278,6 +280,22 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       details: { name, parentId },
       ipAddress: request.ip,
     });
+
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<FolderEventPayload>({
+        type: SyncEventType.FOLDER_CREATED,
+        payload: {
+          folderId: folder.id,
+          parentId: folder.parentId,
+          name: folder.name,
+          slug: folder.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
 
     return reply.status(201).send({
       ...folder,
@@ -592,6 +610,22 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       ipAddress: request.ip,
     });
 
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<FolderEventPayload>({
+        type: SyncEventType.FOLDER_UPDATED,
+        payload: {
+          folderId: folder.id,
+          parentId: folder.parentId,
+          name: folder.name,
+          slug: folder.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
+
     return {
       ...folder,
       createdAt: folder.createdAt.toISOString(),
@@ -701,6 +735,22 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       ipAddress: request.ip,
     });
 
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<FolderEventPayload>({
+        type: SyncEventType.FOLDER_MOVED,
+        payload: {
+          folderId: updated.id,
+          parentId: updated.parentId,
+          name: updated.name,
+          slug: updated.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
+
     return {
       ...updated,
       createdAt: updated.createdAt.toISOString(),
@@ -733,7 +783,7 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
     // Vérifier que le dossier existe et n'est pas personnel
     const existingFolder = await prisma.folder.findUnique({
       where: { id },
-      select: { isPersonal: true },
+      select: { isPersonal: true, name: true, slug: true, parentId: true },
     });
     if (!existingFolder) {
       return reply.status(404).send({
@@ -777,6 +827,22 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
       details: { notesCount, subFoldersCount },
       ipAddress: request.ip,
     });
+
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<FolderEventPayload>({
+        type: SyncEventType.FOLDER_DELETED,
+        payload: {
+          folderId: id,
+          parentId: existingFolder.parentId,
+          name: existingFolder.name,
+          slug: existingFolder.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
 
     return { success: true, deleted: { notes: notesCount, folders: subFoldersCount + 1 } };
   });

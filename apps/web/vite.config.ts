@@ -16,7 +16,14 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'ws://localhost:1234',
+        ws: true,
+      },
     },
+  },
+  preview: {
+    port: 3000,
   },
   build: {
     outDir: 'dist',

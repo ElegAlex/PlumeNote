@@ -17,6 +17,8 @@ import { config } from './config/index.js';
 import { logger } from './lib/logger.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
 import { initRedis, closeRedis } from './services/cache.js';
+import { initEventBus, closeEventBus, getEventBus } from './infrastructure/events/index.js';
+import { SyncWebSocketServer } from './infrastructure/websocket/index.js';
 
 // Routes
 import { authRoutes } from './routes/auth.js';
@@ -53,10 +55,24 @@ export async function buildApp() {
   // ----- Initialisation Redis (US-052) -----
   await initRedis();
 
+  // ----- Initialisation EventBus et WebSocket Sync -----
+  let syncWsServer: SyncWebSocketServer | null = null;
+  try {
+    const eventBus = await initEventBus();
+    syncWsServer = new SyncWebSocketServer(app, eventBus, '/ws/sync');
+    logger.info('[App] EventBus and SyncWebSocket initialized');
+  } catch (error) {
+    logger.warn({ error }, '[App] EventBus initialization failed, sync features disabled');
+  }
+
   // ----- Hook de fermeture propre -----
   app.addHook('onClose', async () => {
+    if (syncWsServer) {
+      await syncWsServer.close();
+    }
+    await closeEventBus();
     await closeRedis();
-    logger.info('Redis connection closed on app shutdown');
+    logger.info('All connections closed on app shutdown');
   });
 
   // ----- Plugins de sécurité -----

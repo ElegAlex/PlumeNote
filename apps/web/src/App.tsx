@@ -18,9 +18,13 @@ import { ShortcutsPage } from './components/shortcuts/ShortcutsPage';
 import { ShortcutsModalTrigger } from './components/shortcuts/ShortcutsModal';
 import { DashboardPage } from './components/dashboard/DashboardPage';
 import { CalendarPage } from './components/calendar/CalendarPage';
+import { useSyncEvents } from './hooks';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isInitialized } = useAuthStore();
+
+  // Initialiser la synchronisation temps réel pour les utilisateurs authentifiés
+  useSyncEvents();
 
   // Attendre que checkAuth() ait terminé pour avoir le user complet
   if (isLoading || !isInitialized) {

@@ -15,3 +15,5 @@ export {
   MAX_IMAGE_SIZE,
 } from './useImageUpload';
 export { useNoteView } from './useNoteView';
+export { useSyncEvents } from './useSyncEvents';
+export { useSyncStatus } from './useSyncStatus';

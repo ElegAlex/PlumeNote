@@ -738,6 +738,97 @@ export interface WSMessage {
   timestamp: number;
 }
 
+// ----- Real-time Sync Events -----
+
+/**
+ * Types d'événements de synchronisation temps réel
+ * Utilisés pour propager les changements de structure (dossiers/notes)
+ * entre tous les utilisateurs connectés
+ */
+export enum SyncEventType {
+  // Notes
+  NOTE_CREATED = 'note:created',
+  NOTE_UPDATED = 'note:updated',
+  NOTE_DELETED = 'note:deleted',
+  NOTE_MOVED = 'note:moved',
+
+  // Folders
+  FOLDER_CREATED = 'folder:created',
+  FOLDER_UPDATED = 'folder:updated',
+  FOLDER_DELETED = 'folder:deleted',
+  FOLDER_MOVED = 'folder:moved',
+
+  // Permissions
+  PERMISSION_CHANGED = 'permission:changed',
+}
+
+/**
+ * Événement de synchronisation générique
+ */
+export interface SyncEvent<T = unknown> {
+  type: SyncEventType;
+  payload: T;
+  userId: string;
+  timestamp: number;
+  correlationId: string;
+}
+
+/**
+ * Payload pour les événements de notes
+ */
+export interface NoteEventPayload {
+  noteId: string;
+  folderId: string | null;
+  title: string;
+  slug: string;
+}
+
+/**
+ * Payload pour les événements de dossiers
+ */
+export interface FolderEventPayload {
+  folderId: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+}
+
+/**
+ * Payload pour les événements de permissions
+ */
+export interface PermissionEventPayload {
+  resourceType: 'note' | 'folder';
+  resourceId: string;
+}
+
+/**
+ * Statut de connexion WebSocket de synchronisation
+ */
+export interface SyncConnectionStatus {
+  isConnected: boolean;
+  isReconnecting: boolean;
+  lastConnectedAt: Date | null;
+  error: string | null;
+}
+
+/**
+ * Message WebSocket de synchronisation (client <-> serveur)
+ */
+export interface SyncWebSocketMessage {
+  type: 'connected' | 'subscribed' | 'unsubscribed' | 'sync_event' | 'pong' | 'error';
+  event?: SyncEvent;
+  userId?: string;
+  timestamp?: number;
+  error?: string;
+}
+
+/**
+ * Message client vers serveur pour souscription
+ */
+export interface SyncClientMessage {
+  type: 'subscribe' | 'unsubscribe' | 'ping';
+}
+
 // ----- P2: MÉTADONNÉES -----
 
 /**

@@ -13,6 +13,7 @@ import { ShortcutsModal } from '../components/shortcuts/ShortcutsModal';
 import { ImportWizard } from '../components/import';
 import { EventDetailModal } from '../components/calendar/EventDetailModal';
 import { TutorialModal, TUTORIAL_VERSION } from '../components/tutorial';
+import { SyncStatusDot } from '../components/common/SyncStatusIndicator';
 import { cn } from '../lib/utils';
 
 export function MainLayout() {
@@ -55,9 +56,13 @@ export function MainLayout() {
         {/* Logo */}
         <div className="h-14 flex items-center justify-between px-4 border-b">
           {!isSidebarCollapsed && (
-            <NavLink to="/" className="font-semibold text-lg">
+            <NavLink to="/" className="font-semibold text-lg flex items-center gap-2">
               PlumeNote
+              <SyncStatusDot />
             </NavLink>
+          )}
+          {isSidebarCollapsed && (
+            <SyncStatusDot className="mx-auto" />
           )}
           <Button
             variant="ghost"

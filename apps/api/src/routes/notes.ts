@@ -11,11 +11,13 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@plumenote/database';
-import type { Note, CreateNoteRequest, NoteFrontmatter, NoteMetadata } from '@plumenote/types';
+import type { Note, CreateNoteRequest, NoteFrontmatter, NoteMetadata, NoteEventPayload } from '@plumenote/types';
+import { SyncEventType } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission } from '../services/permissions.js';
 import { parseLinks, updateLinks } from '../services/links.js';
 import { syncYamlToMetadata } from '../services/metadataSync.js';
+import { getEventBus } from '../infrastructure/events/index.js';
 
 // ----- Schémas de validation -----
 
@@ -487,6 +489,22 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       ipAddress: request.ip,
     });
 
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<NoteEventPayload>({
+        type: SyncEventType.NOTE_CREATED,
+        payload: {
+          noteId: note.id,
+          folderId: note.folderId,
+          title: note.title,
+          slug: note.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
+
     return reply.status(201).send({
       ...note,
       createdAt: note.createdAt.toISOString(),
@@ -703,6 +721,22 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       ipAddress: request.ip,
     });
 
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<NoteEventPayload>({
+        type: SyncEventType.NOTE_UPDATED,
+        payload: {
+          noteId: updated.id,
+          folderId: updated.folderId,
+          title: updated.title,
+          slug: updated.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
+
     return {
       ...updated,
       createdAt: updated.createdAt.toISOString(),
@@ -770,6 +804,22 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       details: { title: note.title },
       ipAddress: request.ip,
     });
+
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<NoteEventPayload>({
+        type: SyncEventType.NOTE_DELETED,
+        payload: {
+          noteId: note.id,
+          folderId: note.folderId,
+          title: note.title,
+          slug: note.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
 
     return { success: true };
   });
@@ -880,6 +930,22 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       },
       ipAddress: request.ip,
     });
+
+    // Émettre l'événement de synchronisation temps réel
+    try {
+      getEventBus().publish<NoteEventPayload>({
+        type: SyncEventType.NOTE_MOVED,
+        payload: {
+          noteId: updated.id,
+          folderId: updated.folderId,
+          title: updated.title,
+          slug: updated.slug,
+        },
+        userId,
+      });
+    } catch {
+      // EventBus non disponible, continuer sans sync
+    }
 
     return reply.send({
       ...updated,
