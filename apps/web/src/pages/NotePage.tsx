@@ -20,7 +20,7 @@ import { PropertiesPanel } from '../components/editor/metadata/PropertiesPanel';
 import { TagsPanel } from '../components/editor/metadata/TagsPanel';
 import { NoteActionMenu, MoveToFolderDialog } from '../components/common';
 import type { FolderTreeNode } from '../components/common';
-import { useNoteView } from '../hooks';
+import { useNoteView, useNoteRealtimeSync } from '../hooks';
 import { useNoteEvents } from '../hooks/useNoteEvents';
 import { EventBadge } from '../components/calendar/EventBadge';
 import { ExportDialog } from '../components/export';
@@ -49,6 +49,14 @@ export function NotePage() {
 
   // P1: Enregistrer la vue de la note
   useNoteView(currentNote?.id);
+
+  // Synchronisation temps réel: recharger la note quand un autre utilisateur la modifie
+  useNoteRealtimeSync(noteId, useCallback(() => {
+    if (noteId) {
+      console.log('[NotePage] Remote update detected, refetching note');
+      fetchNote(noteId);
+    }
+  }, [noteId, fetchNote]));
 
   // Récupérer les événements liés à cette note
   const { events: linkedEvents } = useNoteEvents(currentNote?.id);

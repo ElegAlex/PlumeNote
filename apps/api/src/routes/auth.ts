@@ -116,6 +116,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
               },
             },
             expiresAt: { type: 'string' },
+            token: { type: 'string' },
           },
         },
         401: {
@@ -315,7 +316,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         expires: expiresAt,
       });
 
-      const response: LoginResponse = {
+      const response: LoginResponse & { token: string } = {
         user: {
           id: dbUser.id,
           username: dbUser.username,
@@ -330,6 +331,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
           updatedAt: dbUser.updatedAt.toISOString(),
         },
         expiresAt: expiresAt.toISOString(),
+        token, // Token JWT pour les connexions WebSocket
       };
 
       return response;

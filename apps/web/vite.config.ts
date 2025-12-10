@@ -16,6 +16,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/ws/sync': {
+        target: 'ws://localhost:3001',
+        ws: true,
+      },
       '/ws': {
         target: 'ws://localhost:1234',
         ws: true,

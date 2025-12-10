@@ -108,6 +108,7 @@ async function computePermission(
 
 /**
  * Vérifie les permissions sur un dossier en remontant la hiérarchie
+ * Prend en compte à la fois les permissions explicites et le modèle accessType (OPEN/RESTRICTED)
  */
 async function checkFolderPermission(
   userId: string,
@@ -121,6 +122,7 @@ async function checkFolderPermission(
   while (currentFolderId && !visitedFolders.has(currentFolderId)) {
     visitedFolders.add(currentFolderId);
 
+    // D'abord vérifier les permissions explicites (table Permission)
     const permission = await prisma.permission.findFirst({
       where: {
         resourceType: 'FOLDER',
@@ -136,12 +138,49 @@ async function checkFolderPermission(
       return meetsLevel(permission.level, requiredLevel);
     }
 
-    // Remonter au parent
+    // Vérifier le modèle accessType (OPEN/RESTRICTED)
     const folder = await prisma.folder.findUnique({
       where: { id: currentFolderId },
-      select: { parentId: true },
+      select: {
+        parentId: true,
+        accessType: true,
+        accessList: {
+          where: { userId },
+          select: { canRead: true, canWrite: true },
+        },
+      },
     });
 
+    if (folder) {
+      // Dossier OPEN : tous les utilisateurs authentifiés ont accès en lecture
+      // Les éditeurs peuvent aussi écrire (selon leur rôle global)
+      if (folder.accessType === 'OPEN') {
+        if (requiredLevel === 'READ') {
+          return true;
+        }
+        // Pour WRITE sur un dossier OPEN, vérifier le rôle global (editor peut écrire)
+        if (requiredLevel === 'WRITE') {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { role: true },
+          });
+          return user?.role.name === 'editor' || user?.role.name === 'admin';
+        }
+      }
+
+      // Dossier RESTRICTED : vérifier la liste d'accès
+      if (folder.accessType === 'RESTRICTED' && folder.accessList.length > 0) {
+        const access = folder.accessList[0];
+        if (requiredLevel === 'READ' && access.canRead) {
+          return true;
+        }
+        if (requiredLevel === 'WRITE' && access.canWrite) {
+          return true;
+        }
+      }
+    }
+
+    // Remonter au parent
     currentFolderId = folder?.parentId || null;
   }
 

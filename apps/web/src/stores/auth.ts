@@ -42,7 +42,12 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const response = await api.post('/auth/login', { username, password });
-          const { user } = response.data;
+          const { user, token } = response.data;
+
+          // Stocker le token pour les connexions WebSocket
+          if (token) {
+            localStorage.setItem('plumenote-token', token);
+          }
 
           set({
             user,
@@ -66,6 +71,9 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Ignorer les erreurs de logout
         } finally {
+          // Supprimer le token WebSocket
+          localStorage.removeItem('plumenote-token');
+
           set({
             user: null,
             isAuthenticated: false,

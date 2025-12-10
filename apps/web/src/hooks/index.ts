@@ -17,3 +17,4 @@ export {
 export { useNoteView } from './useNoteView';
 export { useSyncEvents } from './useSyncEvents';
 export { useSyncStatus } from './useSyncStatus';
+export { useNoteRealtimeSync } from './useNoteRealtimeSync';

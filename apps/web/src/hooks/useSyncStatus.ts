@@ -3,7 +3,8 @@
 // ===========================================
 
 import { useState, useEffect } from 'react';
-import { syncWebSocket, SyncConnectionStatus } from '../services/syncWebSocket';
+import type { SyncConnectionStatus } from '@plumenote/types';
+import { syncWebSocket } from '../services/syncWebSocket';
 
 /**
  * Hook qui retourne le statut actuel de la connexion WebSocket de synchronisation

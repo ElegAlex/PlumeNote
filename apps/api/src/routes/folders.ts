@@ -137,7 +137,14 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
         .map((folder) => {
           const perm = permissions.find((p) => p.resourceId === folder.id);
           const accessLevel = perm?.level || null;
-          const hasAccess = isAdmin || accessLevel !== null && accessLevel !== 'NONE' ||
+          // hasAccess = true si:
+          // - admin
+          // - dossier OPEN (accessible à tous les utilisateurs authentifiés)
+          // - permission explicite
+          // - utilisateur dans la liste d'accès d'un dossier RESTRICTED
+          const hasAccess = isAdmin ||
+            folder.accessType === 'OPEN' ||
+            (accessLevel !== null && accessLevel !== 'NONE') ||
             (folder.accessType === 'RESTRICTED' && folder.accessList.some(a => a.canRead));
 
           return {
