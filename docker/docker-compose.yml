@@ -81,6 +81,12 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: plumenote-web
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
     networks:
       - plumenote-network
 

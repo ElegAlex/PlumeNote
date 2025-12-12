@@ -1,165 +1,174 @@
+<div align="center">
+
 # PlumeNote
 
-**Plateforme de gestion de notes collaboratives on-premise**
+**Application de prise de notes collaborative en temps reel pour equipes IT**
 
-PlumeNote est une application de prise de notes Markdown collaborative conçue pour les équipes IT. Elle combine la puissance du Markdown avec une édition temps réel multi-utilisateurs, un système de permissions granulaire et des fonctionnalités avancées type Obsidian (wikilinks, rétroliens, tableaux dynamiques).
+[![CI](https://github.com/ElegAlex/PlumeNote/actions/workflows/ci.yml/badge.svg)](https://github.com/ElegAlex/PlumeNote/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://github.com/ElegAlex/PlumeNote/pkgs/container/plumenote)
 
-## Fonctionnalités principales
+[Demo](https://plumenote.fr) | [Documentation](./docs/) | [Installation](#-installation) | [Contribuer](./CONTRIBUTING.md)
 
-- **Édition Markdown WYSIWYG** avec TipTap/ProseMirror
-- **Collaboration temps réel** via CRDT (Yjs)
-- **Wikilinks** `[[note]]` et rétroliens automatiques
-- **Permissions RBAC** granulaires (Admin/Éditeur/Lecteur)
-- **Recherche full-text** performante
-- **Tableaux dynamiques** type Dataview
-- **Hébergement on-premise** (Docker)
+</div>
 
-## Quick Start
+---
 
-### Prérequis
+## Fonctionnalites
 
-- Node.js 20+
-- Docker & Docker Compose
-- npm 10+
+- **Edition Markdown WYSIWYG** - Editeur riche base sur TipTap/ProseMirror
+- **Collaboration temps reel** - Synchronisation via CRDT (Yjs/Hocuspocus)
+- **Wikilinks** - Liens entre notes avec retroliens automatiques
+- **Recherche full-text** - Recherche instantanee dans toutes vos notes
+- **Tags et dossiers** - Organisation flexible de vos notes
+- **Permissions RBAC** - Controle d'acces granulaire par note/dossier
+- **Tableaux dynamiques** - Requetes type Dataview sur vos notes
+- **On-premise** - Hebergez sur votre propre infrastructure
 
-### Installation
+## Apercu
+
+<div align="center">
+<img src="docs/assets/screenshot.png" alt="PlumeNote Screenshot" width="800">
+</div>
+
+## Installation
+
+### Prerequis
+
+- Docker 20.10+
+- Docker Compose v2.0+
+- 2 Go RAM minimum
+- 10 Go d'espace disque
+
+### Demarrage rapide
 
 ```bash
-# Cloner le projet
+# 1. Cloner le repository
 git clone https://github.com/ElegAlex/PlumeNote.git
-cd plumenote
+cd PlumeNote/docker
 
-# Configuration
+# 2. Configurer l'environnement
 cp .env.example .env
-# Éditer .env avec vos paramètres
+# Editer .env avec vos propres secrets
 
-# Installer les dépendances
-npm install
+# 3. Lancer l'application
+docker compose up -d
 
-# Démarrer les services (PostgreSQL, Redis)
-npm run docker:dev
-
-# Préparer la base de données
-npm run db:generate
-npm run db:migrate
-npm run db:seed
-
-# Lancer en développement
-npm run dev
+# L'application est accessible sur http://localhost
 ```
 
-L'application sera accessible sur :
-- **Frontend** : http://localhost:3000
-- **API** : http://localhost:3001
-- **API Docs** : http://localhost:3001/docs
+### Configuration
 
-### Déploiement Production
+Copiez `.env.example` vers `.env` et configurez les variables :
+
+| Variable | Description | Requis |
+|----------|-------------|--------|
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | Oui |
+| `JWT_SECRET` | Secret JWT (min 32 car.) | Oui |
+| `COOKIE_SECRET` | Secret cookies (min 32 car.) | Oui |
+| `CORS_ORIGINS` | Domaines autorises | Oui |
+| `DOMAIN` | Votre domaine (pour SSL) | Pour HTTPS |
+
+> Generez des secrets securises avec : `openssl rand -base64 32`
+
+### Activer HTTPS
 
 ```bash
-# Build des images
-docker-compose -f docker/docker-compose.yml build
+# 1. Placez vos certificats dans docker/nginx/ssl/
+#    - fullchain.pem
+#    - privkey.pem
 
-# Démarrage
-docker-compose -f docker/docker-compose.yml up -d
+# 2. Configurez votre domaine dans .env
+DOMAIN=votre-domaine.fr
+
+# 3. Activez SSL
+./scripts/enable-ssl.sh
 ```
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         Navigateur                          │
-│                     (React SPA + TipTap)                    │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-              HTTPS       │       WSS
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       Nginx (Reverse Proxy)                 │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-          ┌───────────────┴───────────────┐
-          ▼                               ▼
-┌─────────────────────┐       ┌─────────────────────┐
-│     API Fastify     │       │   Yjs (Hocuspocus)  │
-│                     │       │                     │
-│  - REST API         │       │  - WebSocket        │
-│  - Auth LDAP/JWT    │       │  - CRDT Sync        │
-│  - Permissions      │       │  - Awareness        │
-└─────────┬───────────┘       └─────────┬───────────┘
-          │                             │
-          └──────────────┬──────────────┘
-                         ▼
-              ┌─────────────────────┐
-              │     PostgreSQL      │
-              │                     │
-              │  - Users, Notes     │
-              │  - Permissions      │
-              │  - Full-text Search │
-              └─────────────────────┘
++-------------------------------------------------------------------+
+|                         Nginx (Reverse Proxy)                      |
+|                    HTTP/HTTPS - WebSocket - SSL                    |
++--------------------------------+----------------------------------+
+                                 |
+              +------------------+------------------+
+              |                  |                  |
+              v                  v                  v
+      +-------------+    +-------------+    +-------------+
+      |   Frontend  |    |     API     |    |     Yjs     |
+      |    React    |    |   Fastify   |    |  Hocuspocus |
+      |   TipTap    |    |   REST API  |    |    CRDT     |
+      +-------------+    +------+------+    +------+------+
+                                |                  |
+                         +------+------------------+
+                         |
+                   +-----+-----+
+                   v           v
+           +-------------+ +-------------+
+           |  PostgreSQL | |    Redis    |
+           |    Data     | |    Cache    |
+           +-------------+ +-------------+
 ```
 
-## Stack technique
+### Stack technique
 
-| Couche | Technologie |
-|--------|-------------|
-| Frontend | React 18, TypeScript, Vite |
+| Composant | Technologie |
+|-----------|-------------|
+| Frontend | React 18, TypeScript, Vite, Zustand |
 | UI | Radix UI, Tailwind CSS |
-| Éditeur | TipTap (ProseMirror) |
-| Backend | Node.js, Fastify |
+| Editeur | TipTap (ProseMirror) |
+| Backend | Node.js, Fastify, TypeScript |
 | CRDT | Yjs, Hocuspocus |
-| BDD | PostgreSQL 16 |
-| ORM | Prisma |
-| Cache | Redis |
-| Conteneurs | Docker, Docker Compose |
-
-## Structure du projet
-
-```
-plumenote/
-├── apps/
-│   ├── api/              # Backend Fastify
-│   ├── web/              # Frontend React
-│   └── yjs-server/       # Serveur Yjs
-├── packages/
-│   ├── database/         # Prisma schema
-│   ├── types/            # Types partagés
-│   ├── shared/           # Utilitaires
-│   └── ui/               # Composants React
-├── docker/               # Docker configs
-└── docs/                 # Documentation
-```
-
-## Scripts disponibles
-
-```bash
-npm run dev          # Développement (tous les apps)
-npm run build        # Build production
-npm run test         # Tests
-npm run lint         # Linting
-npm run format       # Formatage Prettier
-npm run db:generate  # Générer Prisma Client
-npm run db:migrate   # Appliquer migrations
-npm run db:studio    # Prisma Studio
-npm run docker:dev   # Démarrer services Docker
-```
+| Base de donnees | PostgreSQL 16, Prisma ORM |
+| Cache | Redis 7 |
+| Infrastructure | Docker, Docker Compose, Nginx |
 
 ## Documentation
 
-- [Guide de contribution](./CONTRIBUTING.md)
-- [Documentation API](http://localhost:3001/docs) (après démarrage)
-- [Backlog produit](./docs/BACKLOG.md)
-- [Éditeur Markdown](./docs/MARKDOWN_EDITOR.md)
+- [Guide d'installation detaille](./docs/installation.md)
+- [Configuration avancee](./docs/configuration.md)
+- [Guide d'administration](./docs/admin.md)
+- [API Reference](./docs/api.md)
+- [Guide de developpement](./docs/development.md)
 
-## Roadmap
+## Contribuer
 
-- [x] **MVP** : Auth, CRUD notes, éditeur, collaboration temps réel
-- [x] **V1.0** : Wikilinks, recherche, historique, images
-- [ ] **V2.0** : Homepage widgets, tableaux dynamiques
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](./CONTRIBUTING.md) pour commencer.
 
-## Licence
+### Developpement local
 
-Propriétaire - Usage interne uniquement
+```bash
+# Installer les dependances
+npm install
 
-## Support
+# Lancer en mode developpement
+npm run dev
 
-Pour toute question, ouvrir une issue ou contacter l'équipe IT.
+# Lancer les tests
+npm run test
+
+# Linter
+npm run lint
+```
+
+## License
+
+Ce projet est sous licence [MIT](./LICENSE).
+
+## Remerciements
+
+- [TipTap](https://tiptap.dev/) - Editeur riche
+- [Yjs](https://yjs.dev/) - CRDT pour la collaboration
+- [Hocuspocus](https://hocuspocus.dev/) - Serveur WebSocket Yjs
+- [Fastify](https://fastify.dev/) - Framework Node.js
+- [Prisma](https://prisma.io/) - ORM TypeScript
+
+---
+
+<div align="center">
+
+Fait avec mass d'amour par [Alexandre Berge](https://github.com/ElegAlex)
+
+</div>
