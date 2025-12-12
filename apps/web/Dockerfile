@@ -13,7 +13,7 @@ RUN cd apps/web && npm run build
 FROM nginx:alpine
 
 # Copy custom nginx config for SPA routing (fixes 404 on refresh)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built application
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
