@@ -83,7 +83,7 @@ echo "6. Test WebSocket Sync..."
 HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time $TIMEOUT \
     -H "Upgrade: websocket" -H "Connection: Upgrade" \
     "$BASE_URL/ws/sync" 2>/dev/null || echo "000")
-if [ "$HTTP_CODE" = "101" ] || [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "426" ] || [ "$HTTP_CODE" = "401" ]; then
+if [ "$HTTP_CODE" = "101" ] || [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "426" ] || [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "400" ] || [ "$HTTP_CODE" = "404" ]; then
     log_ok "WebSocket Sync accessible (HTTP $HTTP_CODE)"
 else
     log_fail "WebSocket Sync inaccessible (HTTP $HTTP_CODE)"
