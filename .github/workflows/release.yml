@@ -38,7 +38,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Build and push API image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./apps/api/Dockerfile
@@ -48,7 +48,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api:latest
 
       - name: Build and push YJS image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./apps/yjs-server/Dockerfile
@@ -58,7 +58,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/yjs:latest
 
       - name: Build and push Web image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./apps/web/Dockerfile
