@@ -38,7 +38,7 @@ WORKDIR /app/apps/yjs-server
 
 # Health check avec port fixe (1234 = port par defaut Hocuspocus)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:1234/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:1234/health || exit 1
 
 EXPOSE 1234
 CMD ["node", "dist/index.js"]
