@@ -1,12 +1,12 @@
 # Déploiement PlumeNote
 
 ## Prérequis
-- Accès SSH au VPS : ssh root@51.178.53.103
+- Accès SSH au VPS : `ssh user@your-server.example.com`
 - Le build local doit passer AVANT tout déploiement
 
 ## Étape 1 : Vérifier le build en local
 ```bash
-cd /home/alex/Documents/REPO/KM/plumenote
+cd /path/to/plumenote
 npm run build
 ```
 
@@ -21,7 +21,7 @@ git push origin main
 
 ## Étape 3 : Déployer sur le VPS
 ```bash
-ssh root@51.178.53.103
+ssh user@your-server.example.com
 cd /opt/plumenote
 git pull origin main
 cd docker

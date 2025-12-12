@@ -3,8 +3,8 @@
 ## Déploiement standard
 
 ```bash
-ssh root@vps-4e7622b4.vps.ovh.net
-cd /root/PlumeNote/docker
+ssh user@your-server.example.com
+cd /opt/plumenote/docker
 ./scripts/deploy.sh --auto-rollback
 ```
 
@@ -46,10 +46,10 @@ docker compose down && docker compose up -d
 
 ```bash
 # Trouver le backup
-ls /root/PlumeNote/backups/
+ls /opt/plumenote/backups/
 
 # Restaurer
-cp /root/PlumeNote/backups/YYYYMMDD_HHMMSS/nginx.conf.bak nginx/nginx.conf
+cp /opt/plumenote/backups/YYYYMMDD_HHMMSS/nginx.conf.bak nginx/nginx.conf
 docker compose restart nginx
 ```
 
