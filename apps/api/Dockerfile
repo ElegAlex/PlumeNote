@@ -23,7 +23,7 @@ RUN npm run build --workspace=@plumenote/api
 FROM node:20-alpine
 WORKDIR /app
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl curl
 
 # Copier uniquement le necessaire pour la production
 COPY --from=builder /app/node_modules ./node_modules
@@ -37,9 +37,9 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/
 
 WORKDIR /app/apps/api
 
-# Health check avec port fixe
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1
+# Health check avec curl et vérification du body JSON (SPEC-004)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -sf http://127.0.0.1:3001/health | grep -q '"status":"ok"' || exit 1
 
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

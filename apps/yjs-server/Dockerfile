@@ -22,7 +22,7 @@ RUN npm run build --workspace=@plumenote/yjs-server
 FROM node:20-alpine
 WORKDIR /app
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl curl
 
 # Copier uniquement le necessaire pour la production
 COPY --from=builder /app/node_modules ./node_modules
@@ -36,9 +36,11 @@ COPY --from=builder /app/apps/yjs-server/package.json ./apps/yjs-server/
 
 WORKDIR /app/apps/yjs-server
 
-# Health check avec port fixe (1234 = port par defaut Hocuspocus)
+# Health check via serveur HTTP auxiliaire (SPEC-004)
+# Port 3003 = serveur health HTTP séparé de Hocuspocus (WebSocket)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:1234/health || exit 1
+  CMD curl -sf http://127.0.0.1:3003/health | grep -q '"status":"ok"' || exit 1
 
-EXPOSE 1234
+# Port 1234 = WebSocket Hocuspocus, Port 3003 = Health check HTTP
+EXPOSE 1234 3003
 CMD ["node", "dist/index.js"]

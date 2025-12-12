@@ -5,6 +5,7 @@
 **Application de prise de notes collaborative en temps reel pour equipes IT**
 
 [![CI](https://github.com/ElegAlex/PlumeNote/actions/workflows/ci.yml/badge.svg)](https://github.com/ElegAlex/PlumeNote/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/ElegAlex/PlumeNote/actions/workflows/codeql.yml/badge.svg)](https://github.com/ElegAlex/PlumeNote/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://github.com/ElegAlex/PlumeNote/pkgs/container/plumenote)
 

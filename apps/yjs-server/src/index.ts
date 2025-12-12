@@ -3,9 +3,11 @@
 // (EP-005 - Sprint 5)
 // US-029: Connexion WebSocket avec authentification JWT
 // US-033: Persistance Y.Doc en base
+// SPEC-004: Endpoint /health pour Docker health checks
 // ===========================================
 
 import 'dotenv/config';
+import { createServer as createHttpServer } from 'http';
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import { Logger } from '@hocuspocus/extension-logger';
@@ -16,6 +18,7 @@ import * as Y from 'yjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const PORT = parseInt(process.env.YJS_PORT || '1234', 10);
+const HEALTH_PORT = parseInt(process.env.HEALTH_PORT || '3003', 10);
 
 interface JWTPayload {
   userId: string;
@@ -318,22 +321,46 @@ const server = new Hocuspocus({
   },
 });
 
-// Start server
+// ===========================================
+// Health Check HTTP Server (SPEC-004)
+// Serveur HTTP séparé pour les health checks Docker
+// ===========================================
+const healthServer = createHttpServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'yjs-server',
+      port: PORT,
+    }));
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  }
+});
+
+// Start servers
 server.listen().then(() => {
-  console.log(`
+  // Start health check server on separate port
+  healthServer.listen(HEALTH_PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
-║   🔄 PlumeNote Yjs Server                                ║
+║   🔄 PlumeNote Yjs Server                                  ║
 ║                                                            ║
-║   WebSocket: ws://localhost:${PORT}                          ║
+║   WebSocket: ws://localhost:${PORT}                           ║
+║   Health:    http://localhost:${HEALTH_PORT}/health            ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
-  `);
+    `);
+  });
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('[Server] Shutting down...');
+  healthServer.close();
   await server.destroy();
   await prisma.$disconnect();
   process.exit(0);
@@ -341,6 +368,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('[Server] Shutting down...');
+  healthServer.close();
   await server.destroy();
   await prisma.$disconnect();
   process.exit(0);
