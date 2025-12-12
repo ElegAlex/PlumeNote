@@ -20,20 +20,27 @@ export function MainLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { isWizardOpen, openWizard, closeWizard } = useImportStore();
-  const { shouldShowTutorial, markTutorialCompleted, isInitialized } = usePreferencesStore();
+  const { markTutorialCompleted, isInitialized } = usePreferencesStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
-  // Afficher le tutoriel à la première connexion
+  // Afficher le tutoriel à la première connexion (une seule fois par session navigateur)
   useEffect(() => {
-    if (isInitialized && shouldShowTutorial(TUTORIAL_VERSION)) {
-      // Petit délai pour laisser l'UI se charger
-      const timer = setTimeout(() => setShowTutorial(true), 500);
-      return () => clearTimeout(timer);
+    const tutorialSessionKey = 'plumenote-tutorial-checked';
+    const alreadyChecked = sessionStorage.getItem(tutorialSessionKey);
+
+    if (isInitialized && !alreadyChecked) {
+      sessionStorage.setItem(tutorialSessionKey, 'true');
+      const shouldShow = usePreferencesStore.getState().shouldShowTutorial(TUTORIAL_VERSION);
+      if (shouldShow) {
+        // Petit délai pour laisser l'UI se charger
+        const timer = setTimeout(() => setShowTutorial(true), 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isInitialized, shouldShowTutorial]);
+  }, [isInitialized]);
 
   const handleTutorialComplete = () => {
     markTutorialCompleted(TUTORIAL_VERSION);
@@ -163,9 +170,17 @@ export function MainLayout() {
                 isSidebarCollapsed && 'justify-center'
               )}
             >
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
-                {user?.displayName?.charAt(0) || user?.username?.charAt(0) || '?'}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.displayName || user.username}
+                  className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
+                  {user?.displayName?.charAt(0) || user?.username?.charAt(0) || '?'}
+                </div>
+              )}
               {!isSidebarCollapsed && (
                 <div className="flex-1 min-w-0 text-left">
                   <div className="text-sm font-medium truncate">

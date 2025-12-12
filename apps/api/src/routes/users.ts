@@ -23,7 +23,10 @@ import {
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(100).optional(),
-  avatarUrl: z.string().url().nullable().optional(),
+  avatarUrl: z.string().nullable().optional().refine(
+    (val) => !val || val.startsWith('data:image/') || val.startsWith('http://') || val.startsWith('https://'),
+    { message: 'Must be a valid URL or base64 image' }
+  ),
   preferences: z.record(z.unknown()).optional(),
 });
 
@@ -202,8 +205,8 @@ export const usersRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    // Profil personnel ou modifications admin
-    if (isSelf && !isAdmin) {
+    // Profil personnel (même pour les admins qui modifient leur propre profil)
+    if (isSelf) {
       const parseResult = updateProfileSchema.safeParse(request.body);
       if (!parseResult.success) {
         return reply.status(400).send({

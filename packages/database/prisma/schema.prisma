@@ -20,7 +20,7 @@ model User {
   username           String    @unique @db.VarChar(50)
   email              String    @unique @db.VarChar(255)
   displayName        String    @map("display_name") @db.VarChar(100)
-  avatarUrl          String?   @map("avatar_url") @db.VarChar(500)
+  avatarUrl          String?   @map("avatar_url") @db.Text
   password           String?   @db.VarChar(255) // Hash bcrypt, null si auth LDAP uniquement
   roleId             String    @map("role_id") @db.Uuid
   isActive           Boolean   @default(true) @map("is_active")

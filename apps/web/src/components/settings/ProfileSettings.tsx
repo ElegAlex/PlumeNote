@@ -38,7 +38,7 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfileSettings() {
-  const { user, setUser } = useAuthStore();
+  const { user, checkAuth } = useAuthStore();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -103,12 +103,8 @@ export function ProfileSettings() {
         avatarUrl: avatarUrl.trim() || null,
       });
 
-      // Mettre à jour le store
-      setUser({
-        ...user,
-        displayName: response.data.displayName,
-        avatarUrl: response.data.avatarUrl,
-      });
+      // Recharger le user depuis l'API pour synchroniser le store
+      await checkAuth();
 
       setHasChanges(false);
       toast.success('Profil mis à jour');
