@@ -8,10 +8,8 @@ COPY packages ./packages
 COPY apps/yjs-server ./apps/yjs-server
 
 RUN pnpm install || npm install
-RUN cd packages/database && npx prisma generate && npm run build
-RUN cd packages/database/dist && mv index.js index.mjs && mv client.js client.mjs 2>/dev/null || true
 RUN cd packages/types && npm run build
-RUN cd packages/types/dist && mv index.js index.mjs 2>/dev/null || true
+RUN cd packages/database && npx prisma generate && npm run build
 
 FROM node:20-alpine
 RUN apk add --no-cache openssl
