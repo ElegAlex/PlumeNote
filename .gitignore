@@ -59,5 +59,7 @@ packages/database/.env
 
 # Docker
 docker/.env
-docker/ssl/*.pem
-!docker/ssl/.gitkeep
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.key
+docker/nginx/ssl/*.crt
+!docker/nginx/ssl/.gitkeep

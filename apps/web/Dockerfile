@@ -1,21 +1,26 @@
+# Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN npm install -g pnpm
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* package-lock.json* tsconfig.base.json ./
+# Copier les fichiers de dependances du monorepo complet
+COPY package.json package-lock.json* tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 
-RUN pnpm install || npm install
-RUN cd packages/types && npm run build
-RUN cd apps/web && npm run build
+# Installer les dependances
+RUN npm ci
 
+# Build des packages puis de l'app (workspaces)
+RUN npm run build --workspace=@plumenote/types
+RUN npm run build --workspace=@plumenote/web
+
+# Stage 2: Production
 FROM nginx:alpine
 
-# Copy custom nginx config for SPA routing (fixes 404 on refresh)
+# Copier la config nginx DEPUIS LE CONTEXTE DE BUILD (racine projet)
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built application
+# Copier l'application buildee
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
 # Health check

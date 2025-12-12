@@ -1,21 +1,41 @@
+# Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache openssl openssl-dev
-RUN npm install -g pnpm
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* package-lock.json* tsconfig.base.json ./
+# Installer les outils necessaires
+RUN apk add --no-cache openssl python3 make g++
+
+# Copier les fichiers de dependances du monorepo complet
+COPY package.json package-lock.json* tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
 
-RUN pnpm install || npm install
-RUN cd packages/types && npm run build
-RUN cd packages/database && npx prisma generate && npm run build
+# Installer toutes les dependances
+RUN npm ci
 
+# Build dans l'ordre des dependances (workspaces)
+RUN npm run build --workspace=@plumenote/types
+RUN npm run db:generate --workspace=@plumenote/database
+RUN npm run build --workspace=@plumenote/database
+RUN npm run build --workspace=@plumenote/api
+
+# Stage 2: Production
 FROM node:20-alpine
-RUN apk add --no-cache openssl
 WORKDIR /app
-RUN npm install -g pnpm
-COPY --from=builder /app ./
+
+RUN apk add --no-cache openssl
+
+# Copier uniquement le necessaire pour la production
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+
 WORKDIR /app/apps/api
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
 EXPOSE 3001
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]
