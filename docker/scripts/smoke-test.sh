@@ -13,6 +13,23 @@ TIMEOUT=10
 FAILED=0
 WSCAT_AVAILABLE=false
 
+# Détection automatique HTTPS pour plumenote.fr
+if [[ "$BASE_URL" == *"plumenote.fr"* ]] && [[ "$BASE_URL" != https://* ]]; then
+    echo -e "${YELLOW}⚠ plumenote.fr détecté → HTTPS${NC}"
+    BASE_URL="https://plumenote.fr"
+fi
+
+# Test SSL si HTTPS
+if [[ "$BASE_URL" == https://* ]]; then
+    echo -n "Vérification SSL... "
+    if curl -sk --max-time 5 "$BASE_URL/" >/dev/null 2>&1; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        echo -e "${RED}✗ HTTPS inaccessible${NC}"
+        exit 1
+    fi
+fi
+
 log_ok() { echo -e "${GREEN}✓${NC} $1"; }
 log_fail() { echo -e "${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
