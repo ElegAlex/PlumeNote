@@ -35,6 +35,8 @@
 certbot certonly --standalone -d votre-domaine.fr -d www.votre-domaine.fr
 ```
 
+> **Note** : Pour renouveler ou etendre un certificat existant, ajoutez `--expand`
+
 3. Copiez les certificats :
 
 ```bash
@@ -49,6 +51,11 @@ cd docker
 echo "DOMAIN=votre-domaine.fr" >> .env
 ./scripts/enable-ssl.sh
 ```
+
+### Redirection www
+
+La configuration nginx redirige automatiquement `www.votre-domaine.fr` vers `votre-domaine.fr`.
+Le certificat SSL doit couvrir les deux domaines (voir etape 2 ci-dessus).
 
 ### Renouvellement automatique
 

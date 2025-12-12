@@ -42,6 +42,8 @@ if [ ! -f "nginx/ssl/fullchain.pem" ] || [ ! -f "nginx/ssl/privkey.pem" ]; then
     echo ""
     echo "  2. Générez des certificats avec certbot:"
     echo "     certbot certonly --standalone -d $DOMAIN -d www.$DOMAIN"
+    echo ""
+    echo "  Pour renouveler/étendre un certificat existant, ajoutez --expand"
     exit 1
 fi
 
