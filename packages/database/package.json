@@ -2,22 +2,24 @@
   "name": "@plumenote/database",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
     },
     "./client": {
-      "import": "./dist/client.js",
-      "types": "./dist/client.d.ts"
+      "types": "./dist/client.d.ts",
+      "require": "./dist/client.js",
+      "import": "./dist/client.mjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/client.ts --format esm --dts --clean",
-    "dev": "tsup src/index.ts src/client.ts --format esm --dts --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",

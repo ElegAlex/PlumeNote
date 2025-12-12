@@ -1,4 +1,4 @@
-# Stage 1: Build (uniquement pour les packages)
+# Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -17,27 +17,29 @@ RUN npm ci
 RUN npm run build --workspace=@plumenote/types
 RUN npm run db:generate --workspace=@plumenote/database
 RUN npm run build --workspace=@plumenote/database
+RUN npm run build --workspace=@plumenote/api
 
-# Stage 2: Production - utiliser tsx avec les sources directement
+# Stage 2: Production
 FROM node:20-alpine
 WORKDIR /app
 
 RUN apk add --no-cache openssl
 
-# Copier tout le necessaire
+# Copier uniquement le necessaire pour la production
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/api ./apps/api
-COPY --from=builder /app/tsconfig.base.json ./
+COPY --from=builder /app/packages/types/dist ./packages/types/dist
+COPY --from=builder /app/packages/types/package.json ./packages/types/
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
+COPY --from=builder /app/packages/database/package.json ./packages/database/
+COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/
 
 WORKDIR /app/apps/api
 
-# Installer tsx globalement pour execution
-RUN npm install -g tsx
-
-# Health check
+# Health check avec port fixe
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 EXPOSE 3001
-CMD ["tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]
