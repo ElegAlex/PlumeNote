@@ -1,18 +1,19 @@
 // ===========================================
-// Registre des raccourcis clavier - P3
+// Registre des raccourcis clavier
+// UNIQUEMENT les raccourcis réellement implémentés
 // ===========================================
 
 import type { ShortcutDefinition } from '@plumenote/types';
 
 /**
- * Liste complète des raccourcis de l'application
+ * Liste des raccourcis IMPLÉMENTÉS de l'application
  */
 export const SHORTCUTS: ShortcutDefinition[] = [
-  // ========== NAVIGATION ==========
+  // ========== NAVIGATION (MainLayout.tsx) ==========
   {
     id: 'quick-search',
     action: 'Recherche rapide',
-    description: 'Ouvrir la palette de recherche pour trouver rapidement notes et commandes',
+    description: 'Ouvrir la page de recherche',
     keys: { modifiers: ['cmd'], key: 'k' },
     category: 'navigation',
     context: 'global',
@@ -20,7 +21,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'new-note',
     action: 'Nouvelle note',
-    description: 'Créer une nouvelle note dans le dossier courant',
+    description: 'Créer une nouvelle note',
     keys: { modifiers: ['alt'], key: 'n' },
     category: 'navigation',
     context: 'global',
@@ -36,7 +37,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'settings',
     action: 'Paramètres',
-    description: "Ouvrir les paramètres de l'application",
+    description: "Ouvrir les paramètres",
     keys: { modifiers: ['cmd'], key: ',' },
     category: 'navigation',
     context: 'global',
@@ -44,50 +45,42 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'shortcuts',
     action: 'Raccourcis clavier',
-    description: 'Afficher cette page de raccourcis',
+    description: 'Afficher les raccourcis',
     keys: { modifiers: ['cmd'], key: '?' },
     category: 'navigation',
     context: 'global',
   },
   {
     id: 'toggle-sidebar',
-    action: 'Afficher/masquer sidebar',
-    description: 'Afficher ou masquer la barre latérale',
+    action: 'Toggle sidebar',
+    description: 'Afficher/masquer la sidebar',
     keys: { modifiers: ['cmd'], key: '\\' },
     category: 'navigation',
     context: 'global',
   },
+  {
+    id: 'focus-explorer',
+    action: 'Accueil',
+    description: "Aller à la page d'accueil",
+    keys: { modifiers: ['cmd', 'shift'], key: 'e' },
+    category: 'navigation',
+    context: 'global',
+  },
+  {
+    id: 'focus-search',
+    action: 'Recherche',
+    description: 'Aller à la page de recherche',
+    keys: { modifiers: ['cmd', 'shift'], key: 'f' },
+    category: 'navigation',
+    context: 'global',
+  },
 
-  // ========== ÉDITEUR - ACTIONS ==========
+  // ========== ÉDITEUR - ACTIONS (MarkdownEditor.tsx) ==========
   {
     id: 'save',
     action: 'Sauvegarder',
-    description: 'Sauvegarder la note courante',
+    description: 'Sauvegarder la note',
     keys: { modifiers: ['cmd'], key: 's' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'undo',
-    action: 'Annuler',
-    description: 'Annuler la dernière action',
-    keys: { modifiers: ['cmd'], key: 'z' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'redo',
-    action: 'Rétablir',
-    description: "Rétablir l'action annulée",
-    keys: { modifiers: ['cmd', 'shift'], key: 'z' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'find',
-    action: 'Rechercher',
-    description: 'Rechercher dans la note courante',
-    keys: { modifiers: ['cmd'], key: 'f' },
     category: 'editor-actions',
     context: 'editor',
   },
@@ -96,7 +89,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'bold',
     action: 'Gras',
-    description: 'Mettre le texte sélectionné en gras',
+    description: 'Texte en gras',
     keys: { modifiers: ['cmd'], key: 'b' },
     category: 'editor-formatting',
     context: 'editor',
@@ -104,7 +97,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'italic',
     action: 'Italique',
-    description: 'Mettre le texte sélectionné en italique',
+    description: 'Texte en italique',
     keys: { modifiers: ['cmd'], key: 'i' },
     category: 'editor-formatting',
     context: 'editor',
@@ -112,7 +105,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'underline',
     action: 'Souligné',
-    description: 'Souligner le texte sélectionné',
+    description: 'Texte souligné',
     keys: { modifiers: ['cmd'], key: 'u' },
     category: 'editor-formatting',
     context: 'editor',
@@ -120,7 +113,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'strikethrough',
     action: 'Barré',
-    description: 'Barrer le texte sélectionné',
+    description: 'Texte barré',
     keys: { modifiers: ['cmd', 'shift'], key: 's' },
     category: 'editor-formatting',
     context: 'editor',
@@ -128,17 +121,15 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'highlight',
     action: 'Surligné',
-    description: 'Surligner le texte sélectionné',
+    description: 'Texte surligné',
     keys: { modifiers: ['cmd', 'shift'], key: 'h' },
     category: 'editor-formatting',
     context: 'editor',
   },
   {
     id: 'link',
-    action: 'Insérer un lien',
-    description: 'Transformer la sélection en lien',
-    // Note: Cmd+K est réservé pour la recherche rapide globale
-    // On utilise Cmd+L pour les liens dans l'éditeur
+    action: 'Lien',
+    description: 'Insérer un lien',
     keys: { modifiers: ['cmd'], key: 'l' },
     category: 'editor-formatting',
     context: 'editor',
@@ -146,23 +137,15 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'code',
     action: 'Code inline',
-    description: 'Formater comme code inline',
+    description: 'Formater en code',
     keys: { modifiers: ['cmd'], key: 'e' },
     category: 'editor-formatting',
     context: 'editor',
   },
   {
-    id: 'code-block',
-    action: 'Bloc de code',
-    description: 'Insérer un bloc de code',
-    keys: { modifiers: ['cmd', 'shift'], key: 'c' },
-    category: 'editor-formatting',
-    context: 'editor',
-  },
-  {
     id: 'math',
-    action: 'Formule mathématique',
-    description: 'Insérer une formule LaTeX',
+    action: 'Formule math',
+    description: 'Insérer formule LaTeX',
     keys: { modifiers: ['cmd', 'shift'], key: 'm' },
     category: 'editor-formatting',
     context: 'editor',
@@ -172,7 +155,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'heading-1',
     action: 'Titre 1',
-    description: 'Convertir en titre de niveau 1',
+    description: 'Titre niveau 1',
     keys: { modifiers: ['cmd', 'alt'], key: '1' },
     category: 'editor-headings',
     context: 'editor',
@@ -180,7 +163,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'heading-2',
     action: 'Titre 2',
-    description: 'Convertir en titre de niveau 2',
+    description: 'Titre niveau 2',
     keys: { modifiers: ['cmd', 'alt'], key: '2' },
     category: 'editor-headings',
     context: 'editor',
@@ -188,7 +171,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'heading-3',
     action: 'Titre 3',
-    description: 'Convertir en titre de niveau 3',
+    description: 'Titre niveau 3',
     keys: { modifiers: ['cmd', 'alt'], key: '3' },
     category: 'editor-headings',
     context: 'editor',
@@ -196,7 +179,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'heading-4',
     action: 'Titre 4',
-    description: 'Convertir en titre de niveau 4',
+    description: 'Titre niveau 4',
     keys: { modifiers: ['cmd', 'alt'], key: '4' },
     category: 'editor-headings',
     context: 'editor',
@@ -204,7 +187,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'paragraph',
     action: 'Paragraphe',
-    description: 'Convertir en paragraphe normal',
+    description: 'Retirer le titre',
     keys: { modifiers: ['cmd', 'alt'], key: '0' },
     category: 'editor-headings',
     context: 'editor',
@@ -214,7 +197,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'numbered-list',
     action: 'Liste numérotée',
-    description: 'Créer une liste numérotée',
+    description: 'Créer liste numérotée',
     keys: { modifiers: ['cmd', 'shift'], key: '7' },
     category: 'editor-lists',
     context: 'editor',
@@ -222,7 +205,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'bullet-list',
     action: 'Liste à puces',
-    description: 'Créer une liste à puces',
+    description: 'Créer liste à puces',
     keys: { modifiers: ['cmd', 'shift'], key: '8' },
     category: 'editor-lists',
     context: 'editor',
@@ -230,7 +213,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'task-list',
     action: 'Liste de tâches',
-    description: 'Créer une liste de tâches cochables',
+    description: 'Créer checklist',
     keys: { modifiers: ['cmd', 'shift'], key: '9' },
     category: 'editor-lists',
     context: 'editor',
@@ -240,15 +223,23 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'blockquote',
     action: 'Citation',
-    description: 'Convertir en bloc de citation',
+    description: 'Insérer citation',
     keys: { modifiers: ['cmd', 'shift'], key: 'b' },
+    category: 'editor-blocks',
+    context: 'editor',
+  },
+  {
+    id: 'code-block',
+    action: 'Bloc de code',
+    description: 'Insérer bloc de code',
+    keys: { modifiers: ['cmd', 'shift'], key: 'c' },
     category: 'editor-blocks',
     context: 'editor',
   },
   {
     id: 'image',
     action: 'Image',
-    description: 'Insérer une image',
+    description: 'Insérer image',
     keys: { modifiers: ['cmd', 'shift'], key: 'i' },
     category: 'editor-blocks',
     context: 'editor',
@@ -256,7 +247,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'table',
     action: 'Tableau',
-    description: 'Insérer un tableau',
+    description: 'Insérer tableau',
     keys: { modifiers: ['cmd', 'shift'], key: 't' },
     category: 'editor-blocks',
     context: 'editor',
@@ -264,28 +255,10 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'horizontal-rule',
     action: 'Ligne horizontale',
-    description: 'Insérer une ligne de séparation',
+    description: 'Insérer séparateur',
     keys: { modifiers: ['cmd', 'shift'], key: '-' },
     category: 'editor-blocks',
     context: 'editor',
-  },
-
-  // ========== PANNEAUX ==========
-  {
-    id: 'focus-explorer',
-    action: 'Focus explorateur',
-    description: "Aller à la page d'accueil",
-    keys: { modifiers: ['cmd', 'shift'], key: 'e' },
-    category: 'panels',
-    context: 'global',
-  },
-  {
-    id: 'focus-search',
-    action: 'Focus recherche',
-    description: 'Aller à la page de recherche',
-    keys: { modifiers: ['cmd', 'shift'], key: 'f' },
-    category: 'panels',
-    context: 'global',
   },
 ];
 
@@ -305,11 +278,10 @@ export function getShortcutsByCategory(): Map<string, ShortcutDefinition[]> {
 }
 
 /**
- * Recherche dans les raccourcis par action ou description
+ * Recherche dans les raccourcis
  */
 export function searchShortcuts(query: string): ShortcutDefinition[] {
   const normalizedQuery = query.toLowerCase().trim();
-
   if (!normalizedQuery) return SHORTCUTS;
 
   return SHORTCUTS.filter(
