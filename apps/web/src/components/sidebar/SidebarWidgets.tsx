@@ -54,7 +54,7 @@ interface Shortcut {
 
 const SHORTCUTS: Shortcut[] = [
   { key: '⌘K', action: 'Recherche' },
-  { key: '⌘N', action: 'Nouvelle note' },
+  { key: 'Alt+N', action: 'Nouvelle note' },
   { key: '⌘S', action: 'Sauvegarder' },
   { key: '⌘?', action: 'Raccourcis' },
 ];
