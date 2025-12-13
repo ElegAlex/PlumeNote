@@ -2,19 +2,23 @@
 # PlumeNote - Pré-déploiement : vérifie l'état et crée un backup
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+# Source common functions
+SCRIPT_DIR="$(dirname "$0")"
+if [ -f "$SCRIPT_DIR/common.sh" ]; then
+    source "$SCRIPT_DIR/common.sh"
+else
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+    PROJECT_ROOT="/root/PlumeNote"
+fi
 
-BACKUP_DIR="/root/PlumeNote/backups/$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="${PROJECT_ROOT}/backups/$(date +%Y%m%d_%H%M%S)"
 
 echo "╔═══════════════════════════════════════════╗"
 echo "║     PlumeNote - Pré-déploiement           ║"
 echo "╚═══════════════════════════════════════════╝"
 echo ""
 
-cd /root/PlumeNote/docker
+cd "${PROJECT_ROOT}/docker"
 
 # Vérifier les conteneurs
 echo -n "Conteneurs Docker... "

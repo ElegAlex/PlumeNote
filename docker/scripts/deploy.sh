@@ -2,7 +2,15 @@
 # PlumeNote - Déploiement sécurisé complet
 set -e
 
-cd /root/PlumeNote/docker
+# Source common functions
+SCRIPT_DIR="$(dirname "$0")"
+if [ -f "$SCRIPT_DIR/common.sh" ]; then
+    source "$SCRIPT_DIR/common.sh"
+else
+    PROJECT_ROOT="/root/PlumeNote"
+fi
+
+cd "${PROJECT_ROOT}/docker"
 
 echo "╔═══════════════════════════════════════════╗"
 echo "║     PlumeNote - Déploiement sécurisé      ║"

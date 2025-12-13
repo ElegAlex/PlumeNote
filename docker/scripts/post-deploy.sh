@@ -2,10 +2,14 @@
 # PlumeNote - Post-déploiement : valide et rollback si échec
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+# Source common functions
+SCRIPT_DIR="$(dirname "$0")"
+if [ -f "$SCRIPT_DIR/common.sh" ]; then
+    source "$SCRIPT_DIR/common.sh"
+else
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+    PROJECT_ROOT="/root/PlumeNote"
+fi
 
 DOMAIN="${DOMAIN:-plumenote.fr}"
 PROTOCOL="${PROTOCOL:-https}"
@@ -19,7 +23,7 @@ echo ""
 echo "Validation : ${PROTOCOL}://${DOMAIN}"
 echo ""
 
-cd /root/PlumeNote/docker
+cd "${PROJECT_ROOT}/docker"
 
 # Attendre healthy (max 90s)
 echo "── Attente des conteneurs ─────────────────"
@@ -69,7 +73,7 @@ fi
 echo -e "${RED}✗ $FAILED test(s) échoué(s)${NC}"
 
 # Rollback
-LAST_BACKUP=$(ls -td /root/PlumeNote/backups/*/ 2>/dev/null | head -1)
+LAST_BACKUP=$(ls -td "${PROJECT_ROOT}/backups"/*/ 2>/dev/null | head -1)
 if [ -n "$LAST_BACKUP" ] && [ -f "${LAST_BACKUP}nginx.conf.bak" ]; then
     if [ "$1" = "--auto-rollback" ]; then
         echo "Rollback automatique..."

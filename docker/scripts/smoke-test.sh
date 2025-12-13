@@ -1,11 +1,18 @@
 #!/bin/bash
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Source common functions
+SCRIPT_DIR="$(dirname "$0")"
+if [ -f "$SCRIPT_DIR/common.sh" ]; then
+    source "$SCRIPT_DIR/common.sh"
+else
+    # Fallback si common.sh absent
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+    log_ok() { echo -e "${GREEN}✓${NC} $1"; }
+    log_fail() { echo -e "${RED}✗${NC} $1"; }
+    log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+    log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
+fi
 
 # Configuration
 BASE_URL="${1:-http://localhost}"
@@ -30,10 +37,8 @@ if [[ "$BASE_URL" == https://* ]]; then
     fi
 fi
 
-log_ok() { echo -e "${GREEN}✓${NC} $1"; }
+# Note: log_fail doit incrémenter FAILED, donc on la redéfinit localement
 log_fail() { echo -e "${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
-log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
-log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
 
 # Vérifier si wscat est disponible
 if command -v wscat &> /dev/null; then

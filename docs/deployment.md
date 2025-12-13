@@ -4,7 +4,7 @@
 
 ```bash
 ssh user@your-server.example.com
-cd /opt/plumenote/docker
+cd /root/PlumeNote/docker
 ./scripts/deploy.sh --auto-rollback
 ```
 
@@ -46,10 +46,10 @@ docker compose down && docker compose up -d
 
 ```bash
 # Trouver le backup
-ls /opt/plumenote/backups/
+ls /root/PlumeNote/backups/
 
 # Restaurer
-cp /opt/plumenote/backups/YYYYMMDD_HHMMSS/nginx.conf.bak nginx/nginx.conf
+cp /root/PlumeNote/backups/YYYYMMDD_HHMMSS/nginx.conf.bak nginx/nginx.conf
 docker compose restart nginx
 ```
 
