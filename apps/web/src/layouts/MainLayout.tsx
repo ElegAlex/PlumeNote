@@ -97,19 +97,17 @@ export function MainLayout() {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
 
-      // Ignorer si dans un champ de saisie (sauf pour certains raccourcis)
-      const target = e.target as HTMLElement;
-      const isInInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable;
+      // === RACCOURCIS GLOBAUX (fonctionnent partout, même dans l'éditeur) ===
 
-      // Cmd+K → Recherche rapide (fonctionne partout)
-      if (isMod && e.key === 'k') {
+      // Cmd+K → Recherche rapide
+      if (isMod && !e.shiftKey && e.key === 'k') {
         e.preventDefault();
         e.stopPropagation();
         navigate('/search');
         return;
       }
 
-      // Cmd+? ou Cmd+/ → Raccourcis (fonctionne partout)
+      // Cmd+? ou Cmd+/ → Raccourcis clavier
       if (isMod && (e.key === '?' || e.key === '/')) {
         e.preventDefault();
         e.stopPropagation();
@@ -117,7 +115,41 @@ export function MainLayout() {
         return;
       }
 
-      // Les raccourcis suivants ne fonctionnent pas dans les champs de saisie
+      // Cmd+, → Paramètres
+      if (isMod && !e.shiftKey && e.key === ',') {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/settings');
+        return;
+      }
+
+      // Cmd+\ → Toggle sidebar
+      if (isMod && !e.shiftKey && e.key === '\\') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsSidebarCollapsed(prev => !prev);
+        return;
+      }
+
+      // Cmd+Shift+E → Accueil
+      if (isMod && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/');
+        return;
+      }
+
+      // Cmd+Shift+F → Page recherche
+      if (isMod && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/search');
+        return;
+      }
+
+      // === RACCOURCIS HORS ÉDITEUR (ne fonctionnent pas quand on édite) ===
+      const target = e.target as HTMLElement;
+      const isInInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable;
       if (isInInput) return;
 
       // Cmd+N → Nouvelle note
@@ -129,42 +161,10 @@ export function MainLayout() {
       }
 
       // Cmd+Shift+N → Nouveau dossier
-      if (isMod && e.shiftKey && e.key === 'N') {
+      if (isMod && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
         e.preventDefault();
         e.stopPropagation();
         handleNewFolder();
-        return;
-      }
-
-      // Cmd+, → Paramètres
-      if (isMod && e.key === ',') {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate('/settings');
-        return;
-      }
-
-      // Cmd+\ → Toggle sidebar
-      if (isMod && e.key === '\\') {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsSidebarCollapsed(prev => !prev);
-        return;
-      }
-
-      // Cmd+Shift+E → Focus explorateur (page d'accueil)
-      if (isMod && e.shiftKey && e.key === 'E') {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate('/');
-        return;
-      }
-
-      // Cmd+Shift+F → Focus recherche
-      if (isMod && e.shiftKey && e.key === 'F') {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate('/search');
         return;
       }
     };
