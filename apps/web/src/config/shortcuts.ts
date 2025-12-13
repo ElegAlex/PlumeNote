@@ -57,22 +57,6 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     category: 'navigation',
     context: 'global',
   },
-  {
-    id: 'go-back',
-    action: 'Page précédente',
-    description: 'Revenir à la page précédente',
-    keys: { modifiers: ['alt'], key: 'left' },
-    category: 'navigation',
-    context: 'global',
-  },
-  {
-    id: 'go-forward',
-    action: 'Page suivante',
-    description: 'Aller à la page suivante',
-    keys: { modifiers: ['alt'], key: 'right' },
-    category: 'navigation',
-    context: 'global',
-  },
 
   // ========== ÉDITEUR - ACTIONS ==========
   {
@@ -104,38 +88,6 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     action: 'Rechercher',
     description: 'Rechercher dans la note courante',
     keys: { modifiers: ['cmd'], key: 'f' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'find-replace',
-    action: 'Rechercher et remplacer',
-    description: 'Rechercher et remplacer du texte',
-    keys: { modifiers: ['cmd'], key: 'h' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'preview',
-    action: 'Mode aperçu',
-    description: 'Basculer en mode lecture seule',
-    keys: { modifiers: ['cmd'], key: 'p' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'duplicate-line',
-    action: 'Dupliquer la ligne',
-    description: 'Dupliquer la ligne courante',
-    keys: { modifiers: ['cmd'], key: 'd' },
-    category: 'editor-actions',
-    context: 'editor',
-  },
-  {
-    id: 'duplicate-note',
-    action: 'Dupliquer la note',
-    description: 'Créer une copie de la note courante',
-    keys: { modifiers: ['cmd', 'shift'], key: 'd' },
     category: 'editor-actions',
     context: 'editor',
   },
@@ -283,22 +235,6 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     category: 'editor-lists',
     context: 'editor',
   },
-  {
-    id: 'indent',
-    action: 'Indenter',
-    description: "Augmenter l'indentation",
-    keys: { modifiers: ['cmd'], key: ']' },
-    category: 'editor-lists',
-    context: 'editor',
-  },
-  {
-    id: 'outdent',
-    action: 'Désindenter',
-    description: "Réduire l'indentation",
-    keys: { modifiers: ['cmd'], key: '[' },
-    category: 'editor-lists',
-    context: 'editor',
-  },
 
   // ========== ÉDITEUR - BLOCS ==========
   {
@@ -329,52 +265,8 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     id: 'horizontal-rule',
     action: 'Ligne horizontale',
     description: 'Insérer une ligne de séparation',
-    // Cmd+Shift+L est pour sélection ligne, on utilise Cmd+Shift+- pour ligne horizontale
     keys: { modifiers: ['cmd', 'shift'], key: '-' },
     category: 'editor-blocks',
-    context: 'editor',
-  },
-  {
-    id: 'slash-commands',
-    action: 'Menu de commandes',
-    description: 'Ouvrir le menu de commandes slash',
-    keys: { modifiers: [], key: '/' },
-    category: 'editor-blocks',
-    context: 'editor',
-  },
-
-  // ========== SÉLECTION ET DÉPLACEMENT ==========
-  {
-    id: 'select-all',
-    action: 'Tout sélectionner',
-    description: 'Sélectionner tout le contenu',
-    keys: { modifiers: ['cmd'], key: 'a' },
-    category: 'selection',
-    context: 'editor',
-  },
-  {
-    id: 'select-line',
-    action: 'Sélectionner la ligne',
-    description: 'Sélectionner la ligne courante',
-    // Cmd+L est utilisé pour les liens, on utilise Cmd+Shift+L pour sélection ligne
-    keys: { modifiers: ['cmd', 'shift'], key: 'l' },
-    category: 'selection',
-    context: 'editor',
-  },
-  {
-    id: 'move-line-up',
-    action: 'Déplacer ligne vers le haut',
-    description: 'Déplacer la ligne courante vers le haut',
-    keys: { modifiers: ['alt'], key: 'up' },
-    category: 'selection',
-    context: 'editor',
-  },
-  {
-    id: 'move-line-down',
-    action: 'Déplacer ligne vers le bas',
-    description: 'Déplacer la ligne courante vers le bas',
-    keys: { modifiers: ['alt'], key: 'down' },
-    category: 'selection',
     context: 'editor',
   },
 
@@ -382,7 +274,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'focus-explorer',
     action: 'Focus explorateur',
-    description: "Mettre le focus sur l'explorateur de fichiers",
+    description: "Aller à la page d'accueil",
     keys: { modifiers: ['cmd', 'shift'], key: 'e' },
     category: 'panels',
     context: 'global',
@@ -390,26 +282,10 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   {
     id: 'focus-search',
     action: 'Focus recherche',
-    description: 'Mettre le focus sur la barre de recherche',
+    description: 'Aller à la page de recherche',
     keys: { modifiers: ['cmd', 'shift'], key: 'f' },
     category: 'panels',
     context: 'global',
-  },
-  {
-    id: 'toggle-properties',
-    action: 'Panneau Properties',
-    description: 'Afficher/masquer le panneau des propriétés',
-    keys: { modifiers: ['cmd', 'shift'], key: 'p' },
-    category: 'panels',
-    context: 'editor',
-  },
-  {
-    id: 'toggle-outline',
-    action: 'Panneau Outline',
-    description: 'Afficher/masquer la table des matières',
-    keys: { modifiers: ['cmd', 'shift'], key: 'o' },
-    category: 'panels',
-    context: 'editor',
   },
 ];
 
