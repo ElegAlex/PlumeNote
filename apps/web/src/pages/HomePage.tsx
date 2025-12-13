@@ -7,6 +7,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 import { useHomepageStore } from '../stores/homepage';
+import { useNotesStore } from '../stores/notes';
+import { useSidebarStore } from '../stores/sidebarStore';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { CalendarWidget } from '../components/homepage/CalendarWidget';
@@ -54,6 +56,8 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { isLoading, error, loadHomepageData } = useHomepageStore();
+  const { createNote } = useNotesStore();
+  const { addNoteToFolder, fetchTree } = useSidebarStore();
 
   // Annonces
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -110,8 +114,24 @@ export function HomePage() {
   const handleNewNote = async () => {
     setIsCreating(true);
     try {
-      const response = await api.post('/notes', { title: 'Sans titre' });
-      navigate(`/notes/${response.data.slug}`);
+      const note = await createNote({ title: 'Sans titre' });
+
+      // Mise à jour optimiste de la sidebar
+      if (note.folderId) {
+        addNoteToFolder(note.folderId, {
+          id: note.id,
+          title: note.title,
+          slug: note.slug,
+          position: 0,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+        });
+      }
+
+      // Rafraîchir l'arbre si un nouveau dossier a été créé
+      await fetchTree();
+
+      navigate(`/notes/${note.id}`);
     } catch {
       // Erreur gérée par le store
     } finally {

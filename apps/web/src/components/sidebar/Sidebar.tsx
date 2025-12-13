@@ -49,7 +49,7 @@ interface DragItem {
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { tree, fetchTree, refreshFolder, addFolderToTree, removeFolderFromTree } = useSidebarStore();
+  const { tree, fetchTree, refreshFolder, addFolderToTree, removeFolderFromTree, addNoteToFolder } = useSidebarStore();
   const { moveNote: movePersonalNote } = usePersonalStore();
   const { createFolder, moveFolder, moveNote } = useFoldersStore();
   const { createNote } = useNotesStore();
@@ -135,13 +135,20 @@ export function Sidebar() {
         folderId: templateTargetFolderId || undefined,
       });
 
-      navigate(`/notes/${note.id}`);
-
-      // Rafraîchir le dossier si nécessaire
-      if (templateTargetFolderId) {
-        await refreshFolder(templateTargetFolderId);
+      // Mise à jour optimiste immédiate de la sidebar
+      const folderId = note.folderId || templateTargetFolderId;
+      if (folderId) {
+        addNoteToFolder(folderId, {
+          id: note.id,
+          title: note.title,
+          slug: note.slug,
+          position: 0,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+        });
       }
 
+      navigate(`/notes/${note.id}`);
       toast.success('Note créée');
     } catch {
       toast.error('Erreur lors de la création');
@@ -149,7 +156,7 @@ export function Sidebar() {
       setShowTemplatePicker(false);
       setTemplateTargetFolderId(null);
     }
-  }, [createNote, navigate, refreshFolder, templateTargetFolderId]);
+  }, [createNote, navigate, addNoteToFolder, templateTargetFolderId]);
 
   // Ouvrir le picker de template
   const handleOpenTemplatePicker = useCallback((folderId?: string) => {
@@ -163,13 +170,22 @@ export function Sidebar() {
         title: 'Sans titre',
         folderId,
       });
+
+      // Mise à jour optimiste immédiate de la sidebar
+      addNoteToFolder(folderId, {
+        id: note.id,
+        title: note.title,
+        slug: note.slug,
+        position: 0,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
+
       navigate(`/notes/${note.id}`);
-      // Rafraîchir le dossier parent
-      await refreshFolder(folderId);
     } catch {
       toast.error('Erreur lors de la création');
     }
-  }, [createNote, navigate, refreshFolder]);
+  }, [createNote, navigate, addNoteToFolder]);
 
   // Création de sous-dossier depuis FolderItem (nouvelle signature)
   const handleCreateFolderInFolder = useCallback(async (name: string, parentId: string) => {

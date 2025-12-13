@@ -393,7 +393,7 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
       let rootFolder = await prisma.folder.findFirst({
         where: {
           parentId: null,
-          createdById: userId,
+          createdBy: userId,
         },
       });
 
@@ -401,8 +401,9 @@ export const notesRoutes: FastifyPluginAsync = async (app) => {
         rootFolder = await prisma.folder.create({
           data: {
             name: 'Mes Notes',
+            slug: 'mes-notes',
             path: '/Mes Notes',
-            createdById: userId,
+            createdBy: userId,
             position: 0,
           },
         });

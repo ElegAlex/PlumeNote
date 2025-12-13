@@ -83,6 +83,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
+        // Ne pas appeler /auth/me si aucun token n'existe
+        const token = localStorage.getItem('plumenote-token');
+        if (!token) {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            isInitialized: true,
+          });
+          return;
+        }
+
         set({ isLoading: true });
 
         try {
@@ -96,6 +108,8 @@ export const useAuthStore = create<AuthState>()(
             isInitialized: true,
           });
         } catch {
+          // Token invalide ou expiré - le supprimer
+          localStorage.removeItem('plumenote-token');
           set({
             user: null,
             isAuthenticated: false,

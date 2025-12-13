@@ -121,7 +121,7 @@ export function FolderPage() {
   const navigate = useNavigate();
   const { createFolder, updateFolder, deleteFolder } = useFoldersStore();
   const { createNote } = useNotesStore();
-  const { refreshFolder, removeFolderFromTree } = useSidebarStore();
+  const { refreshFolder, removeFolderFromTree, addNoteToFolder } = useSidebarStore();
   const { user } = useAuthStore();
 
   // Vérifier si l'utilisateur est admin
@@ -183,6 +183,17 @@ export function FolderPage() {
     setIsSaving(true);
     try {
       const note = await createNote({ title: 'Sans titre', folderId });
+
+      // Mise à jour optimiste de la sidebar
+      addNoteToFolder(folderId, {
+        id: note.id,
+        title: note.title,
+        slug: note.slug,
+        position: 0,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
+
       navigate(`/notes/${note.id}`);
     } catch {
       toast.error('Erreur lors de la création');

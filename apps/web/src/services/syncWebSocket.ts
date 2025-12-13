@@ -27,6 +27,7 @@ class SyncWebSocketService {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private eventListeners: Map<SyncEventType | '*', Set<EventCallback>> = new Map();
   private statusListeners: Set<StatusCallback> = new Set();
+  private isIntentionalDisconnect = false;
 
   private status: SyncConnectionStatus = {
     isConnected: false,
@@ -43,6 +44,7 @@ class SyncWebSocketService {
       return;
     }
 
+    this.isIntentionalDisconnect = false;
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       console.warn('[SyncWS] No auth token available');
@@ -74,6 +76,12 @@ class SyncWebSocketService {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
+      // Si disconnect() a été appelé pendant la connexion, fermer immédiatement
+      if (this.isIntentionalDisconnect) {
+        this.ws?.close(1000, 'Client disconnect');
+        return;
+      }
+
       console.log('[SyncWS] Connected');
       this.reconnectAttempts = 0;
       this.updateStatus({
@@ -100,8 +108,14 @@ class SyncWebSocketService {
     };
 
     this.ws.onclose = (event) => {
-      console.log('[SyncWS] Disconnected:', event.code, event.reason);
       this.stopPing();
+
+      // Ne pas logger ni reconnecter si c'est une déconnexion intentionnelle
+      if (this.isIntentionalDisconnect) {
+        return;
+      }
+
+      console.log('[SyncWS] Disconnected:', event.code, event.reason);
       this.updateStatus({
         isConnected: false,
         isReconnecting: true,
@@ -112,6 +126,10 @@ class SyncWebSocketService {
     };
 
     this.ws.onerror = (error) => {
+      // Ne pas logger si c'est une déconnexion intentionnelle
+      if (this.isIntentionalDisconnect) {
+        return;
+      }
       console.error('[SyncWS] Error:', error);
       this.handleError(new Error('WebSocket connection error'));
     };
@@ -300,9 +318,19 @@ class SyncWebSocketService {
    * Déconnecte proprement le WebSocket
    */
   disconnect(): void {
+    this.isIntentionalDisconnect = true;
     this.stopPing();
     if (this.ws) {
-      this.ws.close(1000, 'Client disconnect');
+      // Ne pas appeler close() si le WebSocket est encore en train de se connecter
+      // car cela génère une erreur dans la console du navigateur
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CLOSING) {
+        this.ws.close(1000, 'Client disconnect');
+      }
+      // Supprimer les handlers pour éviter les callbacks après disconnect
+      this.ws.onopen = null;
+      this.ws.onclose = null;
+      this.ws.onerror = null;
+      this.ws.onmessage = null;
       this.ws = null;
     }
     this.updateStatus({

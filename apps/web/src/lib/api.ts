@@ -27,15 +27,23 @@ async function request<T = any>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE}${path}`;
 
+  const headers: Record<string, string> = {};
+
+  // Ajouter le token d'auth si disponible
+  const token = localStorage.getItem('plumenote-token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const options: RequestInit = {
     method,
-    headers: {},
+    headers,
     credentials: 'include', // Pour les cookies
   };
 
   // Seulement ajouter Content-Type et body si on a des données
   if (data && method !== 'GET') {
-    (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
+    headers['Content-Type'] = 'application/json';
     options.body = JSON.stringify(data);
   }
 
