@@ -26,6 +26,26 @@ export function MainLayout() {
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
+  // Raccourci global Cmd+K pour recherche rapide
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Cmd+K ou Ctrl+K → Recherche rapide
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/search');
+      }
+      // Cmd+? ou Cmd+/ → Raccourcis
+      if ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.key === '/')) {
+        e.preventDefault();
+        setShowShortcutsModal(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
+  }, [navigate]);
+
   // Afficher le tutoriel à la première connexion (une seule fois par session navigateur)
   useEffect(() => {
     const tutorialSessionKey = 'plumenote-tutorial-checked';
