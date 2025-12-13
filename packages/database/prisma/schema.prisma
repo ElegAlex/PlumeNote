@@ -59,6 +59,9 @@ model User {
   // Relations import (EP-008)
   importJobs      ImportJob[]
 
+  // Relations assets utilisateur
+  assets          Asset[]
+
   // Relations événements calendrier autonomes
   createdEvents   Event[]      @relation("EventCreatedBy")
   linkedEventNotes EventNote[] @relation("EventNoteLinkedBy")
@@ -334,6 +337,30 @@ model Attachment {
 
   @@index([noteId])
   @@map("attachments")
+}
+
+// ----- ASSETS UTILISATEUR (Images/Fichiers découplés des notes) -----
+
+model Asset {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  filename     String   @db.VarChar(255) // Nom stocké sur le disque
+  originalName String   @map("original_name") @db.VarChar(255) // Nom original uploadé
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int      @map("size_bytes")
+  storagePath  String   @map("storage_path") @db.VarChar(500)
+  thumbnailPath String? @map("thumbnail_path") @db.VarChar(500) // Miniature pour images
+  width        Int?     // Dimensions pour images
+  height       Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mimeType])
+  @@index([createdAt(sort: Desc)])
+  @@map("assets")
 }
 
 // ----- PERMISSIONS -----

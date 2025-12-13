@@ -14,6 +14,7 @@ import { NoteItem } from './NoteItem';
 import { Spinner } from '../ui/Spinner';
 import { InlineCreateForm } from '../common';
 import { cn } from '../../lib/utils';
+import { getRootFolderColor, type FolderColor } from '../../config/folder-colors';
 import type { SidebarFolderNode } from '@plumenote/types';
 
 // Constante d'indentation par niveau (en pixels)
@@ -26,6 +27,8 @@ interface FolderItemProps {
   onCreateFolder?: (name: string, parentId: string) => Promise<void>;
   /** Mode espace personnel (navigation vers /personal/folder/) */
   isPersonal?: boolean;
+  /** Index du dossier racine (pour coloration automatique) */
+  rootIndex?: number;
 }
 
 export const FolderItem = memo(function FolderItem({
@@ -34,6 +37,7 @@ export const FolderItem = memo(function FolderItem({
   onCreateNote,
   onCreateFolder,
   isPersonal = false,
+  rootIndex,
 }: FolderItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -168,8 +172,22 @@ export const FolderItem = memo(function FolderItem({
   // Calcul de l'indentation
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
 
-  // Couleur de l'icône : utiliser la couleur définie ou la couleur par défaut
-  const folderIconColor = folder.color || 'currentColor';
+  // Couleur du dossier racine (automatique si pas définie manuellement)
+  const isRootFolder = level === 0 && rootIndex !== undefined;
+  const autoColor: FolderColor | null = isRootFolder ? getRootFolderColor(rootIndex) : null;
+
+  // Couleur de l'icône : couleur définie > couleur auto > couleur par défaut
+  const folderIconColor = folder.color || autoColor?.accent || 'currentColor';
+
+  // Styles pour le fond des dossiers racines
+  const rootFolderStyle = isRootFolder && autoColor
+    ? {
+        paddingLeft,
+        '--folder-bg': autoColor.background,
+        '--folder-bg-hover': autoColor.backgroundHover,
+        borderLeft: `3px solid ${autoColor.accent}`,
+      } as React.CSSProperties
+    : { paddingLeft };
 
   return (
     <li role="treeitem" aria-expanded={isExpanded}>
@@ -183,9 +201,11 @@ export const FolderItem = memo(function FolderItem({
           'transition-colors duration-150',
           isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
           // Feedback visuel pendant le drag-over (US-007)
-          isOver && 'ring-2 ring-primary ring-inset bg-primary/10'
+          isOver && 'ring-2 ring-primary ring-inset bg-primary/10',
+          // Dossier racine avec couleur pastel
+          isRootFolder && 'root-folder'
         )}
-        style={{ paddingLeft }}
+        style={rootFolderStyle}
         onClick={handleRowClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}

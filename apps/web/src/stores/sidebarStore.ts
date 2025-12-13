@@ -50,6 +50,9 @@ interface SidebarState {
   // Actions - Mutations optimistes
   addFolderToTree: (folder: SidebarFolderNode, parentId: string | null) => void;
   removeFolderFromTree: (folderId: string) => void;
+  addNoteToFolder: (folderId: string, note: NotePreview) => void;
+  removeNoteFromFolder: (folderId: string, noteId: string) => void;
+  invalidateFolderCache: (folderId: string) => void;
 
   // Getters
   getFolderContent: (folderId: string) => FolderCache | undefined;
@@ -368,6 +371,90 @@ export const useSidebarStore = create<SidebarState>()(
           tree: removeFromNodes(tree),
           loadedFolders: newLoadedFolders,
         });
+      },
+
+      addNoteToFolder: (folderId: string, note: NotePreview) => {
+        const { tree, loadedFolders } = get();
+
+        // Mettre à jour le cache du dossier
+        const folderCache = loadedFolders.get(folderId);
+        if (folderCache) {
+          // Vérifier si la note existe déjà
+          const existingIndex = folderCache.notes.findIndex((n) => n.id === note.id);
+          if (existingIndex === -1) {
+            const newLoadedFolders = new Map(loadedFolders);
+            newLoadedFolders.set(folderId, {
+              ...folderCache,
+              notes: [note, ...folderCache.notes],
+              loadedAt: Date.now(),
+            });
+            set({ loadedFolders: newLoadedFolders });
+          }
+        }
+
+        // Mettre à jour l'arbre
+        const updateTree = (nodes: SidebarFolderNode[]): SidebarFolderNode[] => {
+          return nodes.map((node) => {
+            if (node.id === folderId) {
+              const existingNoteIndex = node.notes.findIndex((n) => n.id === note.id);
+              if (existingNoteIndex === -1) {
+                return {
+                  ...node,
+                  notes: [note, ...node.notes],
+                  notesCount: node.notesCount + 1,
+                };
+              }
+              return node;
+            }
+            if (node.children.length > 0) {
+              return { ...node, children: updateTree(node.children) };
+            }
+            return node;
+          });
+        };
+
+        set({ tree: updateTree(tree) });
+      },
+
+      removeNoteFromFolder: (folderId: string, noteId: string) => {
+        const { tree, loadedFolders } = get();
+
+        // Mettre à jour le cache
+        const folderCache = loadedFolders.get(folderId);
+        if (folderCache) {
+          const newLoadedFolders = new Map(loadedFolders);
+          newLoadedFolders.set(folderId, {
+            ...folderCache,
+            notes: folderCache.notes.filter((n) => n.id !== noteId),
+            loadedAt: Date.now(),
+          });
+          set({ loadedFolders: newLoadedFolders });
+        }
+
+        // Mettre à jour l'arbre
+        const updateTree = (nodes: SidebarFolderNode[]): SidebarFolderNode[] => {
+          return nodes.map((node) => {
+            if (node.id === folderId) {
+              return {
+                ...node,
+                notes: node.notes.filter((n) => n.id !== noteId),
+                notesCount: Math.max(0, node.notesCount - 1),
+              };
+            }
+            if (node.children.length > 0) {
+              return { ...node, children: updateTree(node.children) };
+            }
+            return node;
+          });
+        };
+
+        set({ tree: updateTree(tree) });
+      },
+
+      invalidateFolderCache: (folderId: string) => {
+        const newLoadedFolders = new Map(get().loadedFolders);
+        newLoadedFolders.delete(folderId);
+        set({ loadedFolders: newLoadedFolders });
       },
 
       // ----- Getters -----

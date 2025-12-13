@@ -185,7 +185,9 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     id: 'link',
     action: 'Insérer un lien',
     description: 'Transformer la sélection en lien',
-    keys: { modifiers: ['cmd'], key: 'k' },
+    // Note: Cmd+K est réservé pour la recherche rapide globale
+    // On utilise Cmd+L pour les liens dans l'éditeur
+    keys: { modifiers: ['cmd'], key: 'l' },
     category: 'editor-formatting',
     context: 'editor',
   },
@@ -327,7 +329,8 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     id: 'horizontal-rule',
     action: 'Ligne horizontale',
     description: 'Insérer une ligne de séparation',
-    keys: { modifiers: ['cmd', 'shift'], key: 'l' },
+    // Cmd+Shift+L est pour sélection ligne, on utilise Cmd+Shift+- pour ligne horizontale
+    keys: { modifiers: ['cmd', 'shift'], key: '-' },
     category: 'editor-blocks',
     context: 'editor',
   },
@@ -353,7 +356,8 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     id: 'select-line',
     action: 'Sélectionner la ligne',
     description: 'Sélectionner la ligne courante',
-    keys: { modifiers: ['cmd'], key: 'l' },
+    // Cmd+L est utilisé pour les liens, on utilise Cmd+Shift+L pour sélection ligne
+    keys: { modifiers: ['cmd', 'shift'], key: 'l' },
     category: 'selection',
     context: 'editor',
   },

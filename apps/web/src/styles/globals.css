@@ -500,3 +500,199 @@
 .dark .prose tbody tr {
   @apply border-border;
 }
+
+/* ===================================
+   Code Block Syntax Highlighting
+   Compatible with lowlight/highlight.js
+   =================================== */
+
+/* Code block container */
+.code-block-highlight {
+  @apply relative my-4 rounded-lg overflow-hidden;
+}
+
+.code-block-highlight pre {
+  @apply bg-[#1e1e2e] text-[#cdd6f4] p-4 overflow-x-auto;
+  @apply font-mono text-sm leading-relaxed;
+  margin: 0;
+}
+
+.code-block-highlight code {
+  @apply bg-transparent p-0 font-mono;
+  color: inherit;
+}
+
+/* Light mode code blocks */
+:root .code-block-highlight pre {
+  @apply bg-[#f6f8fa] text-[#24292f];
+}
+
+/* Highlight.js / Lowlight token styles - Dark Theme (Catppuccin) */
+.dark .code-block-highlight .hljs-keyword,
+.dark .code-block-highlight .hljs-selector-tag,
+.dark .code-block-highlight .hljs-built_in,
+.dark .code-block-highlight .hljs-name {
+  @apply text-[#cba6f7]; /* mauve */
+}
+
+.dark .code-block-highlight .hljs-string,
+.dark .code-block-highlight .hljs-attr,
+.dark .code-block-highlight .hljs-symbol,
+.dark .code-block-highlight .hljs-bullet,
+.dark .code-block-highlight .hljs-addition {
+  @apply text-[#a6e3a1]; /* green */
+}
+
+.dark .code-block-highlight .hljs-title,
+.dark .code-block-highlight .hljs-section,
+.dark .code-block-highlight .hljs-selector-id {
+  @apply text-[#89b4fa]; /* blue */
+}
+
+.dark .code-block-highlight .hljs-class .hljs-title,
+.dark .code-block-highlight .hljs-type {
+  @apply text-[#f9e2af]; /* yellow */
+}
+
+.dark .code-block-highlight .hljs-function,
+.dark .code-block-highlight .hljs-title.function_ {
+  @apply text-[#89b4fa]; /* blue */
+}
+
+.dark .code-block-highlight .hljs-variable,
+.dark .code-block-highlight .hljs-template-variable {
+  @apply text-[#f38ba8]; /* red */
+}
+
+.dark .code-block-highlight .hljs-comment,
+.dark .code-block-highlight .hljs-quote,
+.dark .code-block-highlight .hljs-meta {
+  @apply text-[#6c7086] italic; /* overlay0 */
+}
+
+.dark .code-block-highlight .hljs-number,
+.dark .code-block-highlight .hljs-literal {
+  @apply text-[#fab387]; /* peach */
+}
+
+.dark .code-block-highlight .hljs-regexp,
+.dark .code-block-highlight .hljs-link {
+  @apply text-[#94e2d5]; /* teal */
+}
+
+.dark .code-block-highlight .hljs-deletion {
+  @apply text-[#f38ba8] bg-[#f38ba8]/10; /* red */
+}
+
+.dark .code-block-highlight .hljs-emphasis {
+  @apply italic;
+}
+
+.dark .code-block-highlight .hljs-strong {
+  @apply font-bold;
+}
+
+/* Light mode token styles (GitHub-inspired) */
+.code-block-highlight .hljs-keyword,
+.code-block-highlight .hljs-selector-tag,
+.code-block-highlight .hljs-built_in,
+.code-block-highlight .hljs-name {
+  @apply text-[#cf222e];
+}
+
+.code-block-highlight .hljs-string,
+.code-block-highlight .hljs-attr,
+.code-block-highlight .hljs-symbol,
+.code-block-highlight .hljs-bullet,
+.code-block-highlight .hljs-addition {
+  @apply text-[#0a3069];
+}
+
+.code-block-highlight .hljs-title,
+.code-block-highlight .hljs-section,
+.code-block-highlight .hljs-selector-id {
+  @apply text-[#8250df];
+}
+
+.code-block-highlight .hljs-class .hljs-title,
+.code-block-highlight .hljs-type {
+  @apply text-[#953800];
+}
+
+.code-block-highlight .hljs-function,
+.code-block-highlight .hljs-title.function_ {
+  @apply text-[#8250df];
+}
+
+.code-block-highlight .hljs-variable,
+.code-block-highlight .hljs-template-variable {
+  @apply text-[#953800];
+}
+
+.code-block-highlight .hljs-comment,
+.code-block-highlight .hljs-quote,
+.code-block-highlight .hljs-meta {
+  @apply text-[#6e7781] italic;
+}
+
+.code-block-highlight .hljs-number,
+.code-block-highlight .hljs-literal {
+  @apply text-[#0550ae];
+}
+
+.code-block-highlight .hljs-regexp,
+.code-block-highlight .hljs-link {
+  @apply text-[#116329];
+}
+
+.code-block-highlight .hljs-deletion {
+  @apply text-[#82071e] bg-[#ffebe9];
+}
+
+.code-block-highlight .hljs-emphasis {
+  @apply italic;
+}
+
+.code-block-highlight .hljs-strong {
+  @apply font-bold;
+}
+
+/* Language label */
+.code-block-highlight::before {
+  @apply absolute top-2 right-2 text-xs text-muted-foreground/60 font-mono uppercase;
+  content: attr(data-language);
+}
+
+/* Line numbers (optional - add .with-line-numbers class) */
+.code-block-highlight.with-line-numbers code {
+  counter-reset: line;
+}
+
+.code-block-highlight.with-line-numbers code > * {
+  counter-increment: line;
+}
+
+.code-block-highlight.with-line-numbers code > *::before {
+  @apply inline-block w-8 mr-4 text-right text-muted-foreground/40 select-none;
+  content: counter(line);
+}
+
+/* ===================================
+   Root Folder Coloration
+   Couleurs pastels automatiques
+   =================================== */
+
+.root-folder {
+  background-color: var(--folder-bg);
+  margin-bottom: 2px;
+}
+
+.root-folder:hover {
+  background-color: var(--folder-bg-hover) !important;
+}
+
+.root-folder.bg-blue-100,
+.dark .root-folder.dark\:bg-blue-900\/30 {
+  /* Quand sélectionné, garder la couleur de sélection */
+  background-color: inherit;
+}

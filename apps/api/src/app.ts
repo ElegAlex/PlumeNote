@@ -14,6 +14,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import multipart from '@fastify/multipart';
 
 import { config } from './config/index.js';
+import { rateLimitConfig, isReadMethod } from './config/rate-limit.config.js';
 import { logger } from './lib/logger.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
 import { initRedis, closeRedis } from './services/cache.js';
@@ -45,6 +46,7 @@ import { noteTagsRoutes } from './routes/noteTags.js';
 import { eventsRoutes, noteEventsRoutes } from './routes/events.js';
 import { preferencesRoutes } from './routes/preferences.js';
 import { templatesRoutes } from './routes/templates.js';
+import { assetsRoutes } from './routes/assets.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -108,13 +110,56 @@ export async function buildApp() {
   // ----- Middleware d'authentification -----
   registerAuthMiddleware(app);
 
-  await app.register(rateLimit, {
-    max: config.rateLimitMax,
-    timeWindow: config.rateLimitWindow,
-    keyGenerator: (request) => {
-      return request.ip;
-    },
-  });
+  // ----- Rate Limiting différencié -----
+  if (rateLimitConfig.enabled) {
+    await app.register(rateLimit, {
+      global: true,
+      max: (request) => {
+        // Routes d'authentification : limites strictes (protection brute force)
+        if (request.url.startsWith('/api/v1/auth')) {
+          return rateLimitConfig.auth.max;
+        }
+
+        // Utilisateur authentifié : limites hautes différenciées lecture/écriture
+        if (request.user) {
+          return isReadMethod(request.method)
+            ? rateLimitConfig.authenticated.read.max
+            : rateLimitConfig.authenticated.write.max;
+        }
+
+        // Requêtes non authentifiées : limites publiques
+        return rateLimitConfig.public.max;
+      },
+      timeWindow: (request) => {
+        if (request.url.startsWith('/api/v1/auth')) {
+          return rateLimitConfig.auth.timeWindow;
+        }
+
+        if (request.user) {
+          return isReadMethod(request.method)
+            ? rateLimitConfig.authenticated.read.timeWindow
+            : rateLimitConfig.authenticated.write.timeWindow;
+        }
+
+        return rateLimitConfig.public.timeWindow;
+      },
+      keyGenerator: (request) => {
+        // Clé basée sur l'utilisateur si authentifié, sinon IP
+        return request.user?.userId || request.ip;
+      },
+      errorResponseBuilder: (_request, context) => ({
+        statusCode: 429,
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded. Retry after ${context.after}`,
+        retryAfter: context.after,
+      }),
+      onExceeded: (request, key) => {
+        logger.warn({ key, url: request.url, method: request.method }, 'Rate limit exceeded');
+      },
+    });
+  } else {
+    logger.warn('[App] Rate limiting is DISABLED');
+  }
 
   // ----- Plugins utilitaires -----
   await app.register(sensible);
@@ -190,6 +235,7 @@ export async function buildApp() {
   await app.register(noteEventsRoutes, { prefix: '/api/v1/notes' });
   await app.register(preferencesRoutes, { prefix: '/api/v1/preferences' });
   await app.register(templatesRoutes, { prefix: '/api/v1/templates' });
+  await app.register(assetsRoutes, { prefix: '/api/v1/assets' });
 
   // ----- Error Handler global -----
   app.setErrorHandler((error, request, reply) => {

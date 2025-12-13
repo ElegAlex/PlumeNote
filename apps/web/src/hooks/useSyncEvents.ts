@@ -9,12 +9,14 @@ import type {
   NoteEventPayload,
   FolderEventPayload,
   SidebarFolderNode,
+  NotePreview,
 } from '@plumenote/types';
 import { SyncEventType } from '@plumenote/types';
 import { syncWebSocket } from '../services/syncWebSocket';
 import { useSidebarStore } from '../stores/sidebarStore';
 import { useAuthStore } from '../stores/auth';
 import { api } from '../lib/api';
+import { toast } from 'sonner';
 
 /**
  * Hook qui gère la synchronisation temps réel des événements
@@ -27,6 +29,9 @@ export function useSyncEvents() {
     refreshFolder,
     addFolderToTree,
     removeFolderFromTree,
+    addNoteToFolder,
+    removeNoteFromFolder,
+    invalidateFolderCache,
     fetchTree,
   } = useSidebarStore();
 
@@ -35,23 +40,78 @@ export function useSyncEvents() {
   // Handler pour les événements de notes
   const handleNoteEvent = useCallback(
     async (event: SyncEvent<NoteEventPayload>) => {
-      const { payload, type } = event;
+      const { payload, type, userId } = event;
 
       console.log('[SyncEvents] Note event received:', type, payload);
 
       switch (type) {
         case SyncEventType.NOTE_CREATED:
-        case SyncEventType.NOTE_UPDATED:
+          if (payload.folderId && payload.noteId) {
+            try {
+              // Récupérer les infos de la note créée
+              const response = await api.get<{
+                id: string;
+                title: string;
+                slug: string;
+                createdAt: string;
+                updatedAt: string;
+              }>(`/notes/${payload.noteId}`);
+
+              const newNote: NotePreview = {
+                id: response.data.id,
+                title: response.data.title,
+                slug: response.data.slug,
+                position: 0,
+                createdAt: response.data.createdAt,
+                updatedAt: response.data.updatedAt,
+              };
+
+              // Ajouter directement la note au dossier
+              addNoteToFolder(payload.folderId, newNote);
+
+              // Notification visuelle
+              toast.info(`Nouvelle note : ${response.data.title}`, {
+                description: 'Créée par un autre utilisateur',
+                duration: 3000,
+              });
+            } catch (error) {
+              console.error('[SyncEvents] Failed to fetch new note:', error);
+              // Fallback: invalider le cache et rafraîchir
+              invalidateFolderCache(payload.folderId);
+              await refreshFolder(payload.folderId);
+            }
+          }
+          break;
+
         case SyncEventType.NOTE_DELETED:
-        case SyncEventType.NOTE_MOVED:
-          // Rafraîchir le dossier parent pour mettre à jour la liste des notes
+          if (payload.folderId && payload.noteId) {
+            removeNoteFromFolder(payload.folderId, payload.noteId);
+          }
+          break;
+
+        case SyncEventType.NOTE_UPDATED:
+          // Pour les mises à jour, rafraîchir le cache du dossier
           if (payload.folderId) {
+            invalidateFolderCache(payload.folderId);
             await refreshFolder(payload.folderId);
+          }
+          break;
+
+        case SyncEventType.NOTE_MOVED:
+          // Déplacement : mettre à jour l'ancien et le nouveau dossier
+          if (payload.folderId) {
+            invalidateFolderCache(payload.folderId);
+            await refreshFolder(payload.folderId);
+          }
+          // Si on a l'ancien folderId dans le payload, le rafraîchir aussi
+          if ((payload as any).previousFolderId) {
+            invalidateFolderCache((payload as any).previousFolderId);
+            await refreshFolder((payload as any).previousFolderId);
           }
           break;
       }
     },
-    [refreshFolder]
+    [refreshFolder, addNoteToFolder, removeNoteFromFolder, invalidateFolderCache]
   );
 
   // Handler pour les événements de dossiers

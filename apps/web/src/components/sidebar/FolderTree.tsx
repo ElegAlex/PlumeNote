@@ -47,11 +47,12 @@ export function FolderTree({ onCreateNote, onCreateFolder }: FolderTreeProps) {
   return (
     <nav className="folder-tree" role="tree" aria-label="Arborescence des dossiers">
       <ul className="space-y-0.5">
-        {tree.map((folder) => (
+        {tree.map((folder, index) => (
           <FolderItem
             key={folder.id}
             folder={folder}
             level={0}
+            rootIndex={index}
             onCreateNote={onCreateNote}
             onCreateFolder={onCreateFolder}
           />

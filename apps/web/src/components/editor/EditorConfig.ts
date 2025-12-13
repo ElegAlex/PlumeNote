@@ -20,6 +20,7 @@ import { MermaidExtension } from './extensions/mermaid';
 import { ToggleExtension } from './extensions/toggle';
 import { ImageExtension, type ImageExtensionOptions } from './extensions/image';
 import { EmbedExtension } from './extensions/embed';
+import { CodeBlockHighlightExtension } from './extensions/codeblock';
 
 // ===========================================
 // Types pour les feature flags
@@ -128,14 +129,14 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
       heading: {
         levels: headingLevels,
       },
-      codeBlock: {
-        HTMLAttributes: {
-          class: 'hljs',
-        },
-      },
+      // Désactiver le codeBlock de StarterKit, on utilise CodeBlockHighlightExtension
+      codeBlock: false,
       // history: false, // TODO: Désactiver quand collaboration Yjs sera réactivée
     })
   );
+
+  // CodeBlock avec coloration syntaxique (lowlight)
+  extensions.push(CodeBlockHighlightExtension);
 
   // Placeholder - toujours inclus
   extensions.push(

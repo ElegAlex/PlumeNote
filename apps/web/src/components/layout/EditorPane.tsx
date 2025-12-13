@@ -20,10 +20,12 @@ interface EditorPaneProps {
 
 export function EditorPane({ pane }: EditorPaneProps) {
   const navigate = useNavigate();
-  const { activePaneId, setActivePane, closePane, canClosePane, splitPane } =
+  const { activePaneId, setActivePane, closePane, canClosePane, splitPane, resetPanes, getPaneCount } =
     usePanesStore();
   const isActive = activePaneId === pane.id;
   const canClose = canClosePane();
+  const paneCount = getPaneCount();
+  const isInSplitView = paneCount > 1;
 
   const [note, setNote] = useState<Note | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +113,28 @@ export function EditorPane({ pane }: EditorPaneProps) {
           {note?.title || (pane.noteId ? 'Chargement...' : 'Sélectionner une note')}
         </span>
         <div className="flex items-center gap-1">
+          {/* Exit Split View button - shown when in split view on active pane */}
+          {isInSplitView && isActive && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Garder la note du panneau actif avant de reset
+                const currentNoteId = pane.noteId;
+                resetPanes();
+                // Ouvrir la note dans le nouveau panneau unique
+                if (currentNoteId) {
+                  setTimeout(() => {
+                    usePanesStore.getState().openNoteInActivePane(currentNoteId);
+                  }, 0);
+                }
+              }}
+              className="px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded text-muted-foreground hover:text-foreground transition-colors"
+              title="Sortir du Split View"
+            >
+              Sortir du Split
+            </button>
+          )}
+
           {/* Split buttons */}
           <button
             onClick={(e) => {
