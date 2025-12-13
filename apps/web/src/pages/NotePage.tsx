@@ -24,6 +24,7 @@ import { useNoteView, useNoteRealtimeSync } from '../hooks';
 import { useNoteEvents } from '../hooks/useNoteEvents';
 import { EventBadge } from '../components/calendar/EventBadge';
 import { ExportDialog } from '../components/export';
+import { AttachmentsPanel } from '../components/editor/AttachmentsPanel';
 
 export function NotePage() {
   const { noteId } = useParams<{ noteId: string }>();
@@ -45,6 +46,7 @@ export function NotePage() {
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
+  const [showAttachmentsPanel, setShowAttachmentsPanel] = useState(false);
   const { isOpen: isRightPanelOpen, togglePanel, closePanel } = useRightPanelStore();
 
   // P1: Enregistrer la vue de la note
@@ -223,6 +225,7 @@ export function NotePage() {
             onShowToc={() => togglePanel('toc')}
             onShowLinks={() => togglePanel('links')}
             onShowHistory={() => setShowVersionHistory(true)}
+            onShowAttachments={() => setShowAttachmentsPanel(true)}
             onExport={() => setShowExportDialog(true)}
             onMoveClick={() => setShowMoveDialog(true)}
             onSplitView={() => navigate(`/split/${noteId}`)}
@@ -351,6 +354,15 @@ export function NotePage() {
             updatedAt: currentNote.updatedAt,
             tags: currentNote.tags?.map((t) => ({ tag: { name: t.name } })),
           }}
+        />
+      )}
+
+      {/* Attachments Panel */}
+      {currentNote && (
+        <AttachmentsPanel
+          noteId={currentNote.id}
+          isOpen={showAttachmentsPanel}
+          onClose={() => setShowAttachmentsPanel(false)}
         />
       )}
     </div>

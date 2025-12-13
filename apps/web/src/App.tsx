@@ -18,6 +18,7 @@ import { ShortcutsPage } from './components/shortcuts/ShortcutsPage';
 import { ShortcutsModalTrigger } from './components/shortcuts/ShortcutsModal';
 import { DashboardPage } from './components/dashboard/DashboardPage';
 import { CalendarPage } from './components/calendar/CalendarPage';
+import { GalleryPage } from './pages/GalleryPage';
 import { useSyncEvents } from './hooks';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -64,6 +65,7 @@ export function App() {
           <Route path="shortcuts" element={<ShortcutsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="gallery" element={<GalleryPage />} />
           <Route path="split" element={<SplitViewPage />} />
           <Route path="split/:noteId" element={<SplitViewPage />} />
           <Route path="admin/*" element={<AdminPage />} />

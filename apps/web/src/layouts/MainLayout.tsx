@@ -362,6 +362,13 @@ export function MainLayout() {
                     >
                       Statistiques
                     </NavLink>
+                    <NavLink
+                      to="/gallery"
+                      className="block px-4 py-2 text-sm hover:bg-muted"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Galerie
+                    </NavLink>
                     <button
                       className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
                       onClick={() => {

@@ -251,6 +251,78 @@ export const attachmentsRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
+   * GET /api/v1/attachments/user/all
+   * Liste tous les attachments uploadés par l'utilisateur courant
+   * NOTE: Cette route DOIT être définie AVANT /:id pour éviter les conflits
+   */
+  app.get('/user/all', {
+    schema: {
+      tags: ['Attachments'],
+      summary: 'List all user attachments',
+      description: 'List all attachments uploaded by the current user',
+      security: [{ cookieAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'number', default: 50, maximum: 100 },
+          offset: { type: 'number', default: 0 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const userId = request.user.userId;
+    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number };
+
+    // Récupérer tous les attachments de l'utilisateur
+    const [attachments, total] = await Promise.all([
+      prisma.attachment.findMany({
+        where: { uploadedBy: userId },
+        select: {
+          id: true,
+          filename: true,
+          mimeType: true,
+          sizeBytes: true,
+          storagePath: true,
+          createdAt: true,
+          noteId: true,
+          note: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.attachment.count({
+        where: { uploadedBy: userId },
+      }),
+    ]);
+
+    return reply.send({
+      success: true,
+      data: attachments.map((att) => ({
+        id: att.id,
+        filename: att.filename,
+        mimeType: att.mimeType,
+        size: att.sizeBytes,
+        url: storageProvider.getUrl(att.storagePath),
+        createdAt: att.createdAt.toISOString(),
+        noteId: att.noteId,
+        noteTitle: att.note?.title || 'Note supprimée',
+      })),
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + attachments.length < total,
+      },
+    });
+  });
+
+  /**
    * GET /api/v1/attachments/:id
    * Télécharge/affiche un fichier attaché
    */
