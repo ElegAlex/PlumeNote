@@ -255,6 +255,7 @@ export function NotePage() {
           onSave={async (content) => {
             await updateNote(noteId!, { content });
           }}
+          noteId={currentNote.id}
           autoFocus
           onWikilinkClick={async (target, section) => {
             try {

@@ -18,6 +18,7 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import mermaid from 'mermaid';
 import { cn } from '../../lib/utils';
+import { ImageUploadDialog } from './ImageUploadDialog';
 
 // ===========================================
 // Initialisation Mermaid
@@ -446,6 +447,8 @@ interface MarkdownEditorProps {
   onWikilinkClick?: (target: string, section?: string) => void;
   /** Whether the user can edit (for checkbox interaction in preview) */
   canWrite?: boolean;
+  /** Note ID for image uploads (required for upload functionality) */
+  noteId?: string;
 }
 
 // ===========================================
@@ -734,6 +737,10 @@ const CALLOUT_TYPES = [
   { type: 'FAIL', label: 'Échec' },
 ] as const;
 
+const API_BASE = '/api/v1';
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 export function MarkdownEditor({
   content,
   onChange,
@@ -744,6 +751,7 @@ export function MarkdownEditor({
   autoFocus = true,
   onWikilinkClick,
   canWrite = true,
+  noteId,
 }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -751,6 +759,9 @@ export function MarkdownEditor({
   const [fullWidth, setFullWidth] = useState(false);
   const [localContent, setLocalContent] = useState(content);
   const [showCalloutMenu, setShowCalloutMenu] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isUploadingDrop, setIsUploadingDrop] = useState(false);
 
   // Compteur pour identifier les checkboxes en mode preview
   // On utilise un compteur qui se reset à chaque changement de contenu
@@ -857,6 +868,13 @@ export function MarkdownEditor({
   }, []);
 
   const insertImage = useCallback(() => {
+    // Si noteId est fourni, ouvrir le dialog d'upload
+    if (noteId) {
+      setShowImageDialog(true);
+      return;
+    }
+
+    // Sinon, insérer le markdown basique
     const view = viewRef.current;
     if (!view) return;
 
@@ -869,7 +887,119 @@ export function MarkdownEditor({
       selection: { anchor: from + selectedText.length + 4, head: from + selectedText.length + 7 },
     });
     view.focus();
+  }, [noteId]);
+
+  // Callback quand une image est insérée via le dialog
+  const handleImageInserted = useCallback((markdown: string) => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    const { from, to } = view.state.selection.main;
+
+    view.dispatch({
+      changes: { from, to, insert: markdown },
+      selection: { anchor: from + markdown.length },
+    });
+    view.focus();
   }, []);
+
+  // Upload d'image par drag & drop
+  const uploadDroppedImage = useCallback(async (file: File): Promise<string | null> => {
+    if (!noteId) return null;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      console.warn('Type de fichier non supporté:', file.type);
+      return null;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      console.warn('Fichier trop volumineux');
+      return null;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API_BASE}/attachments/upload?noteId=${noteId}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.url) {
+          const alt = file.name.replace(/\.[^.]+$/, '');
+          return `![${alt}](${data.data.url})`;
+        }
+      }
+    } catch (err) {
+      console.error('Erreur upload image:', err);
+    }
+    return null;
+  }, [noteId]);
+
+  // Handlers drag & drop
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!noteId || readOnly) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Vérifier si c'est un fichier image
+    const hasImageFile = Array.from(e.dataTransfer.items).some(
+      item => item.kind === 'file' && ACCEPTED_IMAGE_TYPES.includes(item.type)
+    );
+    if (hasImageFile) {
+      setIsDraggingOver(true);
+    }
+  }, [noteId, readOnly]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    if (!noteId || readOnly || isUploadingDrop) return;
+
+    const files = Array.from(e.dataTransfer.files).filter(
+      file => ACCEPTED_IMAGE_TYPES.includes(file.type)
+    );
+
+    if (files.length === 0) return;
+
+    setIsUploadingDrop(true);
+
+    try {
+      const markdownParts: string[] = [];
+
+      for (const file of files) {
+        const markdown = await uploadDroppedImage(file);
+        if (markdown) {
+          markdownParts.push(markdown);
+        }
+      }
+
+      if (markdownParts.length > 0) {
+        const view = viewRef.current;
+        if (view) {
+          const { from, to } = view.state.selection.main;
+          const insertText = markdownParts.join('\n\n');
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + insertText.length },
+          });
+          view.focus();
+        }
+      }
+    } finally {
+      setIsUploadingDrop(false);
+    }
+  }, [noteId, readOnly, isUploadingDrop, uploadDroppedImage]);
 
   const insertCallout = useCallback((type: string) => {
     const view = viewRef.current;
@@ -1028,7 +1158,39 @@ export function MarkdownEditor({
   const isEditMode = mode === 'edit';
 
   return (
-    <div className={cn('relative h-full w-full flex flex-col', className)}>
+    <div
+      className={cn('relative h-full w-full flex flex-col', className)}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drop overlay */}
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-primary/10 border-2 border-dashed border-primary rounded-lg pointer-events-none">
+          <div className="text-center">
+            <svg className="h-12 w-12 mx-auto mb-2 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <p className="text-sm font-medium text-primary">Déposez l'image ici</p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload indicator */}
+      {isUploadingDrop && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
+          <div className="text-center">
+            <svg className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="10" strokeOpacity={0.25} />
+              <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm text-muted-foreground">Upload en cours...</p>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/30 flex-wrap">
         {/* Undo/Redo */}
@@ -1286,6 +1448,16 @@ export function MarkdownEditor({
           </div>
         )}
       </div>
+
+      {/* Dialog d'upload d'images */}
+      {noteId && (
+        <ImageUploadDialog
+          open={showImageDialog}
+          onOpenChange={setShowImageDialog}
+          noteId={noteId}
+          onImageInserted={handleImageInserted}
+        />
+      )}
     </div>
   );
 }
