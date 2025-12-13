@@ -147,21 +147,16 @@ export function MainLayout() {
         return;
       }
 
-      // === RACCOURCIS HORS ÉDITEUR (ne fonctionnent pas quand on édite) ===
-      const target = e.target as HTMLElement;
-      const isInInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable;
-      if (isInInput) return;
-
-      // Cmd+N → Nouvelle note
-      if (isMod && !e.shiftKey && e.key === 'n') {
+      // Alt+N → Nouvelle note (Ctrl+N est bloqué par le navigateur)
+      if (e.altKey && !e.shiftKey && !isMod && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
         e.stopPropagation();
         handleNewNote();
         return;
       }
 
-      // Cmd+Shift+N → Nouveau dossier
-      if (isMod && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+      // Alt+Shift+N → Nouveau dossier
+      if (e.altKey && e.shiftKey && !isMod && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
         e.stopPropagation();
         handleNewFolder();
