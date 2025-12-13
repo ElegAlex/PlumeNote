@@ -4,12 +4,13 @@
 // ===========================================
 
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { usePanesStore } from '../stores/panesStore';
 import { PaneContainer } from '../components/layout/PaneContainer';
 import { Button } from '../components/ui/Button';
 
 export function SplitViewPage() {
+  const navigate = useNavigate();
   const { noteId } = useParams<{ noteId?: string }>();
   const { root, openNoteInActivePane, resetPanes, getPaneCount } = usePanesStore();
 
@@ -47,6 +48,27 @@ export function SplitViewPage() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={resetPanes}>
             Réinitialiser
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Quitter Split View
           </Button>
         </div>
       </div>
