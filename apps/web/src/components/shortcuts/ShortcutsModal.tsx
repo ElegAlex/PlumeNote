@@ -64,6 +64,9 @@ export function ShortcutsModal({ open, onOpenChange }: ShortcutsModalProps) {
               <Keyboard className="h-5 w-5" />
               Raccourcis clavier
             </Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Liste des raccourcis clavier disponibles dans l'application
+            </Dialog.Description>
             <Dialog.Close asChild>
               <button
                 className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"

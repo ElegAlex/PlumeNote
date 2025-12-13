@@ -135,6 +135,8 @@ export function FolderAccessModal({
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 animate-in fade-in" />
           <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background rounded-lg shadow-xl">
+            <Dialog.Title className="sr-only">Chargement</Dialog.Title>
+            <Dialog.Description className="sr-only">Chargement des accès du dossier</Dialog.Description>
             <div className="flex items-center justify-center p-8">
               <Spinner size="lg" />
             </div>
@@ -154,6 +156,9 @@ export function FolderAccessModal({
             <Dialog.Title className="text-lg font-semibold">
               Gestion des accès - {folderName}
             </Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Configurez qui peut accéder à ce dossier et avec quels droits
+            </Dialog.Description>
             <Dialog.Close asChild>
               <Button variant="ghost" size="icon">
                 <XIcon />
