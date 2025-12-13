@@ -936,10 +936,45 @@ export function MarkdownEditor({
         ...searchKeymap,
         ...closeBracketsKeymap,
         indentWithTab,
+        // Actions
         { key: 'Mod-s', run: () => { handleSave(); return true; } },
+        // Formatage texte
         { key: 'Mod-b', run: () => { wrapSelection('**', '**'); return true; } },
         { key: 'Mod-i', run: () => { wrapSelection('*', '*'); return true; } },
+        { key: 'Mod-u', run: () => { wrapSelection('<u>', '</u>'); return true; } },
+        { key: 'Mod-Shift-s', run: () => { wrapSelection('~~', '~~'); return true; } },
+        { key: 'Mod-e', run: () => { wrapSelection('`', '`'); return true; } },
         { key: 'Mod-l', run: () => { insertLink(); return true; } },
+        { key: 'Mod-Shift-h', run: () => { wrapSelection('==', '=='); return true; } },
+        // Titres (Cmd+Alt+1/2/3/4/0)
+        { key: 'Mod-Alt-1', run: () => { insertAtLineStart('# '); return true; } },
+        { key: 'Mod-Alt-2', run: () => { insertAtLineStart('## '); return true; } },
+        { key: 'Mod-Alt-3', run: () => { insertAtLineStart('### '); return true; } },
+        { key: 'Mod-Alt-4', run: () => { insertAtLineStart('#### '); return true; } },
+        { key: 'Mod-Alt-0', run: () => {
+          // Retirer le préfixe de titre si présent
+          const view = viewRef.current;
+          if (!view) return true;
+          const { from } = view.state.selection.main;
+          const line = view.state.doc.lineAt(from);
+          const lineText = line.text;
+          const match = lineText.match(/^#{1,6}\s+/);
+          if (match) {
+            view.dispatch({ changes: { from: line.from, to: line.from + match[0].length, insert: '' } });
+          }
+          return true;
+        }},
+        // Listes (Cmd+Shift+7/8/9)
+        { key: 'Mod-Shift-7', run: () => { insertAtLineStart('1. '); return true; } },
+        { key: 'Mod-Shift-8', run: () => { insertAtLineStart('- '); return true; } },
+        { key: 'Mod-Shift-9', run: () => { insertAtLineStart('- [ ] '); return true; } },
+        // Blocs
+        { key: 'Mod-Shift-b', run: () => { insertAtLineStart('> '); return true; } },
+        { key: 'Mod-Shift-c', run: () => { insertText('```\n\n```'); return true; } },
+        { key: 'Mod-Shift-i', run: () => { insertImage(); return true; } },
+        { key: 'Mod-Shift-t', run: () => { insertText('| Col 1 | Col 2 | Col 3 |\n|-------|-------|-------|\n| A | B | C |\n'); return true; } },
+        { key: 'Mod-Shift--', run: () => { insertText('\n---\n'); return true; } },
+        { key: 'Mod-Shift-m', run: () => { wrapSelection('$', '$'); return true; } },
       ]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -950,7 +985,7 @@ export function MarkdownEditor({
       }),
       EditorState.readOnly.of(readOnly),
     ];
-  }, [onChange, handleSave, placeholder, readOnly, fullWidth, wrapSelection, insertLink]);
+  }, [onChange, handleSave, placeholder, readOnly, fullWidth, wrapSelection, insertLink, insertAtLineStart, insertText, insertImage]);
 
   // Initialisation de l'éditeur
   useEffect(() => {

@@ -2,11 +2,14 @@
 // Layout Principal avec Sidebar (US-020 à US-024)
 // ===========================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth';
 import { useImportStore } from '../stores/importStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
+import { useNotesStore } from '../stores/notes';
+import { useSidebarStore } from '../stores/sidebarStore';
+import { useFoldersStore } from '../stores/folders';
 import { Button } from '../components/ui/Button';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { ShortcutsModal } from '../components/shortcuts/ShortcutsModal';
@@ -15,36 +18,160 @@ import { EventDetailModal } from '../components/calendar/EventDetailModal';
 import { TutorialModal, TUTORIAL_VERSION } from '../components/tutorial';
 import { SyncStatusDot } from '../components/common/SyncStatusIndicator';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 export function MainLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { isWizardOpen, openWizard, closeWizard } = useImportStore();
   const { markTutorialCompleted, isInitialized } = usePreferencesStore();
+  const { createNote } = useNotesStore();
+  const { addNoteToFolder, addFolderToTree, fetchTree } = useSidebarStore();
+  const { createFolder } = useFoldersStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
-  // Raccourci global Cmd+K pour recherche rapide
+  // Helper pour créer une nouvelle note
+  const handleNewNote = useCallback(async () => {
+    if (isCreatingNote) return;
+    setIsCreatingNote(true);
+    try {
+      const note = await createNote({ title: 'Sans titre' });
+      if (note.folderId) {
+        addNoteToFolder(note.folderId, {
+          id: note.id,
+          title: note.title,
+          slug: note.slug,
+          position: 0,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+        });
+      }
+      await fetchTree();
+      navigate(`/notes/${note.id}`);
+    } catch {
+      toast.error('Erreur lors de la création de la note');
+    } finally {
+      setIsCreatingNote(false);
+    }
+  }, [createNote, addNoteToFolder, fetchTree, navigate, isCreatingNote]);
+
+  // Helper pour créer un nouveau dossier
+  const handleNewFolder = useCallback(async () => {
+    if (isCreatingFolder) return;
+    setIsCreatingFolder(true);
+    try {
+      const folderName = window.prompt('Nom du nouveau dossier:');
+      if (folderName?.trim()) {
+        const newFolder = await createFolder(folderName.trim(), null);
+        // Mise à jour optimiste de la sidebar
+        addFolderToTree({
+          id: newFolder.id,
+          name: newFolder.name,
+          slug: newFolder.slug,
+          parentId: null,
+          color: newFolder.color || null,
+          icon: newFolder.icon || null,
+          position: newFolder.position || 0,
+          hasChildren: false,
+          notesCount: 0,
+          children: [],
+          notes: [],
+          isLoaded: true,
+        }, null);
+        toast.success('Dossier créé');
+      }
+    } catch {
+      toast.error('Erreur lors de la création du dossier');
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  }, [createFolder, addFolderToTree, isCreatingFolder]);
+
+  // Raccourcis globaux
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K ou Ctrl+K → Recherche rapide
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      const isMod = e.metaKey || e.ctrlKey;
+
+      // Ignorer si dans un champ de saisie (sauf pour certains raccourcis)
+      const target = e.target as HTMLElement;
+      const isInInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable;
+
+      // Cmd+K → Recherche rapide (fonctionne partout)
+      if (isMod && e.key === 'k') {
         e.preventDefault();
         e.stopPropagation();
         navigate('/search');
+        return;
       }
-      // Cmd+? ou Cmd+/ → Raccourcis
-      if ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.key === '/')) {
+
+      // Cmd+? ou Cmd+/ → Raccourcis (fonctionne partout)
+      if (isMod && (e.key === '?' || e.key === '/')) {
         e.preventDefault();
+        e.stopPropagation();
         setShowShortcutsModal(true);
+        return;
+      }
+
+      // Les raccourcis suivants ne fonctionnent pas dans les champs de saisie
+      if (isInInput) return;
+
+      // Cmd+N → Nouvelle note
+      if (isMod && !e.shiftKey && e.key === 'n') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleNewNote();
+        return;
+      }
+
+      // Cmd+Shift+N → Nouveau dossier
+      if (isMod && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleNewFolder();
+        return;
+      }
+
+      // Cmd+, → Paramètres
+      if (isMod && e.key === ',') {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/settings');
+        return;
+      }
+
+      // Cmd+\ → Toggle sidebar
+      if (isMod && e.key === '\\') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsSidebarCollapsed(prev => !prev);
+        return;
+      }
+
+      // Cmd+Shift+E → Focus explorateur (page d'accueil)
+      if (isMod && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/');
+        return;
+      }
+
+      // Cmd+Shift+F → Focus recherche
+      if (isMod && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate('/search');
+        return;
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
-  }, [navigate]);
+  }, [navigate, handleNewNote, handleNewFolder]);
 
   // Afficher le tutoriel à la première connexion (une seule fois par session navigateur)
   useEffect(() => {
