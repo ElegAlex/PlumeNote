@@ -939,7 +939,7 @@ export function MarkdownEditor({
         { key: 'Mod-s', run: () => { handleSave(); return true; } },
         { key: 'Mod-b', run: () => { wrapSelection('**', '**'); return true; } },
         { key: 'Mod-i', run: () => { wrapSelection('*', '*'); return true; } },
-        { key: 'Mod-k', run: () => { insertLink(); return true; } },
+        { key: 'Mod-l', run: () => { insertLink(); return true; } },
       ]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {

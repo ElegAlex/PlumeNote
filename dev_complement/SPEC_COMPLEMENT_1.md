@@ -2,15 +2,15 @@
 
 ## Vue d'ensemble des demandes
 
-|#|Demande|Type|Priorité|Complexité|
-|---|---|---|---|---|
-|1|Assouplissement/Suppression Rate Limiting|Configuration|P0-Critique|S|
-|2|Synchronisation temps réel sidebar (création notes)|Bugfix|P0-Critique|M|
-|3|Coloration syntaxique des blocs de code|Feature|P2-Moyenne|M|
-|4|Gestion des assets/images locaux|Feature|P1-Haute|XL|
-|5|Coloration visuelle des dossiers|Feature|P2-Moyenne|M|
-|6|Bouton sortie Split View|Bugfix|P1-Haute|S|
-|7|Audit/Correction raccourcis clavier|Évaluation|P2-Moyenne|M|
+| #   | Demande                                             | Type          | Priorité    | Complexité |
+| --- | --------------------------------------------------- | ------------- | ----------- | ---------- |
+| 1   | Assouplissement/Suppression Rate Limiting           | Configuration | P0-Critique | S          |
+| 2   | Synchronisation temps réel sidebar (création notes) | Bugfix        | P0-Critique | M          |
+| 3   | Coloration syntaxique des blocs de code             | Feature       | P2-Moyenne  | M          |
+| 4   | Gestion des assets/images locaux                    | Feature       | P1-Haute    | XL         |
+| 5   | Coloration visuelle des dossiers                    | Feature       | P2-Moyenne  | M          |
+| 6   | Bouton sortie Split View                            | Bugfix        | P1-Haute    | S          |
+| 7   | Audit/Correction raccourcis clavier                 | Évaluation    | P2-Moyenne  | M          |
 
 ---
 

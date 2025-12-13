@@ -277,8 +277,8 @@ export const WikilinkExtension = Node.create<WikilinkOptions>({
 
   addKeyboardShortcuts() {
     return {
-      // Ctrl/Cmd + K to insert wikilink
-      'Mod-k': () => {
+      // Ctrl/Cmd + L to insert wikilink (Mod-K is reserved for quick search)
+      'Mod-l': () => {
         const input = window.prompt('Lien vers note (format: note, note|alias, ou note#section):');
         if (input) {
           const parsed = parseWikilink(input);
