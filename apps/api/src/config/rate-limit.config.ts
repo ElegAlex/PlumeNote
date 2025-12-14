@@ -32,7 +32,7 @@ export function isReadMethod(method: string): boolean {
 }
 
 export const rateLimitConfig: RateLimitConfig = {
-  enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+  enabled: false, // DÉSACTIVÉ - process.env.RATE_LIMIT_ENABLED !== 'false',
   public: {
     max: parseInt(process.env.RATE_LIMIT_PUBLIC_MAX || '100', 10),
     timeWindow: process.env.RATE_LIMIT_PUBLIC_WINDOW || '1 minute',

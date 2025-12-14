@@ -26,44 +26,22 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
 
-// ----- Rate limiting pour auth -----
-const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
-const MAX_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+// ----- Rate limiting pour auth ----- DÉSACTIVÉ
+// const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+// const MAX_ATTEMPTS = 5;
+// const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
-function checkRateLimit(key: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const record = loginAttempts.get(key);
-
-  if (!record) {
-    return { allowed: true };
-  }
-
-  if (record.lockedUntil > now) {
-    return { allowed: false, retryAfter: Math.ceil((record.lockedUntil - now) / 1000) };
-  }
-
-  if (record.count >= MAX_ATTEMPTS) {
-    record.lockedUntil = now + LOCK_DURATION_MS;
-    return { allowed: false, retryAfter: LOCK_DURATION_MS / 1000 };
-  }
-
+function checkRateLimit(_key: string): { allowed: boolean; retryAfter?: number } {
+  // DÉSACTIVÉ - toujours autoriser
   return { allowed: true };
 }
 
-function recordFailedAttempt(key: string): void {
-  const record = loginAttempts.get(key) || { count: 0, lockedUntil: 0 };
-  record.count += 1;
-  loginAttempts.set(key, record);
-
-  // Nettoyage après succès ou expiration
-  setTimeout(() => {
-    loginAttempts.delete(key);
-  }, LOCK_DURATION_MS);
+function recordFailedAttempt(_key: string): void {
+  // DÉSACTIVÉ - ne rien faire
 }
 
-function clearAttempts(key: string): void {
-  loginAttempts.delete(key);
+function clearAttempts(_key: string): void {
+  // DÉSACTIVÉ - ne rien faire
 }
 
 // ----- Routes -----
