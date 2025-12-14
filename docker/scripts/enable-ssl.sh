@@ -53,7 +53,15 @@ log_info "Certificats trouvés"
 
 # Générer la config nginx avec le domaine
 log_info "Génération de la configuration nginx SSL..."
-envsubst '${DOMAIN}' < nginx/nginx-ssl.conf.template > nginx/nginx.conf
+sed "s/\${DOMAIN}/${DOMAIN}/g" nginx/nginx-ssl.conf.template > nginx/nginx.conf
+
+# Vérifier que le domaine a été substitué
+if grep -q '\${DOMAIN}' nginx/nginx.conf; then
+    log_error "Erreur: \${DOMAIN} non substitué dans nginx.conf"
+    log_error "Vérifiez que DOMAIN est défini dans .env (actuel: $DOMAIN)"
+    exit 1
+fi
+log_info "Configuration nginx générée pour $DOMAIN"
 
 # Mettre à jour CORS_ORIGINS si nécessaire
 if [[ "$CORS_ORIGINS" != *"https://$DOMAIN"* ]]; then

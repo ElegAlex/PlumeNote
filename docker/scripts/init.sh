@@ -46,11 +46,11 @@ if [ ! -f ".env" ]; then
         log_warn "Fichier .env non trouve, creation depuis .env.example"
         cp .env.example .env
 
-        # Generer des secrets aleatoires
-        JWT_SECRET=$(openssl rand -base64 32)
-        COOKIE_SECRET=$(openssl rand -base64 32)
-        POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24)
-        REDIS_PASSWORD=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24)
+        # Generer des secrets aleatoires (hex pour eviter les caracteres speciaux)
+        JWT_SECRET=$(openssl rand -hex 32)
+        COOKIE_SECRET=$(openssl rand -hex 32)
+        POSTGRES_PASSWORD=$(openssl rand -hex 16)
+        REDIS_PASSWORD=$(openssl rand -hex 16)
 
         # Remplacer les placeholders
         sed -i "s/CHANGEZ_MOI_secret_jwt_minimum_32_caracteres/$JWT_SECRET/" .env
@@ -118,14 +118,40 @@ if [ $RETRIES -eq 0 ]; then
 fi
 log_success "PostgreSQL pret"
 
+# Attendre que l'API soit prete
+log_info "Attente que l'API soit prete..."
+for i in {1..30}; do
+    if docker compose exec -T api curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+        log_success "API prete"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        log_error "Timeout: API non disponible apres 60s"
+        docker compose logs api
+        exit 1
+    fi
+    sleep 2
+done
+
 # Executer les migrations Prisma
 log_info "Execution des migrations de base de donnees..."
-docker compose exec -T api npx prisma migrate deploy || log_warn "Migrations deja appliquees ou erreur"
+if docker compose exec -T api npx prisma migrate deploy --schema=/app/packages/database/prisma/schema.prisma; then
+    log_success "Migrations appliquees"
+else
+    log_warn "Migrations deja appliquees ou erreur"
+fi
 
-# Seed si demande
+# Seed de la base de donnees (roles, utilisateurs de demo)
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
-    log_info "Initialisation des donnees de demo..."
-    docker compose exec -T api npx prisma db seed || log_warn "Seed deja effectue ou erreur"
+    log_info "Execution du seed de la base de donnees..."
+    if docker compose exec -T api node /app/packages/database/prisma/seed.js; then
+        log_success "Seed execute avec succes"
+    else
+        log_warn "Erreur lors du seed (peut-etre deja execute)"
+    fi
+else
+    log_info "Seed ignore (SEED_DATABASE != true)"
+    log_info "Pour creer les utilisateurs de demo, relancez avec SEED_DATABASE=true"
 fi
 
 # Verification finale

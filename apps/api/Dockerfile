@@ -32,6 +32,8 @@ COPY --from=builder /app/packages/types/package.json ./packages/types/
 COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
+# Copier le seed.js pour l'execution en production
+COPY --from=builder /app/packages/database/prisma/seed.js ./packages/database/prisma/seed.js
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 
