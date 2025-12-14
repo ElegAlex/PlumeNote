@@ -19,6 +19,9 @@ http {
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 
+    # Taille max des uploads
+    client_max_body_size 100M;
+
     upstream api {
         server api:3001;
     }

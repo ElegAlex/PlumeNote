@@ -104,6 +104,43 @@ async function main() {
 
   console.log('✅ Users created\n');
 
+  // ----- DEFAULT FOLDERS -----
+  console.log('Creating default folders...');
+
+  // Récupérer les users créés
+  const adminUserRecord = await prisma.user.findUnique({ where: { username: 'admin' } });
+  const demoUserRecord = await prisma.user.findUnique({ where: { username: 'demo' } });
+
+  // Dossier pour admin
+  await prisma.folder.upsert({
+    where: { slug: 'mes-notes-admin' },
+    update: {},
+    create: {
+      name: 'Mes Notes',
+      slug: 'mes-notes-admin',
+      description: 'Dossier principal',
+      isPublic: false,
+      ownerId: adminUserRecord.id,
+      createdBy: adminUserRecord.id,
+    },
+  });
+
+  // Dossier pour demo
+  await prisma.folder.upsert({
+    where: { slug: 'mes-notes-demo' },
+    update: {},
+    create: {
+      name: 'Mes Notes',
+      slug: 'mes-notes-demo',
+      description: 'Dossier principal',
+      isPublic: false,
+      ownerId: demoUserRecord.id,
+      createdBy: demoUserRecord.id,
+    },
+  });
+
+  console.log('✅ Default folders created\n');
+
   // ----- HOMEPAGE CONFIG -----
   console.log('Creating homepage config...');
 
