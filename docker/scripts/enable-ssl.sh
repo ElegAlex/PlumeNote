@@ -34,6 +34,14 @@ fi
 
 log_info "Configuration SSL pour: $DOMAIN"
 
+# Copier automatiquement les certificats Let's Encrypt s'ils existent
+if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+    log_info "Certificats Let's Encrypt trouvés, copie automatique..."
+    cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem nginx/ssl/
+    cp /etc/letsencrypt/live/$DOMAIN/privkey.pem nginx/ssl/
+    log_success "Certificats copiés"
+fi
+
 # Vérifier les certificats
 if [ ! -f "nginx/ssl/fullchain.pem" ] || [ ! -f "nginx/ssl/privkey.pem" ]; then
     log_warn "Certificats SSL non trouvés dans nginx/ssl/"
@@ -72,6 +80,20 @@ fi
 # Redémarrer nginx
 log_info "Redémarrage de nginx..."
 docker compose restart nginx
+
+# Attendre que nginx soit prêt
+log_info "Attente que nginx soit prêt..."
+sleep 3
+for i in {1..10}; do
+    if curl -sk --max-time 2 https://localhost/ > /dev/null 2>&1; then
+        log_success "Nginx HTTPS opérationnel"
+        break
+    fi
+    if [ $i -eq 10 ]; then
+        log_warn "Nginx peut nécessiter quelques secondes supplémentaires"
+    fi
+    sleep 1
+done
 
 log_info "SSL activé pour https://$DOMAIN"
 echo ""
