@@ -24,10 +24,13 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.56.0",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^14.1.0",
     "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "eslint": "^9.39.2",
     "prettier": "^3.1.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.0"
