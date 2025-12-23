@@ -2,8 +2,19 @@
 // Image Processor - Traitement d'images
 // US-028: Compression, redimensionnement
 // ===========================================
+// Security: Includes input validation and EXIF stripping
+// ===========================================
 
 import sharp from 'sharp';
+
+// Security: Configure Sharp with safety limits
+sharp.cache(false); // Disable cache to prevent memory leaks
+sharp.simd(true);   // Enable SIMD for performance
+
+// Security limits
+const MAX_IMAGE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+const MAX_PIXELS = 100_000_000; // 100 megapixels
+const ALLOWED_FORMATS = ['jpeg', 'png', 'webp', 'gif', 'avif', 'tiff', 'svg'];
 
 /**
  * Options de traitement d'image
@@ -70,17 +81,40 @@ export class ImageProcessor {
 
   /**
    * Traite une image: redimensionnement et optimisation
+   * Security: Validates input size, dimensions, and format before processing
    */
   async process(
     buffer: Buffer,
     options?: ImageProcessingOptions
   ): Promise<ImageProcessingResult> {
+    // Security: Validate input size
+    if (buffer.length > MAX_IMAGE_SIZE_BYTES) {
+      throw new Error('Image too large');
+    }
+
     const opts = { ...this.defaultOptions, ...options };
-    const image = sharp(buffer);
+
+    // Security: Use limitInputPixels to prevent DoS via huge images
+    const image = sharp(buffer, {
+      limitInputPixels: MAX_PIXELS,
+      sequentialRead: true, // Memory optimization
+    });
+
     const metadata = await image.metadata();
 
     if (!metadata.width || !metadata.height) {
       throw new Error('Could not read image dimensions');
+    }
+
+    // Security: Validate format
+    if (!metadata.format || !ALLOWED_FORMATS.includes(metadata.format)) {
+      throw new Error(`Unsupported image format: ${metadata.format}`);
+    }
+
+    // Security: Validate total pixels
+    const totalPixels = metadata.width * metadata.height;
+    if (totalPixels > MAX_PIXELS) {
+      throw new Error('Image dimensions too large');
     }
 
     const originalWidth = metadata.width;
@@ -92,6 +126,9 @@ export class ImageProcessor {
 
     // Configurer le pipeline de traitement
     let pipeline = image;
+
+    // Security: Strip EXIF and other metadata (may contain sensitive info)
+    pipeline = pipeline.rotate(); // Auto-rotate based on EXIF, then strip
 
     if (needsResize) {
       pipeline = pipeline.resize(opts.maxWidth, opts.maxHeight, {
