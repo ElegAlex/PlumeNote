@@ -5,6 +5,8 @@
 // US-033: Persistance Y.Doc en base
 // SPEC-004: Endpoint /health pour Docker health checks
 // ===========================================
+// Security: JWT algorithm whitelist, production mode hardening
+// ===========================================
 
 import 'dotenv/config';
 import { createServer as createHttpServer } from 'http';
@@ -16,9 +18,29 @@ import { prisma } from '@plumenote/database';
 import jwt from 'jsonwebtoken';
 import * as Y from 'yjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// ===========================================
+// Security Configuration
+// ===========================================
+const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = parseInt(process.env.YJS_PORT || '1234', 10);
 const HEALTH_PORT = parseInt(process.env.HEALTH_PORT || '3003', 10);
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Security: JWT algorithm whitelist to prevent algorithm confusion attacks
+const JWT_ALGORITHMS = ['HS256'] as const;
+
+// Security: Validate JWT secret at startup
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('[Security] FATAL: JWT_SECRET must be at least 32 characters');
+  if (IS_PRODUCTION) {
+    process.exit(1);
+  } else {
+    console.warn('[Security] WARNING: Using insecure JWT secret in development mode');
+  }
+}
+
+// Security: Maximum message size to prevent DoS
+const MAX_MESSAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface JWTPayload {
   userId: string;
@@ -139,18 +161,26 @@ const server = new Hocuspocus({
     const { token, documentName } = data;
     const noteId = extractNoteId(documentName);
 
-    // En développement, permettre l'accès anonyme si pas de token
+    // Security: Require authentication in production
     if (!token) {
-      console.log(`[Auth] Anonymous access to ${documentName}`);
+      if (IS_PRODUCTION) {
+        console.log(`[Auth] Rejected: No token provided for ${documentName}`);
+        throw new Error('Authentication required');
+      }
+      // Development only: Allow anonymous access
+      console.log(`[Auth] Anonymous access to ${documentName} (dev mode)`);
       return {
         userId: 'anonymous',
         username: 'Anonymous',
-        canWrite: true, // En dev, permettre l'écriture
+        canWrite: true,
       };
     }
 
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      // Security: Verify JWT with explicit algorithm whitelist
+      const payload = jwt.verify(token, JWT_SECRET!, {
+        algorithms: JWT_ALGORITHMS as unknown as jwt.Algorithm[],
+      }) as JWTPayload;
 
       // Vérifier que l'utilisateur existe et est actif
       const user = await prisma.user.findUnique({
@@ -217,16 +247,18 @@ const server = new Hocuspocus({
         isPersonalNote,
       };
     } catch (error) {
-      // En développement, permettre l'accès anonyme
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Auth] Fallback to anonymous access (dev mode)`);
-        return {
-          userId: 'anonymous',
-          username: 'Anonymous',
-          canWrite: true,
-        };
+      // Security: In production, always reject invalid tokens
+      if (IS_PRODUCTION) {
+        console.log(`[Auth] Rejected: Invalid token for ${documentName}`);
+        throw new Error('Invalid or expired token');
       }
-      throw error;
+      // Development only: Allow anonymous fallback
+      console.log(`[Auth] Fallback to anonymous access (dev mode)`);
+      return {
+        userId: 'anonymous',
+        username: 'Anonymous',
+        canWrite: true,
+      };
     }
   },
 
