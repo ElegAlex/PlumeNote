@@ -262,16 +262,17 @@ export function NoteEditor({
   }, [noteId, reset]);
 
   // FEAT-07: Raccourcis clavier pour la recherche
+  // Note: Ctrl+F est capturé par le navigateur, on utilise Ctrl+Shift+F à la place
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+F ou Cmd+F : Ouvrir la recherche
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      // Ctrl+Shift+F ou Cmd+Shift+F : Ouvrir la recherche (évite conflit navigateur)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
         e.preventDefault();
         setShowSearchReplace(false);
         setIsSearchOpen(true);
       }
       // Ctrl+H ou Cmd+H : Ouvrir rechercher/remplacer
-      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'h') {
         e.preventDefault();
         setShowSearchReplace(true);
         setIsSearchOpen(true);
