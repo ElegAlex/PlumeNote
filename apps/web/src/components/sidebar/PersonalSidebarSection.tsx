@@ -10,11 +10,13 @@ import { usePersonalStore } from '../../stores/personalStore';
 import { useAuthStore } from '../../stores/auth';
 import { Button } from '../ui/Button';
 import { InlineCreateForm } from '../common';
+import { TemplatePickerDialog } from '../templates';
 import { FolderItem } from './FolderItem';
 import { NoteItem } from './NoteItem';
 import { toast } from '../ui/Toaster';
 import { cn } from '../../lib/utils';
 import type { PersonalTreeNode, PersonalNotePreview, SidebarFolderNode, NotePreview } from '@plumenote/types';
+import type { NoteTemplate } from '../../services/templatesApi';
 
 // Icons (seuls ceux utilisés dans ce composant)
 const LockIcon = () => (
@@ -126,7 +128,10 @@ export function PersonalSidebarSection() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isCreatingNote, setIsCreatingNote] = useState(false);
+
+  // État Template Picker (cohérence avec espace général)
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [templateTargetFolderId, setTemplateTargetFolderId] = useState<string | null>(null);
 
   // Ne pas afficher pour les utilisateurs "reader"
   if (user?.role?.name === 'reader') {
@@ -148,15 +153,42 @@ export function PersonalSidebarSection() {
     setIsExpanded(!isExpanded);
   };
 
-  const handleCreateNote = async (title: string) => {
+  // Handler sélection template (cohérence avec espace général)
+  const handleTemplateSelect = useCallback(async (template: NoteTemplate | null) => {
     try {
-      const note = await createNote({ title });
-      setIsCreatingNote(false);
+      // Préparer le contenu avec substitution de date
+      let content = template?.content || '';
+      if (content) {
+        const today = new Date().toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        content = content.replace(/\{\{date\}\}/g, today);
+      }
+
+      const note = await createNote({
+        title: template?.name || 'Sans titre',
+        content,
+        folderId: templateTargetFolderId || undefined,
+      });
+
       navigate(`/personal/note/${note.id}`);
+      toast.success('Note créée');
     } catch {
       toast.error('Erreur lors de la création');
+    } finally {
+      setShowTemplatePicker(false);
+      setTemplateTargetFolderId(null);
     }
-  };
+  }, [createNote, navigate, templateTargetFolderId]);
+
+  // Ouvrir le picker de template
+  const handleOpenTemplatePicker = useCallback((folderId?: string) => {
+    setTemplateTargetFolderId(folderId || null);
+    setShowTemplatePicker(true);
+  }, []);
 
   const handleCreateFolder = async (name: string) => {
     try {
@@ -180,11 +212,6 @@ export function PersonalSidebarSection() {
       toast.error('Erreur lors de la création');
     }
   };
-
-  // Handlers pour création dans un dossier spécifique
-  const handleCreateNoteInFolder = useCallback((folderId: string) => {
-    navigate(`/personal/folder/${folderId}?action=new-note`);
-  }, [navigate]);
 
   const handleCreateSubfolder = useCallback(async (name: string, parentId: string) => {
     try {
@@ -254,7 +281,7 @@ export function PersonalSidebarSection() {
               variant="ghost"
               size="sm"
               className="h-6 flex-1 text-xs gap-1"
-              onClick={() => setIsCreatingNote(true)}
+              onClick={() => handleOpenTemplatePicker()}
               title="Nouvelle note"
             >
               <PlusIcon />
@@ -269,18 +296,6 @@ export function PersonalSidebarSection() {
                 onSubmit={handleCreateFolder}
                 onCancel={() => setIsCreatingFolder(false)}
                 placeholder="Nom du dossier"
-                compact
-              />
-            </div>
-          )}
-
-          {/* Formulaire création note */}
-          {isCreatingNote && (
-            <div className="px-1 py-1">
-              <InlineCreateForm
-                onSubmit={handleCreateNote}
-                onCancel={() => setIsCreatingNote(false)}
-                placeholder="Titre de la note"
                 compact
               />
             </div>
@@ -302,7 +317,7 @@ export function PersonalSidebarSection() {
                   key={folder.id}
                   folder={folder}
                   level={0}
-                  onCreateNote={handleCreateNoteInFolder}
+                  onCreateNote={handleOpenTemplatePicker}
                   onCreateFolder={handleCreateSubfolder}
                   isPersonal
                 />
@@ -329,6 +344,13 @@ export function PersonalSidebarSection() {
           )}
         </div>
       )}
+
+      {/* Template Picker Dialog (cohérence avec espace général) */}
+      <TemplatePickerDialog
+        open={showTemplatePicker}
+        onOpenChange={setShowTemplatePicker}
+        onSelect={handleTemplateSelect}
+      />
     </div>
   );
 }
