@@ -11,6 +11,26 @@ import Link from '@tiptap/extension-link';
 import Typography from '@tiptap/extension-typography';
 import type { Extensions } from '@tiptap/core';
 
+// Security: Allowed URL protocols for links
+const ALLOWED_LINK_PROTOCOLS = ['http:', 'https:', 'mailto:'];
+
+/**
+ * Security: Validates that a URL uses an allowed protocol.
+ * Prevents javascript:, data:, vbscript: and other XSS vectors.
+ */
+function isValidLinkUrl(href: string): boolean {
+  try {
+    const url = new URL(href, window.location.origin);
+    return ALLOWED_LINK_PROTOCOLS.includes(url.protocol.toLowerCase());
+  } catch {
+    // Invalid URL, allow relative paths but block suspicious patterns
+    if (/^(javascript|data|vbscript):/i.test(href)) {
+      return false;
+    }
+    return true;
+  }
+}
+
 import { WikilinkExtension } from './extensions/wikilink';
 import { HighlightMarkdownExtension } from './extensions/highlight';
 import { CalloutExtension } from './extensions/callout';
@@ -155,13 +175,23 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
     );
   }
 
-  // Links
+  // Links - with URL validation to prevent XSS
   if (flags.links) {
     extensions.push(
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-primary underline',
+          rel: 'noopener noreferrer nofollow',
+          target: '_blank',
+        },
+        // Security: Validate URLs to block javascript:, data: etc.
+        validate: (href) => {
+          if (!isValidLinkUrl(href)) {
+            console.warn(`[Security] Blocked unsafe URL: ${href}`);
+            return false;
+          }
+          return true;
         },
       })
     );

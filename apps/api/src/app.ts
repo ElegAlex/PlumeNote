@@ -99,11 +99,20 @@ export async function buildApp() {
     parseOptions: {},
   });
 
+  // ----- JWT with explicit algorithm whitelist (security) -----
+  // Prevents algorithm confusion attacks (CVE-2022-23540/41)
   await app.register(jwt, {
     secret: config.jwtSecret,
     cookie: {
       cookieName: 'token',
       signed: false,
+    },
+    sign: {
+      algorithm: 'HS256',
+      expiresIn: config.jwtExpiresIn,
+    },
+    verify: {
+      algorithms: ['HS256'], // CRITICAL: Explicit algorithm whitelist
     },
   });
 

@@ -5,6 +5,7 @@
 import ldap from 'ldapjs';
 import { config } from '../config/index.js';
 import { logger } from '../lib/logger.js';
+import { escapeLdapFilter, isValidLdapUsername } from '../utils/ldap-sanitize.js';
 
 export interface LdapUser {
   username: string;
@@ -20,6 +21,12 @@ export async function authenticateLdap(
   password: string
 ): Promise<LdapUser | null> {
   if (!config.ldap.enabled || !config.ldap.url) {
+    return null;
+  }
+
+  // Security: Validate username format before LDAP operations
+  if (!isValidLdapUsername(username)) {
+    logger.warn({ username }, 'LDAP authentication rejected - invalid username format');
     return null;
   }
 
@@ -45,7 +52,9 @@ export async function authenticateLdap(
       }
 
       // 2. Rechercher l'utilisateur
-      const searchFilter = config.ldap.searchFilter.replace('{{username}}', username);
+      // Security: Escape username to prevent LDAP injection (RFC 4515)
+      const safeUsername = escapeLdapFilter(username);
+      const searchFilter = config.ldap.searchFilter.replace('{{username}}', safeUsername);
       const searchOptions: ldap.SearchOptions = {
         scope: 'sub',
         filter: searchFilter,

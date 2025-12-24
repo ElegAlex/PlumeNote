@@ -2,9 +2,12 @@
 // ZIP Extractor
 // EP-008: Extraction de fichiers depuis un archive ZIP
 // ===========================================
+// Security: Includes Zip Slip protection (path traversal prevention)
+// ===========================================
 
 import unzipper from 'unzipper';
 import { Readable } from 'node:stream';
+import path from 'node:path';
 
 /**
  * Fichier extrait d'une archive ZIP
@@ -80,6 +83,11 @@ export class ZipExtractor {
     const assetFiles: string[] = [];
 
     for (const file of directory.files) {
+      // Security: Validate path to prevent Zip Slip attacks
+      if (!this.isPathSafe(file.path)) {
+        continue;
+      }
+
       if (this.shouldIgnore(file.path)) {
         continue;
       }
@@ -128,6 +136,11 @@ export class ZipExtractor {
     const files: ExtractedFile[] = [];
 
     for (const file of directory.files) {
+      // Security: Validate path to prevent Zip Slip attacks
+      if (!this.isPathSafe(file.path)) {
+        continue;
+      }
+
       if (this.shouldIgnore(file.path)) {
         continue;
       }
@@ -188,8 +201,8 @@ export class ZipExtractor {
   /**
    * Vérifie si un chemin doit être ignoré
    */
-  private shouldIgnore(path: string): boolean {
-    const normalizedPath = path.replace(/\\/g, '/');
+  private shouldIgnore(filePath: string): boolean {
+    const normalizedPath = filePath.replace(/\\/g, '/');
     const parts = normalizedPath.split('/');
 
     return parts.some(part =>
@@ -197,6 +210,39 @@ export class ZipExtractor {
         part.startsWith(prefix)
       )
     );
+  }
+
+  /**
+   * Security: Validates that a path doesn't contain path traversal sequences.
+   * Prevents Zip Slip attacks (CVE-2018-1002203).
+   *
+   * @returns true if path is safe, false if it contains traversal
+   */
+  private isPathSafe(filePath: string): boolean {
+    const normalized = path.normalize(filePath).replace(/\\/g, '/');
+
+    // Reject absolute paths
+    if (path.isAbsolute(normalized)) {
+      return false;
+    }
+
+    // Reject paths that escape the extraction directory
+    if (normalized.startsWith('../') || normalized.includes('/../')) {
+      return false;
+    }
+
+    // Reject paths with null bytes (can confuse C-based parsers)
+    if (normalized.includes('\0')) {
+      return false;
+    }
+
+    // Reject excessively deep paths
+    const depth = normalized.split('/').length;
+    if (depth > 50) {
+      return false;
+    }
+
+    return true;
   }
 
   /**

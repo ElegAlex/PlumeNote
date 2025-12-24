@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# ===========================================
+# PlumeNote Pre-Commit Security Checks
+# ===========================================
+
+echo "Running pre-commit security checks..."
+
+# Check for secrets in staged files using grep patterns
+# (Lightweight alternative to full secrets scanner)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -n "$STAGED_FILES" ]; then
+  # Check for potential secrets
+  SECRETS_PATTERN='(password|secret|api_key|apikey|token|private_key|PRIVATE_KEY).*[=:]\s*["\x27][^"\x27]{8,}'
+
+  for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+      # Skip binary files and known safe patterns
+      if file "$file" | grep -q "text"; then
+        if grep -iE "$SECRETS_PATTERN" "$file" 2>/dev/null; then
+          echo "WARNING: Potential secret detected in $file"
+          echo "Please review before committing."
+        fi
+      fi
+    fi
+  done
+fi
+
+# Check if package.json or package-lock.json changed
+if echo "$STAGED_FILES" | grep -qE "package(-lock)?\.json"; then
+  echo "Package files changed, running npm audit..."
+  npm audit --audit-level=critical --omit=dev 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo "CRITICAL vulnerabilities found in dependencies!"
+    echo "Run 'npm audit' for details."
+    exit 1
+  fi
+fi
+
+echo "Pre-commit checks passed."

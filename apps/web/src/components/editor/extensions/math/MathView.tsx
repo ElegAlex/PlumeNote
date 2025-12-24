@@ -2,11 +2,19 @@
 // Composant React pour rendu Math LaTeX (US-018)
 // Utilise KaTeX pour le rendu des équations
 // ===========================================
+// Security: Uses strict mode with URL validation and limits
+// ===========================================
 
 import { useState, useEffect, useRef } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+
+// Security: Maximum LaTeX expression length
+const MAX_LATEX_LENGTH = 10000;
+
+// Security: Allowed URL protocols for \href and \url
+const ALLOWED_PROTOCOLS = ['http:', 'https:'];
 
 interface MathViewComponentProps extends NodeViewProps {
   isBlock?: boolean;
@@ -23,13 +31,38 @@ function MathViewBase({ node, updateAttributes, selected, isBlock = false }: Mat
   // Rendre l'équation avec KaTeX
   useEffect(() => {
     if (!isEditing && renderRef.current) {
+      // Security: Reject overly long expressions (DoS prevention)
+      if (latex.length > MAX_LATEX_LENGTH) {
+        setError('Expression too long');
+        return;
+      }
+
       try {
         katex.render(latex, renderRef.current, {
           displayMode: isBlock,
           throwOnError: false,
           errorColor: '#ef4444',
-          trust: false,
-          strict: false,
+          // Security: Limit macro expansion to prevent DoS
+          maxSize: 10,
+          maxExpand: 1000,
+          // Security: Trust function to validate URLs in \href and \url
+          trust: (context) => {
+            // Allow only safe protocols for URLs
+            if (context.command === '\\href' || context.command === '\\url') {
+              try {
+                const url = new URL(context.url);
+                return ALLOWED_PROTOCOLS.includes(url.protocol.toLowerCase());
+              } catch {
+                return false;
+              }
+            }
+            // Block \includegraphics and other risky commands
+            if (context.command === '\\includegraphics') {
+              return false;
+            }
+            return false;
+          },
+          strict: 'warn', // Warn on unrecognized commands
         });
         setError(null);
       } catch (err) {

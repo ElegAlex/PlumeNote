@@ -18,6 +18,7 @@
     "@plumenote/database": "*",
     "dotenv": "^16.3.0",
     "jsonwebtoken": "^9.0.0",
+    "ws": "^8.17.1",
     "yjs": "^13.6.0"
   },
   "devDependencies": {

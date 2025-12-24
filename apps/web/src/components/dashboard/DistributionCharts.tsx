@@ -111,7 +111,7 @@ export function DistributionCharts({
                 width={80}
               />
               <Tooltip
-                formatter={(value: number) => [`${value} notes`, 'Nombre']}
+                formatter={(value) => [`${value ?? 0} notes`, 'Nombre']}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
@@ -154,10 +154,13 @@ export function DistributionCharts({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number) => [
-                    `${value} (${Math.round((value / total) * 100)}%)`,
-                    'Notes',
-                  ]}
+                  formatter={(value) => {
+                    const numValue = (value as number) ?? 0;
+                    return [
+                      `${numValue} (${Math.round((numValue / total) * 100)}%)`,
+                      'Notes',
+                    ];
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>

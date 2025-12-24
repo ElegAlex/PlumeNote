@@ -2,18 +2,36 @@
 // Composant React pour rendu Mermaid (US-019)
 // Diagrammes: flowchart, sequence, gantt, class
 // ===========================================
+// Security: Uses strict mode and DOMPurify sanitization
+// ===========================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 
-// Configuration Mermaid
+// Security: Configure Mermaid with strict security
 mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
-  securityLevel: 'strict',
+  securityLevel: 'strict', // CRITICAL: Blocks script execution
   fontFamily: 'inherit',
+  // Security: Disable HTML labels to prevent XSS
+  flowchart: {
+    htmlLabels: false,
+  },
+  // Security: Limit diagram size
+  maxTextSize: 50000,
 });
+
+// Security: DOMPurify configuration for SVG
+const PURIFY_CONFIG = {
+  USE_PROFILES: { svg: true, svgFilters: true },
+  // Allow foreignObject for text rendering
+  ADD_TAGS: ['foreignObject'],
+  // Remove dangerous attributes
+  FORBID_ATTR: ['onclick', 'onerror', 'onload', 'onmouseover'],
+};
 
 // Compteur unique pour les IDs Mermaid
 let mermaidIdCounter = 0;
@@ -36,13 +54,30 @@ export function MermaidView({ node, updateAttributes, selected }: NodeViewProps)
       return;
     }
 
+    // Security: Reject suspiciously large or malicious content
+    if (diagramCode.length > 50000) {
+      setError('Diagram code too large');
+      setSvg('');
+      return;
+    }
+
+    // Security: Block obvious XSS patterns
+    if (/javascript:|onclick|onerror|<script/i.test(diagramCode)) {
+      setError('Potentially malicious content detected');
+      setSvg('');
+      return;
+    }
+
     try {
       // Valider la syntaxe
       await mermaid.parse(diagramCode);
 
       // Rendre le SVG
       const { svg: renderedSvg } = await mermaid.render(idRef.current, diagramCode);
-      setSvg(renderedSvg);
+
+      // Security: Sanitize SVG output with DOMPurify
+      const sanitizedSvg = DOMPurify.sanitize(renderedSvg, PURIFY_CONFIG);
+      setSvg(sanitizedSvg);
       setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur de syntaxe Mermaid';
