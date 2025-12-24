@@ -11,6 +11,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import { useNavigate } from 'react-router-dom';
 import { EditorToolbar } from './EditorToolbar';
 import { SaveIndicator } from './SaveIndicator';
+import { SearchBar } from './SearchBar';
 import { PropertiesPanel } from './metadata/PropertiesPanel';
 import { TagSuggestionPopup, useTagSuggestion } from './extensions/tag';
 import { WikilinkSuggestionPopup, useWikilinkSuggestion } from './extensions/wikilink';
@@ -62,6 +63,10 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const navigate = useNavigate();
   const [isPropertiesPanelVisible, setIsPropertiesPanelVisible] = useState(showProperties);
+
+  // FEAT-07: État pour la barre de recherche
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showSearchReplace, setShowSearchReplace] = useState(false);
 
   // Hook pour récupérer les événements liés à cette note
   const { events: linkedEvents } = useNoteEvents(noteId);
@@ -256,6 +261,33 @@ export function NoteEditor({
     }
   }, [noteId, reset]);
 
+  // FEAT-07: Raccourcis clavier pour la recherche
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F ou Cmd+F : Ouvrir la recherche
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearchReplace(false);
+        setIsSearchOpen(true);
+      }
+      // Ctrl+H ou Cmd+H : Ouvrir rechercher/remplacer
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        setShowSearchReplace(true);
+        setIsSearchOpen(true);
+      }
+      // Escape : Fermer la recherche
+      if (e.key === 'Escape' && isSearchOpen) {
+        e.preventDefault();
+        editor?.commands.clearSearch();
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editor, isSearchOpen]);
+
   if (!editor) {
     return null;
   }
@@ -327,6 +359,14 @@ export function NoteEditor({
           onSelect={wikilinkSuggestion.selectNote}
         />
       </div>
+
+      {/* FEAT-07: Barre de recherche/remplacement */}
+      <SearchBar
+        editor={editor}
+        isOpen={isSearchOpen}
+        showReplace={showSearchReplace}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </div>
   );
 }

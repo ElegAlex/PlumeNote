@@ -696,3 +696,27 @@
   /* Quand sélectionné, garder la couleur de sélection */
   background-color: inherit;
 }
+
+/* ===================================
+   FEAT-07: Search & Replace Highlighting
+   =================================== */
+
+.search-result {
+  background-color: rgba(255, 200, 0, 0.4);
+  border-radius: 2px;
+}
+
+.search-result-current {
+  background-color: rgba(255, 150, 0, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 150, 0, 0.4);
+}
+
+/* Dark mode adjustments */
+.dark .search-result {
+  background-color: rgba(255, 200, 0, 0.3);
+}
+
+.dark .search-result-current {
+  background-color: rgba(255, 150, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 150, 0, 0.3);
+}

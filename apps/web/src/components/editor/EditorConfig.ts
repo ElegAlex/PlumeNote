@@ -42,6 +42,7 @@ import { ImageExtension, type ImageExtensionOptions } from './extensions/image';
 import { EmbedExtension } from './extensions/embed';
 import { CodeBlockHighlightExtension } from './extensions/codeblock';
 import { VideoExtension } from './extensions/video';
+import { SearchReplaceExtension } from './extensions/searchReplace';
 
 // ===========================================
 // Types pour les feature flags
@@ -292,6 +293,9 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
       })
     );
   }
+
+  // FEAT-07: Rechercher/Remplacer (toujours actif)
+  extensions.push(SearchReplaceExtension);
 
   return extensions;
 }
