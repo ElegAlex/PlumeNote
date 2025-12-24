@@ -7,7 +7,7 @@
 
 import { memo, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDroppable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useSidebarStore } from '../../stores/sidebarStore';
 import { usePersonalStore } from '../../stores/personalStore';
 import { NoteItem } from './NoteItem';
@@ -70,8 +70,26 @@ export const FolderItem = memo(function FolderItem({
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // FEAT-04: Draggable pour permettre le déplacement du dossier
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: `drag-folder:${folder.id}`,
+    data: {
+      type: 'folder',
+      id: folder.id,
+      name: folder.name,
+      parentId: folder.parentId,
+      isPersonal,
+    },
+  });
+
   // Droppable pour le drag-and-drop (US-007)
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `folder:${folder.id}`,
     data: {
       type: 'folder',
@@ -80,6 +98,15 @@ export const FolderItem = memo(function FolderItem({
       isPersonal,
     },
   });
+
+  // Combiner les refs draggable et droppable
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node);
+      setDropRef(node);
+    },
+    [setDragRef, setDropRef]
+  );
 
   // Contenu à afficher (cache ou données initiales)
   const children = cache?.children ?? folder.children;
@@ -172,6 +199,11 @@ export const FolderItem = memo(function FolderItem({
   // Calcul de l'indentation
   const paddingLeft = level * INDENT_PER_LEVEL + 8;
 
+  // FEAT-04: Style pour le drag
+  const dragStyle = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
+    : undefined;
+
   // Couleur du dossier racine (automatique si pas définie manuellement)
   const isRootFolder = level === 0 && rootIndex !== undefined;
   const autoColor: FolderColor | null = isRootFolder ? getRootFolderColor(rootIndex) : null;
@@ -202,15 +234,19 @@ export const FolderItem = memo(function FolderItem({
           isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
           // Feedback visuel pendant le drag-over (US-007)
           isOver && 'ring-2 ring-primary ring-inset bg-primary/10',
+          // FEAT-04: Feedback visuel pendant le drag
+          isDragging && 'opacity-50',
           // Dossier racine avec couleur pastel
           isRootFolder && 'root-folder'
         )}
-        style={rootFolderStyle}
+        style={{ ...rootFolderStyle, ...dragStyle }}
         onClick={handleRowClick}
         onKeyDown={handleKeyDown}
+        aria-label={`Dossier ${folder.name}${hasContent ? ', cliquez pour déplier' : ''}`}
+        {...attributes}
+        {...listeners}
         tabIndex={0}
         role="button"
-        aria-label={`Dossier ${folder.name}${hasContent ? ', cliquez pour déplier' : ''}`}
       >
         {/* Chevron de dépliage */}
         <button
