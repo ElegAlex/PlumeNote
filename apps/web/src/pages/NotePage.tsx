@@ -2,7 +2,7 @@
 // Page Note - Éditeur Markdown style Obsidian
 // ===========================================
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotesStore } from '../stores/notes';
 import { useFoldersStore } from '../stores/folders';
@@ -48,6 +48,10 @@ export function NotePage() {
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [showAttachmentsPanel, setShowAttachmentsPanel] = useState(false);
   const { isOpen: isRightPanelOpen, togglePanel, closePanel } = useRightPanelStore();
+
+  // FEAT-09: Ref pour préserver le focus et la position du curseur lors de l'auto-save
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
 
   // P1: Enregistrer la vue de la note
   useNoteView(currentNote?.id);
@@ -97,11 +101,29 @@ export function NotePage() {
     [noteId, updateNote]
   );
 
+  // FEAT-09: Gérer le changement de titre en préservant la position du curseur
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
+    // Sauvegarder la position du curseur avant la mise à jour
+    selectionRef.current = {
+      start: e.target.selectionStart ?? 0,
+      end: e.target.selectionEnd ?? 0,
+    };
     setTitle(newTitle);
     debouncedSaveTitle(newTitle);
   };
+
+  // FEAT-09: Restaurer la position du curseur après la mise à jour du state
+  useEffect(() => {
+    if (titleInputRef.current && selectionRef.current) {
+      const { start, end } = selectionRef.current;
+      const input = titleInputRef.current;
+      // Vérifier si l'input a toujours le focus
+      if (document.activeElement === input) {
+        input.setSelectionRange(start, end);
+      }
+    }
+  }, [title]);
 
   const handleDelete = async () => {
     if (!noteId) return;
@@ -177,6 +199,7 @@ export function NotePage() {
         <div className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <input
+            ref={titleInputRef}
             type="text"
             value={title}
             onChange={handleTitleChange}

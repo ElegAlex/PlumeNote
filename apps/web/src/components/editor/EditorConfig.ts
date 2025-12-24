@@ -41,6 +41,7 @@ import { ToggleExtension } from './extensions/toggle';
 import { ImageExtension, type ImageExtensionOptions } from './extensions/image';
 import { EmbedExtension } from './extensions/embed';
 import { CodeBlockHighlightExtension } from './extensions/codeblock';
+import { VideoExtension } from './extensions/video';
 
 // ===========================================
 // Types pour les feature flags
@@ -71,6 +72,8 @@ export interface EditorFeatureFlags {
   images?: boolean;
   /** Active les embeds ![[note]] (US-040) */
   embeds?: boolean;
+  /** FEAT-02: Active l'upload de vidéos (drag, drop, paste) */
+  videos?: boolean;
 }
 
 export interface EditorConfigOptions {
@@ -86,6 +89,12 @@ export interface EditorConfigOptions {
   onWikilinkClick?: (target: string) => void;
   /** Configuration pour l'upload d'images */
   imageUpload?: {
+    uploadFn?: (file: File) => Promise<{ url: string; id: string } | null>;
+    onSuccess?: (result: { url: string; id: string }) => void;
+    onError?: (error: Error) => void;
+  };
+  /** FEAT-02: Configuration pour l'upload de vidéos */
+  videoUpload?: {
     uploadFn?: (file: File) => Promise<{ url: string; id: string } | null>;
     onSuccess?: (result: { url: string; id: string }) => void;
     onError?: (error: Error) => void;
@@ -109,9 +118,10 @@ export const DEFAULT_FEATURE_FLAGS: Required<EditorFeatureFlags> = {
   toggle: true,
   images: true,
   embeds: true,
+  videos: true, // FEAT-02: Support vidéo natif
 };
 
-export const DEFAULT_EDITOR_OPTIONS: Required<Omit<EditorConfigOptions, 'onTagClick' | 'onWikilinkClick' | 'imageUpload'>> = {
+export const DEFAULT_EDITOR_OPTIONS: Required<Omit<EditorConfigOptions, 'onTagClick' | 'onWikilinkClick' | 'imageUpload' | 'videoUpload'>> = {
   features: DEFAULT_FEATURE_FLAGS,
   placeholder: 'Commencez à écrire...',
   headingLevels: [1, 2, 3, 4],
@@ -269,6 +279,20 @@ export function createEditorExtensions(options: EditorConfigOptions = {}): Exten
     extensions.push(EmbedExtension);
   }
 
+  // FEAT-02: Videos avec upload (drag, drop, paste)
+  if (flags.videos) {
+    extensions.push(
+      VideoExtension.configure({
+        uploadFn: options.videoUpload?.uploadFn ?? options.imageUpload?.uploadFn,
+        onUploadSuccess: options.videoUpload?.onSuccess,
+        onUploadError: options.videoUpload?.onError,
+        HTMLAttributes: {
+          class: 'rounded-lg max-w-full',
+        },
+      })
+    );
+  }
+
   return extensions;
 }
 
@@ -290,6 +314,7 @@ export const MINIMAL_PRESET: EditorConfigOptions = {
     mermaid: false,
     toggle: false,
     embeds: false,
+    videos: false,
   },
   headingLevels: [1, 2, 3],
 };

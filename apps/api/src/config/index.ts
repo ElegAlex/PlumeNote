@@ -37,9 +37,9 @@ const envSchema = z.object({
   LDAP_SEARCH_BASE: z.string().optional(),
   LDAP_SEARCH_FILTER: z.string().default('(uid={{username}})'),
 
-  // File upload
+  // File upload (FEAT-01: limite augmentée à 500 Mo)
   UPLOAD_DIR: z.string().default('./uploads'),
-  MAX_FILE_SIZE_MB: z.coerce.number().default(50),
+  MAX_FILE_SIZE_MB: z.coerce.number().default(500),
 
   // Session
   SESSION_INACTIVITY_TIMEOUT_MS: z.coerce.number().default(1800000),

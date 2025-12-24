@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/Select';
-import type { EditorWidth } from '@plumenote/types';
+import type { EditorWidth, DefaultViewMode } from '@plumenote/types';
 
 const EDITOR_WIDTHS: Array<{ value: EditorWidth; label: string; description: string }> = [
   { value: 'narrow', label: 'Étroit', description: '600px max' },
@@ -22,12 +22,42 @@ const EDITOR_WIDTHS: Array<{ value: EditorWidth; label: string; description: str
   { value: 'full', label: 'Pleine largeur', description: '100%' },
 ];
 
+// FEAT-12: Options de mode de vue par défaut
+const VIEW_MODES: Array<{ value: DefaultViewMode; label: string; description: string }> = [
+  { value: 'edit', label: 'Édition', description: 'Ouvrir les notes en mode édition' },
+  { value: 'view', label: 'Lecture', description: 'Ouvrir les notes en mode lecture seule' },
+];
+
 export function EditorSettings() {
-  const { preferences, updateEditor, setEditorWidth, isLoading } = usePreferencesStore();
+  const { preferences, updateEditor, setEditorWidth, setDefaultViewMode, isLoading } = usePreferencesStore();
   const { editor } = preferences;
 
   return (
     <div className="space-y-6">
+      {/* FEAT-12: Mode de vue par défaut */}
+      <div className="space-y-2">
+        <Label htmlFor="defaultViewMode">Mode d'ouverture des notes</Label>
+        <Select
+          value={editor.defaultViewMode ?? 'edit'}
+          onValueChange={(value: string) => setDefaultViewMode(value as DefaultViewMode)}
+          disabled={isLoading}
+        >
+          <SelectTrigger id="defaultViewMode" className="w-[250px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {VIEW_MODES.map(({ value, label, description }) => (
+              <SelectItem key={value} value={value}>
+                {label} - {description}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          Choisissez si les notes s'ouvrent en mode édition ou lecture par défaut.
+        </p>
+      </div>
+
       {/* Largeur de l'éditeur */}
       <div className="space-y-2">
         <Label htmlFor="editorWidth">Largeur de l'éditeur</Label>

@@ -117,14 +117,20 @@ DOMAIN=votre-domaine.fr
 
 | Composant | Technologie |
 |-----------|-------------|
-| Frontend | React 18, TypeScript, Vite, Zustand |
-| UI | Radix UI, Tailwind CSS |
-| Editeur | TipTap (ProseMirror) |
-| Backend | Node.js, Fastify, TypeScript |
-| CRDT | Yjs, Hocuspocus |
-| Base de donnees | PostgreSQL 16, Prisma ORM |
-| Cache | Redis 7 |
-| Infrastructure | Docker, Docker Compose, Nginx |
+| **Frontend** | React 18, TypeScript 5.3, Vite 5 |
+| **State** | Zustand, TanStack React Query |
+| **UI** | Radix UI, Tailwind CSS, Lucide React |
+| **Editeur** | TipTap (ProseMirror), CodeMirror 6 |
+| **Markdown** | react-markdown, Mermaid, KaTeX |
+| **Backend** | Node.js 20, Fastify 4, TypeScript |
+| **ORM & Validation** | Prisma 5, Zod |
+| **Auth** | JWT, bcrypt, LDAP (optionnel) |
+| **CRDT** | Yjs, Hocuspocus |
+| **Base de donnees** | PostgreSQL 16 (JSONB, GIN indexes) |
+| **Cache** | Redis 7 |
+| **Monorepo** | Turbo, npm workspaces |
+| **Testing** | Vitest, Playwright |
+| **Infrastructure** | Docker, Docker Compose, Nginx |
 
 ## Documentation
 

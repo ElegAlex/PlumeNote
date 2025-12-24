@@ -253,15 +253,18 @@ export function AuditLogs() {
         </div>
       </div>
 
-      {/* Tableau */}
+      {/* Tableau - FEAT-11: Container scrollable avec hauteur fixe */}
       {isLoading && audit.logs.length === 0 ? (
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
       ) : (
-        <div className="rounded-md border">
+        <div
+          className="rounded-md border overflow-auto"
+          style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '300px' }}
+        >
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
                 <TableHead className="w-[160px]">Date</TableHead>
                 <TableHead>Utilisateur</TableHead>

@@ -9,6 +9,7 @@ import type {
   Theme,
   EditorMode,
   EditorWidth,
+  DefaultViewMode,
   DisplayPreferences,
   EditorPreferences,
   SidebarPreferences,
@@ -33,6 +34,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     spellCheck: true,
     autoSave: true,
     autoSaveInterval: 30,
+    defaultViewMode: 'edit', // FEAT-12: Par défaut en mode édition
   },
   sidebar: {
     collapsed: false,
@@ -70,6 +72,7 @@ interface PreferencesState {
   setTheme: (theme: Theme) => Promise<void>;
   setEditorMode: (mode: EditorMode) => Promise<void>;
   setEditorWidth: (width: EditorWidth) => Promise<void>;
+  setDefaultViewMode: (mode: DefaultViewMode) => Promise<void>; // FEAT-12
   toggleSidebar: () => Promise<void>;
   resetPreferences: () => Promise<void>;
   clearError: () => void;
@@ -248,6 +251,22 @@ export const usePreferencesStore = create<PreferencesState>()(
           await preferencesApi.updateEditorPreferences({ width });
         } catch (error) {
           set({ error: 'Erreur lors du changement de largeur éditeur' });
+        }
+      },
+
+      // FEAT-12: Définir le mode de vue par défaut
+      setDefaultViewMode: async (mode) => {
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            editor: { ...state.preferences.editor, defaultViewMode: mode },
+          },
+        }));
+
+        try {
+          await preferencesApi.updateEditorPreferences({ defaultViewMode: mode });
+        } catch (error) {
+          set({ error: 'Erreur lors du changement de mode de vue' });
         }
       },
 

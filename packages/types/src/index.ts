@@ -186,6 +186,8 @@ export type EditorWidth = 'narrow' | 'medium' | 'wide' | 'full';
 export type Language = 'fr' | 'en';
 export type TimeFormat = '12h' | '24h';
 export type StartOfWeek = 'monday' | 'sunday';
+// FEAT-12: Mode de vue par défaut (édition ou visualisation)
+export type DefaultViewMode = 'edit' | 'view';
 
 /**
  * Préférences d'affichage
@@ -208,6 +210,8 @@ export interface EditorPreferences {
   spellCheck: boolean;
   autoSave: boolean;
   autoSaveInterval: number;
+  // FEAT-12: Mode de vue par défaut lors de l'ouverture d'une note
+  defaultViewMode: DefaultViewMode;
 }
 
 /**

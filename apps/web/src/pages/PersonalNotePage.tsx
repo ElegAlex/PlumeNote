@@ -3,7 +3,7 @@
 // Pas de collaboration temps réel
 // ===========================================
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePersonalStore } from '../stores/personalStore';
 import { useAuthStore } from '../stores/auth';
@@ -78,6 +78,10 @@ export function PersonalNotePage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
 
+  // FEAT-09: Ref pour préserver le focus et la position du curseur lors de l'auto-save
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const selectionRef = useRef<{ start: number; end: number } | null>(null);
+
   // Récupérer les événements liés à cette note
   const { events: linkedEvents } = useNoteEvents(currentNote?.id);
 
@@ -134,11 +138,27 @@ export function PersonalNotePage() {
     [noteId, updateNote]
   );
 
+  // FEAT-09: Gérer le changement de titre en préservant la position du curseur
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
+    selectionRef.current = {
+      start: e.target.selectionStart ?? 0,
+      end: e.target.selectionEnd ?? 0,
+    };
     setTitle(newTitle);
     debouncedSaveTitle(newTitle);
   };
+
+  // FEAT-09: Restaurer la position du curseur après la mise à jour du state
+  useEffect(() => {
+    if (titleInputRef.current && selectionRef.current) {
+      const { start, end } = selectionRef.current;
+      const input = titleInputRef.current;
+      if (document.activeElement === input) {
+        input.setSelectionRange(start, end);
+      }
+    }
+  }, [title]);
 
   const handleDelete = async () => {
     if (!noteId) return;
@@ -217,6 +237,7 @@ export function PersonalNotePage() {
 
           {/* Titre éditable */}
           <input
+            ref={titleInputRef}
             type="text"
             value={title}
             onChange={handleTitleChange}

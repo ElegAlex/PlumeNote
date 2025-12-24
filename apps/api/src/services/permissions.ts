@@ -281,7 +281,11 @@ async function getResourcesByType(
   type: ResourceType
 ): Promise<Array<{ type: ResourceType; id: string }>> {
   if (type === 'FOLDER') {
-    const folders = await prisma.folder.findMany({ select: { id: true } });
+    // FEAT-13: Exclure les dossiers supprimés des permissions
+    const folders = await prisma.folder.findMany({
+      where: { isDeleted: false },
+      select: { id: true },
+    });
     return folders.map((f) => ({ type: 'FOLDER', id: f.id }));
   } else {
     const notes = await prisma.note.findMany({

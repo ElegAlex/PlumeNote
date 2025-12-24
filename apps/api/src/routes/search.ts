@@ -301,6 +301,7 @@ function calculateRank(
 
 /**
  * Génère les facettes de recherche
+ * FEAT-13: Filtre les dossiers supprimés
  */
 async function generateFacets(accessibleFolderIds: string[], searchTerms: string[]) {
   const whereBase = {
@@ -309,9 +310,12 @@ async function generateFacets(accessibleFolderIds: string[], searchTerms: string
     folderId: { in: accessibleFolderIds },
   };
 
-  // Facette par dossier
+  // FEAT-13: Facette par dossier - Exclure les dossiers supprimés
   const folderFacets = await prisma.folder.findMany({
-    where: { id: { in: accessibleFolderIds } },
+    where: {
+      id: { in: accessibleFolderIds },
+      isDeleted: false, // FEAT-13: Ne pas inclure les dossiers supprimés
+    },
     select: {
       id: true,
       name: true,

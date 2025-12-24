@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePreferencesStore } from '../stores/preferencesStore';
 import { useAuthStore } from '../stores/auth';
 import { DisplaySettings, EditorSettings, ProfileSettings } from '../components/settings';
+import { TemplateManagementConsole } from '../components/templates';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -19,9 +20,11 @@ import {
   Shield,
   RotateCcw,
   User,
+  FileText,
 } from 'lucide-react';
 
-type Tab = 'display' | 'editor' | 'profile';
+// FEAT-06: Ajout onglet Templates
+type Tab = 'display' | 'editor' | 'profile' | 'templates';
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -105,7 +108,7 @@ export function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
           <TabsTrigger value="display" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">Affichage</span>
@@ -113,6 +116,10 @@ export function SettingsPage() {
           <TabsTrigger value="editor" className="flex items-center gap-2">
             <FileEdit className="h-4 w-4" />
             <span className="hidden sm:inline">Éditeur</span>
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Templates</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -150,6 +157,24 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <EditorSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FEAT-06: Onglet Templates */}
+        <TabsContent value="templates" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Templates
+              </CardTitle>
+              <CardDescription>
+                Créez et gérez vos modèles de notes personnalisés.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TemplateManagementConsole />
             </CardContent>
           </Card>
         </TabsContent>

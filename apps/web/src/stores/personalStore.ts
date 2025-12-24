@@ -18,6 +18,7 @@ import type {
   UpdatePersonalNoteRequest,
 } from '@plumenote/types';
 import { personalApi } from '../services/personalApi';
+import { naturalCompare } from '../lib/naturalSort';
 
 // ----- Types -----
 
@@ -360,9 +361,12 @@ export const usePersonalStore = create<PersonalState>()(
         set({ isLoading: true, error: null });
         try {
           const treeResponse = await personalApi.getTree();
+          // FEAT-03: Tri alphanumérique naturel des dossiers et notes
+          const sortedTree = sortPersonalTreeNodes(treeResponse.tree);
+          const sortedNotes = [...treeResponse.rootNotes].sort((a, b) => naturalCompare(a.title, b.title));
           set({
-            tree: treeResponse.tree,
-            rootNotes: treeResponse.rootNotes,
+            tree: sortedTree,
+            rootNotes: sortedNotes,
             isLoading: false,
           });
         } catch (error) {
@@ -503,4 +507,17 @@ async function buildBreadcrumb(folderId: string): Promise<Breadcrumb[]> {
   }
 
   return breadcrumb;
+}
+
+/**
+ * FEAT-03: Trie récursivement les nœuds de l'arborescence personnelle
+ */
+function sortPersonalTreeNodes(nodes: PersonalTreeNode[]): PersonalTreeNode[] {
+  return [...nodes]
+    .sort((a, b) => naturalCompare(a.name, b.name))
+    .map((node) => ({
+      ...node,
+      children: node.children.length > 0 ? sortPersonalTreeNodes(node.children) : [],
+      notes: node.notes ? [...node.notes].sort((a, b) => naturalCompare(a.title, b.title)) : [],
+    }));
 }

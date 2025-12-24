@@ -12,6 +12,7 @@ import type {
   SidebarFolderNode,
 } from '@plumenote/types';
 import { api } from '../lib/api';
+import { naturalCompare } from '../lib/naturalSort';
 
 // ----- Types internes -----
 
@@ -70,6 +71,22 @@ function isCacheValid(cache: FolderCache | undefined): boolean {
 }
 
 function convertTreeNodeToSidebar(node: FolderTreeNode): SidebarFolderNode {
+  // FEAT-03: Tri alphanumérique naturel des enfants et notes
+  const sortedChildren = [...node.children]
+    .sort((a, b) => naturalCompare(a.name, b.name))
+    .map(convertTreeNodeToSidebar);
+
+  const sortedNotes = (node.notes ?? [])
+    .map((n) => ({
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      position: 0,
+      updatedAt: n.updatedAt,
+      createdAt: n.updatedAt,
+    }))
+    .sort((a, b) => naturalCompare(a.title, b.title));
+
   return {
     id: node.id,
     name: node.name,
@@ -80,15 +97,8 @@ function convertTreeNodeToSidebar(node: FolderTreeNode): SidebarFolderNode {
     position: node.position,
     hasChildren: node.children.length > 0 || node.level === 0,
     notesCount: node.notes?.length ?? 0,
-    children: node.children.map(convertTreeNodeToSidebar),
-    notes: node.notes?.map((n) => ({
-      id: n.id,
-      title: n.title,
-      slug: n.slug,
-      position: 0,
-      updatedAt: n.updatedAt,
-      createdAt: n.updatedAt,
-    })) ?? [],
+    children: sortedChildren,
+    notes: sortedNotes,
     isLoaded: node.notes !== undefined && node.notes.length > 0,
     accessType: node.accessType,
   };
@@ -123,7 +133,10 @@ export const useSidebarStore = create<SidebarState>()(
 
         try {
           const response = await api.get<{ tree: FolderTreeNode[] }>('/folders/tree');
-          const tree = response.data.tree.map(convertTreeNodeToSidebar);
+          // FEAT-03: Trier l'arbre racine par ordre alphanumérique
+          const tree = response.data.tree
+            .map(convertTreeNodeToSidebar)
+            .sort((a, b) => naturalCompare(a.name, b.name));
 
           // Pré-remplir le cache avec les données de l'arbre
           const loadedFolders = new Map<string, FolderCache>();
@@ -167,38 +180,43 @@ export const useSidebarStore = create<SidebarState>()(
           const response = await api.get<FolderContent>(`/folders/${folderId}/content`);
           const content = response.data;
 
-          // Convertir en SidebarFolderNode
-          const children: SidebarFolderNode[] = content.children.map((child) => ({
-            id: child.id,
-            name: child.name,
-            slug: child.slug,
-            parentId: folderId,
-            color: child.color,
-            icon: child.icon,
-            position: child.position,
-            hasChildren: child.hasChildren,
-            notesCount: child.notesCount,
-            children: [],
-            notes: [],
-            isLoaded: false,
-          }));
+          // FEAT-03: Convertir en SidebarFolderNode avec tri alphanumérique
+          const children: SidebarFolderNode[] = content.children
+            .map((child) => ({
+              id: child.id,
+              name: child.name,
+              slug: child.slug,
+              parentId: folderId,
+              color: child.color,
+              icon: child.icon,
+              position: child.position,
+              hasChildren: child.hasChildren,
+              notesCount: child.notesCount,
+              children: [],
+              notes: [],
+              isLoaded: false,
+            }))
+            .sort((a, b) => naturalCompare(a.name, b.name));
+
+          // FEAT-03: Trier les notes par titre
+          const sortedNotes = [...content.notes].sort((a, b) => naturalCompare(a.title, b.title));
 
           // Mettre à jour le cache
           const newLoadedFolders = new Map(get().loadedFolders);
           newLoadedFolders.set(folderId, {
             children,
-            notes: content.notes,
+            notes: sortedNotes,
             loadedAt: Date.now(),
           });
 
-          // Mettre à jour l'arbre avec les nouveaux enfants
+          // Mettre à jour l'arbre avec les nouveaux enfants (déjà triés)
           const updateTree = (nodes: SidebarFolderNode[]): SidebarFolderNode[] => {
             return nodes.map((node) => {
               if (node.id === folderId) {
                 return {
                   ...node,
                   children,
-                  notes: content.notes,
+                  notes: sortedNotes,
                   isLoaded: true,
                 };
               }

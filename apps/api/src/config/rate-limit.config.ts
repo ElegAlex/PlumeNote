@@ -32,23 +32,24 @@ export function isReadMethod(method: string): boolean {
 }
 
 export const rateLimitConfig: RateLimitConfig = {
-  enabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+  // FEAT-10: Rate limiting désactivé par défaut pour éviter les blocages en usage normal
+  enabled: process.env.RATE_LIMIT_ENABLED === 'true',
   public: {
-    max: parseInt(process.env.RATE_LIMIT_PUBLIC_MAX || '100', 10),
+    max: parseInt(process.env.RATE_LIMIT_PUBLIC_MAX || '10000', 10),
     timeWindow: process.env.RATE_LIMIT_PUBLIC_WINDOW || '1 minute',
   },
   authenticated: {
     read: {
-      max: parseInt(process.env.RATE_LIMIT_AUTH_READ_MAX || '10000', 10),
+      max: parseInt(process.env.RATE_LIMIT_AUTH_READ_MAX || '100000', 10),
       timeWindow: process.env.RATE_LIMIT_AUTH_READ_WINDOW || '1 minute',
     },
     write: {
-      max: parseInt(process.env.RATE_LIMIT_AUTH_WRITE_MAX || '1000', 10),
+      max: parseInt(process.env.RATE_LIMIT_AUTH_WRITE_MAX || '50000', 10),
       timeWindow: process.env.RATE_LIMIT_AUTH_WRITE_WINDOW || '1 minute',
     },
   },
   auth: {
-    max: parseInt(process.env.RATE_LIMIT_AUTH_MAX || '10', 10),
+    max: parseInt(process.env.RATE_LIMIT_AUTH_MAX || '100', 10),
     timeWindow: process.env.RATE_LIMIT_AUTH_WINDOW || '1 minute',
   },
 };
