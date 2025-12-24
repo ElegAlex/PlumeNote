@@ -1,12 +1,14 @@
 // ===========================================
 // Store Folders (Zustand)
 // US-002: Persistance de l'état d'expansion des dossiers
+// FEAT-13: Invalidation des facettes de recherche
 // ===========================================
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { FolderTreeNode } from '@plumenote/types';
 import { api } from '../lib/api';
+import { useSearchStore } from './searchStore';
 
 interface FoldersState {
   tree: FolderTreeNode[];
@@ -101,6 +103,8 @@ export const useFoldersStore = create<FoldersState>()(
 
       deleteFolder: async (folderId: string) => {
         await api.delete(`/folders/${folderId}`);
+        // FEAT-13: Invalider les facettes de recherche après suppression
+        useSearchStore.getState().invalidateFacets();
         await get().fetchTree();
       },
 

@@ -1,5 +1,6 @@
 // ===========================================
 // Page de Recherche Avancée (US-060 à US-063)
+// FEAT-13: Utilise searchStore pour les facettes
 // ===========================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,14 +10,8 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { debounce, formatRelativeTime } from '../lib/utils';
+import { useSearchStore, type SearchFacets } from '../stores/searchStore';
 import type { SearchResult } from '@plumenote/types';
-
-interface Facets {
-  folders: { id: string; name: string; path: string; count: number }[];
-  tags: { id: string; name: string; color: string | null; count: number }[];
-  authors: { id: string; name: string; count: number }[];
-  dates: { month: string; label: string; count: number }[];
-}
 
 interface SearchFilters {
   folderId?: string;
@@ -32,7 +27,6 @@ export function SearchPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
-  const [facets, setFacets] = useState<Facets | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -41,19 +35,14 @@ export function SearchPage() {
     sortOrder: 'desc',
   });
 
+  // FEAT-13: Utiliser le store pour les facettes (avec invalidation automatique)
+  const facets = useSearchStore((s) => s.facets);
+  const fetchFacets = useSearchStore((s) => s.fetchFacets);
+
   // Load facets on mount
   useEffect(() => {
-    loadFacets();
-  }, []);
-
-  const loadFacets = async () => {
-    try {
-      const response = await api.get<Facets>('/search/facets');
-      setFacets(response.data);
-    } catch {
-      // Ignore errors
-    }
-  };
+    fetchFacets();
+  }, [fetchFacets]);
 
   const performSearch = useCallback(
     debounce(async (searchQuery: string, searchFilters: SearchFilters) => {
@@ -92,14 +81,12 @@ export function SearchPage() {
         const response = await api.get<{
           results: SearchResult[];
           total: number;
-          facets: Facets;
+          facets: SearchFacets;
         }>(`/search?${params}`);
 
         setResults(response.data.results);
         setTotal(response.data.total);
-        if (response.data.facets) {
-          setFacets(response.data.facets);
-        }
+        // FEAT-13: Les facettes sont gérées par le store, pas besoin de les mettre à jour ici
       } catch {
         setResults([]);
         setTotal(0);

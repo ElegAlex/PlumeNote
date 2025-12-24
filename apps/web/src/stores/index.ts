@@ -9,3 +9,4 @@ export { useSidebarStore } from './sidebarStore';
 export { useMetadataStore } from './metadataStore';
 export { useAnalyticsStore } from './analyticsStore';
 export { useCalendarStore } from './calendarStore';
+export { useSearchStore } from './searchStore';
