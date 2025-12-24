@@ -89,8 +89,11 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     }
   },
 
-  // FEAT-13: Invalidate cache to force refetch
+  // FEAT-13: Invalidate cache and refetch immediately
   invalidateFacets: () => {
-    set({ lastFetched: null });
+    // Clear cache and facets data
+    set({ lastFetched: null, facets: null });
+    // Trigger immediate refetch
+    get().fetchFacets();
   },
 }));

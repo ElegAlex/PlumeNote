@@ -15,6 +15,7 @@ import { SyncEventType } from '@plumenote/types';
 import { createAuditLog } from '../services/audit.js';
 import { checkPermission, getEffectivePermissions } from '../services/permissions.js';
 import { getEventBus } from '../infrastructure/events/index.js';
+import { invalidateAllPermissionCache } from '../services/cache.js';
 
 // ----- Schémas de validation -----
 
@@ -825,6 +826,9 @@ export const foldersRoutes: FastifyPluginAsync = async (app) => {
 
     // Supprimer le dossier (cascade sur sous-dossiers via Prisma)
     await prisma.folder.delete({ where: { id, isPersonal: false } });
+
+    // FEAT-13: Invalider le cache des permissions pour mettre à jour les filtres de recherche
+    await invalidateAllPermissionCache();
 
     await createAuditLog({
       userId,
