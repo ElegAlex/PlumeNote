@@ -2,6 +2,7 @@
 // Composant NoteItem - P0
 // Affichage d'une note dans la sidebar
 // US-007: Déplacement via menu contextuel
+// FEAT-08: Sélecteurs Zustand optimisés pour éviter re-renders
 // ===========================================
 
 import { memo, useCallback, useState } from 'react';
@@ -39,9 +40,13 @@ export const NoteItem = memo(function NoteItem({ note, level, folderId, isPerson
   const navigate = useNavigate();
   const location = useLocation();
   const { noteId: currentNoteId } = useParams<{ noteId: string }>();
-  const { selectNote, tree, refreshFolder } = useSidebarStore();
-  const { moveNote } = useFoldersStore();
-  const { openNoteInActivePane } = usePanesStore();
+
+  // FEAT-08: Sélecteurs spécifiques pour éviter les re-renders inutiles
+  const selectNote = useSidebarStore((s) => s.selectNote);
+  const tree = useSidebarStore((s) => s.tree);
+  const refreshFolder = useSidebarStore((s) => s.refreshFolder);
+  const moveNote = useFoldersStore((s) => s.moveNote);
+  const openNoteInActivePane = usePanesStore((s) => s.openNoteInActivePane);
 
   // État pour le menu contextuel et la modale de déplacement
   const [showContextMenu, setShowContextMenu] = useState(false);

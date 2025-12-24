@@ -3,6 +3,7 @@
 // Composant récursif pour l'arborescence des dossiers
 // Utilise InlineCreateForm pour création de sous-dossiers
 // US-007: Support drag-and-drop avec feedback visuel
+// FEAT-08: Sélecteurs Zustand optimisés pour éviter re-renders
 // ===========================================
 
 import { memo, useCallback, useState } from 'react';
@@ -42,19 +43,26 @@ export const FolderItem = memo(function FolderItem({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Stores selon le mode (personnel ou général)
-  const sidebarStore = useSidebarStore();
-  const personalStore = usePersonalStore();
+  // FEAT-08: Sélecteurs spécifiques pour éviter les re-renders inutiles
+  // Sidebar store - sélecteurs individuels
+  const sidebarExpandedIds = useSidebarStore((s) => s.expandedIds);
+  const sidebarToggleFolder = useSidebarStore((s) => s.toggleFolder);
+  const sidebarLoadedFolders = useSidebarStore((s) => s.loadedFolders);
+  const sidebarIsLoadingFolder = useSidebarStore((s) => s.isLoadingFolder);
+  const sidebarSelectedFolderId = useSidebarStore((s) => s.selectedFolderId);
+  const sidebarSelectFolder = useSidebarStore((s) => s.selectFolder);
 
-  // Sélection du store approprié
-  const expandedIds = isPersonal ? personalStore.expandedFolderIds : sidebarStore.expandedIds;
-  const toggleFolder = isPersonal ? personalStore.toggleFolderExpanded : sidebarStore.toggleFolder;
+  // Personal store - sélecteurs individuels
+  const personalExpandedIds = usePersonalStore((s) => s.expandedFolderIds);
+  const personalToggleFolder = usePersonalStore((s) => s.toggleFolderExpanded);
 
-  // Ces valeurs ne sont utilisées qu'en mode général
-  const loadedFolders = sidebarStore.loadedFolders;
-  const isLoadingFolder = sidebarStore.isLoadingFolder;
-  const selectedFolderId = sidebarStore.selectedFolderId;
-  const selectFolder = sidebarStore.selectFolder;
+  // Sélection selon le mode
+  const expandedIds = isPersonal ? personalExpandedIds : sidebarExpandedIds;
+  const toggleFolder = isPersonal ? personalToggleFolder : sidebarToggleFolder;
+  const loadedFolders = sidebarLoadedFolders;
+  const isLoadingFolder = sidebarIsLoadingFolder;
+  const selectedFolderId = sidebarSelectedFolderId;
+  const selectFolder = sidebarSelectFolder;
 
   // Chemins de navigation selon le mode
   const folderPath = isPersonal ? `/personal/folder/${folder.id}` : `/folders/${folder.id}`;
