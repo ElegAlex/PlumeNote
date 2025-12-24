@@ -423,8 +423,8 @@ export function Sidebar() {
             )}
 
 
-            {/* Folder Tree */}
-            <FolderTree onCreateNote={handleCreateNote} onCreateFolder={handleCreateFolderInFolder} />
+            {/* Folder Tree - utilise handleOpenTemplatePicker pour la cohérence avec le bouton général */}
+            <FolderTree onCreateNote={handleOpenTemplatePicker} onCreateFolder={handleCreateFolderInFolder} />
           </div>
         )}
 
