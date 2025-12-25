@@ -43,9 +43,13 @@ function createMockFolder(overrides: Partial<SidebarFolderNode> = {}): SidebarFo
   };
 }
 
-// Wrapper pour les tests
+// Wrapper pour les tests - utilise le wrapper de testing-library
+const RouterWrapper = ({ children }: { children: React.ReactNode }) => (
+  <MemoryRouter>{children}</MemoryRouter>
+);
+
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  return render(ui, { wrapper: RouterWrapper });
 }
 
 describe('FolderItem', () => {

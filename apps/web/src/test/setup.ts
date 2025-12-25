@@ -5,15 +5,8 @@
 import { vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
-// Mock react-router-dom
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-    useParams: () => ({ noteId: undefined }),
-  };
-});
+// Note: react-router-dom is mocked locally in tests that need it
+// to avoid conflicts with MemoryRouter in React 19
 
 // Mock API
 vi.mock('../lib/api', () => ({

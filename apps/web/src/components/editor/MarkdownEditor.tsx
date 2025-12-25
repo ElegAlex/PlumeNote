@@ -305,8 +305,8 @@ function CalloutBlock({ children }: { children: React.ReactNode }) {
   const extractText = (node: React.ReactNode): string => {
     if (typeof node === 'string') return node;
     if (Array.isArray(node)) return node.map(extractText).join('');
-    if (node && typeof node === 'object' && 'props' in node) {
-      return extractText((node as React.ReactElement).props.children);
+    if (React.isValidElement<{ children?: React.ReactNode }>(node) && node.props) {
+      return extractText(node.props.children);
     }
     return '';
   };
@@ -1349,9 +1349,9 @@ export function MarkdownEditor({
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                 // Interactive checkboxes in preview mode
-                input: (inputProps) => {
+                input: (componentProps) => {
                   // Extract and IGNORE the default disabled from remarkGfm
-                  const { type, checked, disabled: _ignored, node, ...props } = inputProps;
+                  const { type, checked, disabled: _ignored, node, ref: _ref, ...restProps } = componentProps;
                   if (type === 'checkbox') {
                     // Use modulo to handle React StrictMode double rendering
                     const totalCheckboxes = (localContent.match(/- \[[ xX]\]/g) || []).length;
@@ -1371,7 +1371,7 @@ export function MarkdownEditor({
                       />
                     );
                   }
-                  return <input type={type} checked={checked} {...props} />;
+                  return <input type={type} checked={checked} {...restProps} />;
                 },
                 blockquote: ({ children }) => <CalloutBlock>{children}</CalloutBlock>,
                 // Render paragraphs with wikilinks support
@@ -1409,6 +1409,7 @@ export function MarkdownEditor({
                   return <li>{processed}</li>;
                 },
                 code: ({ className, children, ...props }) => {
+                  const { ref, ...codeProps } = props as { ref?: unknown; [key: string]: unknown };
                   const match = /language-(\w+)/.exec(className || '');
                   const language = match ? match[1] : '';
                   const codeString = String(children).replace(/\n$/, '');
@@ -1426,7 +1427,7 @@ export function MarkdownEditor({
                           {language}
                         </div>
                         <pre className="!mt-0">
-                          <code className={className} {...props}>
+                          <code className={className} {...codeProps}>
                             {children}
                           </code>
                         </pre>
@@ -1436,7 +1437,7 @@ export function MarkdownEditor({
 
                   // Inline code
                   return (
-                    <code className={className} {...props}>
+                    <code className={className} {...codeProps}>
                       {children}
                     </code>
                   );

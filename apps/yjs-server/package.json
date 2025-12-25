@@ -11,10 +11,10 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
-    "@hocuspocus/extension-database": "^2.8.0",
-    "@hocuspocus/extension-logger": "^2.8.0",
-    "@hocuspocus/extension-throttle": "^2.8.0",
-    "@hocuspocus/server": "^2.8.0",
+    "@hocuspocus/extension-database": "^3.4.0",
+    "@hocuspocus/extension-logger": "^3.4.0",
+    "@hocuspocus/extension-throttle": "^3.4.0",
+    "@hocuspocus/server": "^3.4.3",
     "@plumenote/database": "*",
     "dotenv": "^16.3.0",
     "jsonwebtoken": "^9.0.0",
