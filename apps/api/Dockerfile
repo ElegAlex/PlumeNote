@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:25-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Installer les outils necessaires
@@ -11,7 +11,7 @@ COPY packages ./packages
 COPY apps/api ./apps/api
 
 # Installer toutes les dependances
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Build dans l'ordre des dependances (workspaces)
 RUN npm run build --workspace=@plumenote/types
@@ -20,7 +20,7 @@ RUN npm run build --workspace=@plumenote/database
 RUN npm run build --workspace=@plumenote/api
 
 # Stage 2: Production
-FROM node:25-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 RUN apk add --no-cache openssl curl

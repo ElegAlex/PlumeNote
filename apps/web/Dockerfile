@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:25-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copier les fichiers de dependances du monorepo complet
@@ -8,7 +8,7 @@ COPY packages ./packages
 COPY apps/web ./apps/web
 
 # Installer les dependances
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Build des packages puis de l'app (workspaces)
 RUN npm run build --workspace=@plumenote/types
