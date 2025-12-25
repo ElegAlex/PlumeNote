@@ -41,6 +41,10 @@ declare module '@tiptap/core' {
       clearSearch: () => ReturnType;
     };
   }
+
+  interface ExtensionStorage {
+    searchReplace: SearchReplaceStorage;
+  }
 }
 
 export const searchReplacePluginKey = new PluginKey('searchReplace');

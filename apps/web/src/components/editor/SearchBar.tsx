@@ -8,6 +8,7 @@ import type { Editor } from '@tiptap/react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
+import type { SearchReplaceStorage } from './extensions/searchReplace/SearchReplaceExtension';
 
 interface SearchBarProps {
   editor: Editor | null;
@@ -117,7 +118,8 @@ export function SearchBar({ editor, isOpen, showReplace = false, onClose }: Sear
   }, [useRegex, editor]);
 
   // Récupérer le storage de l'extension
-  const storage = editor?.storage?.searchReplace;
+  const editorStorage = editor?.storage as { searchReplace?: SearchReplaceStorage } | undefined;
+  const storage = editorStorage?.searchReplace;
   const resultCount = storage?.results?.length || 0;
   const currentIndex = storage?.currentIndex ?? -1;
 
