@@ -41,6 +41,8 @@ import {
   Pencil,
   Trash2,
   Search,
+  Eye,
+  Copy,
 } from 'lucide-react';
 
 // Catégories disponibles
@@ -93,6 +95,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
   const [editingTemplate, setEditingTemplate] = useState<NoteTemplate | null>(null);
   const [formData, setFormData] = useState<TemplateFormData>(DEFAULT_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   // État suppression
   const [templateToDelete, setTemplateToDelete] = useState<NoteTemplate | null>(null);
@@ -130,6 +133,22 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
   const handleCreate = () => {
     setEditingTemplate(null);
     setFormData(DEFAULT_FORM);
+    setIsViewMode(false);
+    setIsDialogOpen(true);
+  };
+
+  // Ouvrir le dialogue pour voir (lecture seule)
+  const handleView = (template: NoteTemplate) => {
+    setEditingTemplate(template);
+    setFormData({
+      name: template.name,
+      description: template.description ?? '',
+      content: template.content,
+      icon: template.icon ?? 'FileText',
+      category: template.category,
+      isPublic: template.isPublic ?? false,
+    });
+    setIsViewMode(true);
     setIsDialogOpen(true);
   };
 
@@ -144,7 +163,27 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
       category: template.category,
       isPublic: template.isPublic ?? false,
     });
+    setIsViewMode(false);
     setIsDialogOpen(true);
+  };
+
+  // Dupliquer un template (créer une copie modifiable)
+  const handleDuplicate = async (template: NoteTemplate) => {
+    try {
+      await createTemplate({
+        name: `${template.name} (copie)`,
+        description: template.description ?? '',
+        content: template.content,
+        icon: template.icon ?? 'FileText',
+        category: template.category,
+        isPublic: false,
+      });
+      toast.success('Template dupliqué');
+      loadTemplates();
+    } catch (error) {
+      console.error('Failed to duplicate template:', error);
+      toast.error('Erreur lors de la duplication');
+    }
   };
 
   // Sauvegarder le template
@@ -295,44 +334,71 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 </div>
 
                 {/* Actions */}
-                {!template.isBuiltIn && (
-                  <div className="flex gap-2 mt-4 pt-3 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(template)}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Modifier
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTemplateToDelete(template)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Supprimer
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-2 mt-4 pt-3 border-t">
+                  {template.isBuiltIn ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(template)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Voir
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicate(template)}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Dupliquer
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(template)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTemplateToDelete(template)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Supprimer
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Dialogue création/édition */}
+      {/* Dialogue création/édition/visualisation */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
-              {editingTemplate ? 'Modifier le template' : 'Nouveau template'}
+              {isViewMode
+                ? 'Visualiser le template'
+                : editingTemplate
+                  ? 'Modifier le template'
+                  : 'Nouveau template'}
             </DialogTitle>
             <DialogDescription>
-              {editingTemplate
-                ? 'Modifiez les informations du template'
-                : 'Créez un nouveau modèle de note réutilisable'}
+              {isViewMode
+                ? 'Ce template intégré ne peut pas être modifié. Vous pouvez le dupliquer pour créer votre propre version.'
+                : editingTemplate
+                  ? 'Modifiez les informations du template'
+                  : 'Créez un nouveau modèle de note réutilisable'}
             </DialogDescription>
           </DialogHeader>
 
@@ -344,6 +410,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Compte-rendu réunion"
+                  disabled={isViewMode}
                 />
               </div>
               <div className="space-y-2">
@@ -351,6 +418,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 <Select
                   value={formData.category}
                   onValueChange={(v) => setFormData({ ...formData, category: v })}
+                  disabled={isViewMode}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -372,6 +440,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brève description du template"
+                disabled={isViewMode}
               />
             </div>
 
@@ -381,6 +450,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 <Select
                   value={formData.icon}
                   onValueChange={(v) => setFormData({ ...formData, icon: v })}
+                  disabled={isViewMode}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -405,6 +475,7 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 <Select
                   value={formData.isPublic ? 'public' : 'private'}
                   onValueChange={(v) => setFormData({ ...formData, isPublic: v === 'public' })}
+                  disabled={isViewMode}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -424,18 +495,38 @@ export function TemplateManagementConsole({ className }: TemplateManagementConso
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 placeholder="# Titre&#10;&#10;## Section 1&#10;&#10;Contenu..."
+                disabled={isViewMode}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? <Spinner size="sm" /> : null}
-              {editingTemplate ? 'Enregistrer' : 'Créer'}
-            </Button>
+            {isViewMode ? (
+              <>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Fermer
+                </Button>
+                <Button onClick={() => {
+                  if (editingTemplate) {
+                    handleDuplicate(editingTemplate);
+                    setIsDialogOpen(false);
+                  }
+                }}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Dupliquer
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Spinner size="sm" /> : null}
+                  {editingTemplate ? 'Enregistrer' : 'Créer'}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
