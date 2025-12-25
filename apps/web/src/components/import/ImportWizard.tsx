@@ -106,6 +106,10 @@ export function ImportWizard({ open, onClose }: ImportWizardProps) {
   };
 
   const handleClose = () => {
+    // Rafraichir les dossiers si l'import a reussi
+    if (currentJob?.status === 'COMPLETED') {
+      fetchTree();
+    }
     clearPreview();
     clearError();
     setStep('upload');
