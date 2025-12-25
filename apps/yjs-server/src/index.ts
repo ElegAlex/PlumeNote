@@ -10,7 +10,7 @@
 
 import 'dotenv/config';
 import { createServer as createHttpServer } from 'http';
-import { Hocuspocus } from '@hocuspocus/server';
+import { Server as HocuspocusServer } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import { Logger } from '@hocuspocus/extension-logger';
 import { Throttle } from '@hocuspocus/extension-throttle';
@@ -82,7 +82,7 @@ function extractNoteId(documentName: string): string | null {
   return noteId;
 }
 
-const server = new Hocuspocus({
+const server = new HocuspocusServer({
   port: PORT,
 
   // Délai avant sauvegarde (debounce)
