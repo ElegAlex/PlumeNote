@@ -1,73 +1,174 @@
-# Déploiement PlumeNote
+# Deploiement PlumeNote
 
-## Prérequis
-- Accès SSH au VPS : `ssh user@your-server.example.com`
-- Le build local doit passer AVANT tout déploiement
+## Production
 
-## Étape 1 : Vérifier le build en local
+- **URL** : https://plumenote.fr
+- **Serveur** : VPS Debian 12 (OVH)
+- **Documentation complete** : Voir fichier local `plumenote-production.md` (non versionne)
+
+---
+
+## Prerequis
+
+- Cle SSH configuree (`~/.ssh/plumenote_ed25519`)
+- Alias SSH configure (optionnel) : `ssh plumenote`
+- Build local doit passer AVANT tout deploiement
+
+---
+
+## Deploiement standard
+
+### 1. Verifier le build en local
+
 ```bash
-cd /path/to/plumenote
 npm run build
 ```
 
-Si le build échoue, corriger les erreurs AVANT de continuer.
+Si le build echoue, corriger les erreurs AVANT de continuer.
 
-## Étape 2 : Commit et push
+### 2. Commit et push
+
 ```bash
 git add -A
 git commit -m "description des changements"
 git push origin main
 ```
 
-## Étape 3 : Déployer sur le VPS
+### 3. Deployer sur le VPS
+
 ```bash
-ssh user@your-server.example.com
-cd /opt/plumenote
+# Connexion
+ssh plumenote
+
+# Mise a jour du code
+cd /opt/plumenote/app
 git pull origin main
-cd docker
-docker compose build --no-cache
-docker compose up -d --force-recreate
-docker compose ps
+
+# Rebuild et redemarrage
+cd /opt/plumenote
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+
+# Verification
+docker compose -f docker-compose.prod.yml ps
 ```
 
-Tous les containers doivent afficher "Up".
+Tous les containers doivent afficher "healthy".
 
-## Étape 4 : Appliquer les migrations (si nouvelles migrations)
+### 4. Appliquer les migrations (si necessaire)
+
 ```bash
-docker compose exec api npx prisma migrate deploy --schema=/app/packages/database/prisma/schema.prisma
+docker exec plumenote-api npx prisma migrate deploy
 ```
 
-## Dépannage
+---
 
-### Voir les logs
+## Structure serveur
+
+```
+/opt/plumenote/
+├── .env                        # Secrets (voir doc locale)
+├── docker-compose.prod.yml     # Configuration Docker
+├── app/                        # Code source (git clone)
+├── nginx/
+│   ├── nginx.conf
+│   └── conf.d/plumenote.conf
+├── ssl/
+│   ├── fullchain.pem
+│   └── privkey.pem
+└── renew-ssl.sh
+```
+
+---
+
+## Commandes utiles
+
+### Logs
+
 ```bash
-docker compose logs api --tail=50
-docker compose logs web --tail=50
-docker compose logs nginx --tail=50
+# Logs API
+docker compose -f docker-compose.prod.yml logs -f api
+
+# Logs Nginx
+docker compose -f docker-compose.prod.yml logs -f nginx
+
+# Tous les logs
+docker compose -f docker-compose.prod.yml logs -f
 ```
+
+### Redemarrage
+
+```bash
+# Un service
+docker compose -f docker-compose.prod.yml restart api
+
+# Tous les services
+docker compose -f docker-compose.prod.yml restart
+```
+
+### Base de donnees
+
+```bash
+# Console PostgreSQL
+docker exec -it plumenote-postgres psql -U plumenote_user -d plumenote
+
+# Backup
+docker exec plumenote-postgres pg_dump -U plumenote_user plumenote > backup_$(date +%Y%m%d).sql
+```
+
+### Nettoyage Docker
+
+```bash
+# Nettoyer le cache (apres un build)
+docker system prune -af
+docker builder prune -af
+```
+
+---
+
+## Depannage
 
 ### Container qui redémarre en boucle
+
 ```bash
-docker compose logs <service> --tail=100
+docker compose -f docker-compose.prod.yml logs <service> --tail=100
 ```
 
 ### Erreur variables d'environnement
-Vérifier .env :
-```bash
-cat /opt/plumenote/docker/.env
-```
 
-Variables requises :
-- POSTGRES_PASSWORD
-- JWT_SECRET (32+ caractères)
-- COOKIE_SECRET (32+ caractères)
+Verifier `/opt/plumenote/.env` - Variables requises :
+- POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 - REDIS_PASSWORD
+- JWT_SECRET (64+ caracteres)
+- COOKIE_SECRET (64+ caracteres)
 - CORS_ORIGINS
+- API_URL, WEB_URL, YJS_URL
 
 ### Reset complet (dernier recours)
+
 ```bash
-docker compose down
+cd /opt/plumenote
+docker compose -f docker-compose.prod.yml down
 docker system prune -af
-docker compose build --no-cache
-docker compose up -d
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
+
+### Certificat SSL
+
+```bash
+# Verifier expiration
+openssl s_client -connect plumenote.fr:443 -servername plumenote.fr 2>/dev/null | openssl x509 -noout -dates
+
+# Renouveler manuellement
+sudo /opt/plumenote/renew-ssl.sh
+```
+
+---
+
+## Securite
+
+- SSH : Port 2222, cle uniquement, root desactive
+- Firewall : UFW (ports 2222, 80, 443)
+- Fail2ban : Ban 24h apres 3 echecs SSH
+- SSL : Let's Encrypt, renouvellement auto
