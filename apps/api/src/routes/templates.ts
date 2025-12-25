@@ -161,24 +161,16 @@ export const templatesRoutes: FastifyPluginAsync = async (app) => {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const userId = request.user.userId;
 
-    // Vérifier que l'utilisateur est propriétaire
+    // Vérifier que le template existe
     const existing = await prisma.noteTemplate.findFirst({
-      where: { id, createdById: userId },
+      where: { id },
     });
 
     if (!existing) {
       return reply.status(404).send({
         error: 'NOT_FOUND',
-        message: 'Template non trouvé ou non modifiable',
-      });
-    }
-
-    if (existing.isBuiltIn) {
-      return reply.status(403).send({
-        error: 'FORBIDDEN',
-        message: 'Les templates intégrés ne peuvent pas être modifiés',
+        message: 'Template non trouvé',
       });
     }
 
@@ -210,23 +202,15 @@ export const templatesRoutes: FastifyPluginAsync = async (app) => {
     },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const userId = request.user.userId;
 
     const existing = await prisma.noteTemplate.findFirst({
-      where: { id, createdById: userId },
+      where: { id },
     });
 
     if (!existing) {
       return reply.status(404).send({
         error: 'NOT_FOUND',
         message: 'Template non trouvé',
-      });
-    }
-
-    if (existing.isBuiltIn) {
-      return reply.status(403).send({
-        error: 'FORBIDDEN',
-        message: 'Les templates intégrés ne peuvent pas être supprimés',
       });
     }
 
