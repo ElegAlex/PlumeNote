@@ -8,9 +8,9 @@ RUN apk add --no-cache openssl python3 make g++
 # Copier les fichiers de dependances du monorepo complet
 COPY package.json package-lock.json* tsconfig.base.json ./
 COPY packages ./packages
-COPY apps/api ./apps/api
+COPY apps ./apps
 
-# Installer toutes les dependances
+# Installer toutes les dependances (workspaces need all apps)
 RUN npm install --legacy-peer-deps
 
 # Build dans l'ordre des dependances (workspaces)
