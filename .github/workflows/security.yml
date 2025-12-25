@@ -5,6 +5,10 @@
 
 name: Security Audit
 
+permissions:
+  contents: read
+  security-events: write
+
 on:
   push:
     branches: [main, develop]
