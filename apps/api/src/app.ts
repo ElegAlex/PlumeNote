@@ -50,7 +50,7 @@ import { assetsRoutes } from './routes/assets.js';
 
 export async function buildApp() {
   const app = Fastify({
-    logger: logger,
+    loggerInstance: logger,
     trustProxy: true,
   });
 
