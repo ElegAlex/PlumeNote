@@ -30,7 +30,7 @@ export default defineConfig({
     'fastify',
     'fastify-plugin',
     'ioredis',
-    'ldapjs',
+    'ldapts',
     'pino',
     'pino-pretty',
     'sharp',
