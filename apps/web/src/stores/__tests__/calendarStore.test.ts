@@ -240,7 +240,11 @@ describe('calendarStore', () => {
 
       await useCalendarStore.getState().createQuickEvent('New Event', '2024-03-15', 'event');
 
-      expect(calendarApi.createQuickEvent).toHaveBeenCalledWith('New Event', '2024-03-15', 'event', undefined);
+      expect(calendarApi.createQuickEvent).toHaveBeenCalledWith({
+        title: 'New Event',
+        date: '2024-03-15',
+        type: 'event',
+      });
       expect(calendarApi.getEvents).toHaveBeenCalled(); // Events reloaded
     });
 
@@ -250,7 +254,11 @@ describe('calendarStore', () => {
 
       await useCalendarStore.getState().createQuickEvent('Event', '2024-03-15', 'event', '14:30');
 
-      expect(calendarApi.createQuickEvent).toHaveBeenCalledWith('Event', '2024-03-15', 'event', '14:30');
+      expect(calendarApi.createQuickEvent).toHaveBeenCalledWith({
+        title: 'Event',
+        date: '2024-03-15T14:30',
+        type: 'event',
+      });
     });
   });
 

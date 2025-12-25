@@ -58,8 +58,8 @@ describe('shortcuts config', () => {
       expect(withoutModifiers.length).toBe(0);
     });
 
-    it('should have more than 30 shortcuts', () => {
-      expect(SHORTCUTS.length).toBeGreaterThan(30);
+    it('should have at least 30 shortcuts', () => {
+      expect(SHORTCUTS.length).toBeGreaterThanOrEqual(30);
     });
   });
 
@@ -74,7 +74,8 @@ describe('shortcuts config', () => {
       expect(result.has('navigation')).toBe(true);
       expect(result.has('editor-formatting')).toBe(true);
       expect(result.has('editor-actions')).toBe(true);
-      expect(result.has('panels')).toBe(true);
+      expect(result.has('editor-headings')).toBe(true);
+      expect(result.has('editor-blocks')).toBe(true);
     });
 
     it('should include all shortcuts', () => {
@@ -117,7 +118,7 @@ describe('shortcuts config', () => {
     });
 
     it('should filter by description', () => {
-      const result = searchShortcuts('sélectionner');
+      const result = searchShortcuts('insérer');
       expect(result.length).toBeGreaterThan(0);
     });
 

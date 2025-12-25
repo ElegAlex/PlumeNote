@@ -8,9 +8,16 @@ import { BrowserRouter } from 'react-router-dom';
 import { CalendarMonthView } from '../CalendarMonthView';
 import { useCalendarStore } from '../../../stores/calendarStore';
 
-// Mock du store
+// Mock des stores
 vi.mock('../../../stores/calendarStore', () => ({
   useCalendarStore: vi.fn(),
+}));
+
+vi.mock('../../../stores/eventStore', () => ({
+  useEventStore: () => ({
+    openEventDetail: vi.fn(),
+    deleteEvent: vi.fn(),
+  }),
 }));
 
 const renderComponent = (props = {}) => {
@@ -108,7 +115,8 @@ describe('CalendarMonthView', () => {
   it('should display events on days that have them', () => {
     renderComponent();
 
-    expect(screen.getByText('Réunion importante')).toBeInTheDocument();
+    // CalendarEventItem affiche noteTitle en priorité sur title
+    expect(screen.getByText('Réunion')).toBeInTheDocument();
   });
 
   it('should show loading skeletons when isLoading is true', () => {

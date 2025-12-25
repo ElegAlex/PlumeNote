@@ -42,6 +42,14 @@ const localStorageMock = {
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock ResizeObserver (required by Radix UI)
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+Object.defineProperty(window, 'ResizeObserver', { value: ResizeObserverMock });
+
 // Reset mocks before each test
 beforeEach(() => {
   vi.clearAllMocks();

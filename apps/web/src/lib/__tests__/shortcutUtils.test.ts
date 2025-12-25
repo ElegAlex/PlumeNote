@@ -16,40 +16,9 @@ import {
 describe('shortcutUtils', () => {
   const originalNavigator = global.navigator;
 
-  describe('on Mac', () => {
-    beforeEach(() => {
-      Object.defineProperty(global, 'navigator', {
-        value: { platform: 'MacIntel' },
-        writable: true,
-      });
-    });
-
-    afterEach(() => {
-      Object.defineProperty(global, 'navigator', {
-        value: originalNavigator,
-        writable: true,
-      });
-    });
-
-    // Note: Les tests Mac ne fonctionneront pas parfaitement car isMac est évalué au load du module
-    // Dans un environnement réel, il faudrait mocker avant l'import
-  });
-
-  describe('on Windows/Linux', () => {
-    beforeEach(() => {
-      Object.defineProperty(global, 'navigator', {
-        value: { platform: 'Win32' },
-        writable: true,
-      });
-    });
-
-    afterEach(() => {
-      Object.defineProperty(global, 'navigator', {
-        value: originalNavigator,
-        writable: true,
-      });
-    });
-  });
+  // Note: Les tests platform-specific (Mac vs Windows) ne fonctionnent pas car
+  // isMac est évalué au load du module. Les tests généraux ci-dessous couvrent
+  // les fonctionnalités cross-platform.
 
   describe('formatShortcut', () => {
     it('should format a simple shortcut with one modifier', () => {

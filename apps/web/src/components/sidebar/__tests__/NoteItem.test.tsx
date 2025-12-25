@@ -25,9 +25,32 @@ vi.mock('react-router-dom', async () => {
 const mockSelectNote = vi.fn();
 
 vi.mock('../../../stores/sidebarStore', () => ({
-  useSidebarStore: () => ({
-    selectNote: mockSelectNote,
-  }),
+  useSidebarStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      selectNote: mockSelectNote,
+      tree: [],
+      refreshFolder: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
+}));
+
+vi.mock('../../../stores/folders', () => ({
+  useFoldersStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      moveNote: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
+}));
+
+vi.mock('../../../stores/panesStore', () => ({
+  usePanesStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      openNoteInActivePane: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Helper pour créer un mock de note
@@ -73,7 +96,7 @@ describe('NoteItem', () => {
       renderWithRouter(<NoteItem note={note} level={0} />);
 
       // Vérifier que l'icône de note est présente
-      const noteIcon = screen.getByRole('button').querySelector('svg');
+      const noteIcon = screen.getByRole('button', { name: /Note/ }).querySelector('svg');
       expect(noteIcon).toBeInTheDocument();
     });
 
@@ -95,7 +118,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveStyle({ paddingLeft: '8px' }); // 0 * 16 + 8
     });
 
@@ -104,7 +127,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={1} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveStyle({ paddingLeft: '24px' }); // 1 * 16 + 8
     });
 
@@ -113,7 +136,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={2} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveStyle({ paddingLeft: '40px' }); // 2 * 16 + 8
     });
 
@@ -123,7 +146,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={3} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       // 3 * 16 + 8 = 56px, identique à FolderItem
       expect(noteElement).toHaveStyle({ paddingLeft: '56px' });
     });
@@ -135,7 +158,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      fireEvent.click(screen.getByRole('button'));
+      fireEvent.click(screen.getByRole('button', { name: /Note/ }));
 
       expect(mockNavigate).toHaveBeenCalledWith('/notes/note-123');
     });
@@ -145,7 +168,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      fireEvent.click(screen.getByRole('button'));
+      fireEvent.click(screen.getByRole('button', { name: /Note/ }));
 
       expect(mockSelectNote).toHaveBeenCalledWith('note-456');
     });
@@ -155,7 +178,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       fireEvent.keyDown(noteElement, { key: 'Enter' });
 
       expect(mockNavigate).toHaveBeenCalledWith('/notes/note-enter');
@@ -166,7 +189,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       fireEvent.keyDown(noteElement, { key: ' ' });
 
       expect(mockNavigate).toHaveBeenCalledWith('/notes/note-space');
@@ -180,7 +203,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveClass('bg-accent');
       expect(noteElement).toHaveClass('font-medium');
     });
@@ -191,7 +214,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).not.toHaveClass('font-medium');
     });
 
@@ -201,7 +224,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveAttribute('aria-current', 'page');
     });
 
@@ -211,7 +234,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).not.toHaveAttribute('aria-current');
     });
   });
@@ -240,7 +263,7 @@ describe('NoteItem', () => {
 
       renderWithRouter(<NoteItem note={note} level={0} />);
 
-      const noteElement = screen.getByRole('button');
+      const noteElement = screen.getByRole('button', { name: /Note/ });
       expect(noteElement).toHaveAttribute('tabIndex', '0');
     });
   });
@@ -253,7 +276,7 @@ describe('NoteItem visual alignment', () => {
     renderWithRouter(<NoteItem note={note} level={0} />);
 
     // Le spacer doit être présent pour aligner avec les chevrons des dossiers
-    const noteButton = screen.getByRole('button');
+    const noteButton = screen.getByRole('button', { name: /Note/ });
     const spacer = noteButton.querySelector('span.w-4.h-4');
     expect(spacer).toBeInTheDocument();
   });

@@ -12,16 +12,33 @@ import type { SidebarFolderNode } from '@plumenote/types';
 // Mock du store
 const mockToggleFolder = vi.fn();
 const mockSelectFolder = vi.fn();
+const mockExpandedIds = new Set<string>();
+const mockLoadedFolders = new Map();
 
+// Le store utilise des sélecteurs individuels, donc on doit mocker une fonction qui retourne la valeur selon le sélecteur
 vi.mock('../../../stores/sidebarStore', () => ({
-  useSidebarStore: () => ({
-    expandedIds: new Set<string>(),
-    loadedFolders: new Map(),
-    isLoadingFolder: null,
-    selectedFolderId: null,
-    toggleFolder: mockToggleFolder,
-    selectFolder: mockSelectFolder,
-  }),
+  useSidebarStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      expandedIds: mockExpandedIds,
+      loadedFolders: mockLoadedFolders,
+      isLoadingFolder: null,
+      selectedFolderId: null,
+      toggleFolder: mockToggleFolder,
+      selectFolder: mockSelectFolder,
+    };
+    return selector ? selector(state) : state;
+  },
+}));
+
+// Mock du personal store
+vi.mock('../../../stores/personalStore', () => ({
+  usePersonalStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      expandedFolderIds: new Set<string>(),
+      toggleFolderExpanded: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 // Helper pour créer un mock de dossier
@@ -71,7 +88,10 @@ describe('FolderItem', () => {
 
       renderWithRouter(<FolderItem folder={folder} level={0} />);
 
-      const folderIcon = screen.getByRole('button').querySelector('svg:nth-of-type(2)');
+      // Le dossier avec couleur personnalisée applique la couleur au SVG de dossier
+      const button = screen.getByRole('button', { name: /Dossier/ });
+      // Sans chevron (hasChildren=false), le folder icon est le premier SVG direct
+      const folderIcon = button.querySelector('svg[style*="color"]');
       expect(folderIcon).toHaveStyle({ color: '#ff5500' });
     });
 
@@ -228,7 +248,7 @@ describe('FolderItem', () => {
       expect(mockCreateNote).toHaveBeenCalledWith('folder-note');
     });
 
-    it('should call onCreateFolder when folder button is clicked', () => {
+    it('should show inline form when folder button is clicked', () => {
       const mockCreateFolder = vi.fn();
       const folder = createMockFolder({ id: 'folder-create' });
 
@@ -239,7 +259,8 @@ describe('FolderItem', () => {
       const folderButton = screen.getByTitle('Nouveau sous-dossier');
       fireEvent.click(folderButton);
 
-      expect(mockCreateFolder).toHaveBeenCalledWith('folder-create');
+      // Le formulaire inline doit s'afficher (input visible)
+      expect(screen.getByPlaceholderText(/nom/i)).toBeInTheDocument();
     });
   });
 

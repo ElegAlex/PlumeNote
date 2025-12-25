@@ -18,7 +18,7 @@ const renderPage = () => {
 describe('ShortcutsPage', () => {
   it('should render the page title', () => {
     renderPage();
-    expect(screen.getByText('Raccourcis clavier')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Raccourcis clavier' })).toBeInTheDocument();
   });
 
   it('should render the search input', () => {
@@ -38,7 +38,7 @@ describe('ShortcutsPage', () => {
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Éditeur - Formatage')).toBeInTheDocument();
     expect(screen.getByText('Éditeur - Actions')).toBeInTheDocument();
-    expect(screen.getByText('Panneaux')).toBeInTheDocument();
+    expect(screen.getByText('Éditeur - Titres')).toBeInTheDocument();
   });
 
   it('should display the total shortcut count', () => {
@@ -82,12 +82,9 @@ describe('ShortcutsPage', () => {
   });
 
   it('should display keyboard key symbols', () => {
-    renderPage();
-    // Les touches sont rendues avec le composant KeyboardKey
-    // On vérifie qu'il y a des éléments kbd
-    const kbdElements = screen.getAllByRole('generic').filter(
-      (el) => el.tagName === 'KBD'
-    );
+    const { container } = renderPage();
+    // Les touches sont rendues avec le composant KeyboardKey (élément kbd)
+    const kbdElements = container.querySelectorAll('kbd');
     expect(kbdElements.length).toBeGreaterThan(0);
   });
 
