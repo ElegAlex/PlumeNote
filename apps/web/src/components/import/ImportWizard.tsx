@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Upload, FolderInput, AlertCircle, X } from 'lucide-react';
 import { useImportStore } from '../../stores/importStore';
 import { useFoldersStore } from '../../stores/folders';
+import { useSidebarStore } from '../../stores/sidebarStore';
 import { Button } from '../ui/Button';
 import { UploadDropzone } from './UploadDropzone';
 import { ImportPreview as ImportPreviewComponent } from './ImportPreview';
@@ -47,6 +48,7 @@ export function ImportWizard({ open, onClose }: ImportWizardProps) {
   } = useImportStore();
 
   const { tree, fetchTree } = useFoldersStore();
+  const { fetchTree: fetchSidebarTree } = useSidebarStore();
 
   // Charger l'arbre des dossiers
   useEffect(() => {
@@ -109,6 +111,7 @@ export function ImportWizard({ open, onClose }: ImportWizardProps) {
     // Rafraichir les dossiers si l'import a reussi
     if (currentJob?.status === 'COMPLETED') {
       fetchTree();
+      fetchSidebarTree();
     }
     clearPreview();
     clearError();

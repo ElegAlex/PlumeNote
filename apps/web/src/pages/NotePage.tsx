@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotesStore } from '../stores/notes';
 import { useFoldersStore } from '../stores/folders';
+import { useSidebarStore } from '../stores/sidebarStore';
 import { useRightPanelStore } from '../stores/rightPanelStore';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
@@ -41,6 +42,7 @@ export function NotePage() {
   } = useNotesStore();
 
   const { tree: folders } = useFoldersStore();
+  const { removeNoteFromFolder } = useSidebarStore();
   const [title, setTitle] = useState('');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -130,7 +132,12 @@ export function NotePage() {
 
     if (window.confirm('Voulez-vous vraiment supprimer cette note ?')) {
       try {
+        const folderId = currentNote?.folderId;
         await deleteNote(noteId);
+        // Mise a jour optimiste de la sidebar
+        if (folderId) {
+          removeNoteFromFolder(folderId, noteId);
+        }
         toast.success('Note supprimée');
         navigate('/');
       } catch {
