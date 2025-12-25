@@ -162,7 +162,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Create .env file
+      - name: Create .env file and SSL certs
         run: |
           cat > docker/.env << 'EOF'
           NODE_ENV=production
@@ -179,6 +179,12 @@ jobs:
           ENABLE_SSL=false
           SEED_DATABASE=true
           EOF
+          # Create dummy SSL certs for nginx
+          mkdir -p docker/nginx/ssl
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout docker/nginx/ssl/privkey.pem \
+            -out docker/nginx/ssl/fullchain.pem \
+            -subj "/CN=localhost"
 
       - name: Start services
         run: |
