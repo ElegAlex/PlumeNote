@@ -19,6 +19,7 @@ services:
     tmpfs:
       - /tmp
       - /run
+      - /var/run/postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-plumenote}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -105,6 +106,12 @@ services:
       COOKIE_SECRET: ${COOKIE_SECRET:?COOKIE_SECRET is required}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
       PORT: 3001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - frontend
       - backend
