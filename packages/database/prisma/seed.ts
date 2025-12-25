@@ -83,7 +83,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const demoUser = await prisma.user.upsert({
     where: { username: 'demo' },
     update: {},
     create: {
@@ -101,6 +101,83 @@ async function main() {
   });
 
   console.log('✅ Users created\n');
+
+  // ----- PERSONAL FOLDERS -----
+  console.log('Creating personal folders...');
+
+  // Dossier personnel admin
+  const adminFolder = await prisma.folder.upsert({
+    where: {
+      parentId_slug: {
+        parentId: null as unknown as string,
+        slug: 'admin-space',
+      },
+    },
+    update: {},
+    create: {
+      name: 'Mon espace',
+      slug: 'admin-space',
+      path: '/admin-space',
+      isPersonal: true,
+      ownerId: adminUser.id,
+      createdById: adminUser.id,
+    },
+  });
+
+  // Acces ecriture pour admin
+  await prisma.folderAccess.upsert({
+    where: {
+      folderId_userId: {
+        folderId: adminFolder.id,
+        userId: adminUser.id,
+      },
+    },
+    update: { canWrite: true },
+    create: {
+      folderId: adminFolder.id,
+      userId: adminUser.id,
+      canRead: true,
+      canWrite: true,
+    },
+  });
+
+  // Dossier personnel demo
+  const demoFolder = await prisma.folder.upsert({
+    where: {
+      parentId_slug: {
+        parentId: null as unknown as string,
+        slug: 'demo-space',
+      },
+    },
+    update: {},
+    create: {
+      name: 'Mon espace',
+      slug: 'demo-space',
+      path: '/demo-space',
+      isPersonal: true,
+      ownerId: demoUser.id,
+      createdById: demoUser.id,
+    },
+  });
+
+  // Acces ecriture pour demo
+  await prisma.folderAccess.upsert({
+    where: {
+      folderId_userId: {
+        folderId: demoFolder.id,
+        userId: demoUser.id,
+      },
+    },
+    update: { canWrite: true },
+    create: {
+      folderId: demoFolder.id,
+      userId: demoUser.id,
+      canRead: true,
+      canWrite: true,
+    },
+  });
+
+  console.log('✅ Personal folders created\n');
 
   // ----- HOMEPAGE CONFIG -----
   console.log('Creating homepage config...');
