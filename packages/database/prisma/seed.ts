@@ -232,6 +232,158 @@ async function main() {
 
   console.log('✅ System config created\n');
 
+  // ----- NOTE TEMPLATES -----
+  console.log('Creating note templates...');
+
+  const builtInTemplates = [
+    {
+      id: '00000000-0000-0000-0001-000000000001',
+      name: 'Note vide',
+      description: 'Une note vierge',
+      content: '',
+      icon: 'FileText',
+      category: 'general',
+      isBuiltIn: true,
+      isPublic: true,
+    },
+    {
+      id: '00000000-0000-0000-0001-000000000002',
+      name: 'Réunion',
+      description: 'Notes de réunion avec participants et actions',
+      content: `# Réunion - {{date}}
+
+## Participants
+-
+
+## Ordre du jour
+1.
+
+## Notes
+
+
+## Actions
+- [ ]
+
+## Prochaine réunion
+`,
+      icon: 'Users',
+      category: 'work',
+      isBuiltIn: true,
+      isPublic: true,
+    },
+    {
+      id: '00000000-0000-0000-0001-000000000003',
+      name: 'Journal quotidien',
+      description: 'Template pour journal personnel',
+      content: `# {{date}}
+
+## Gratitude
+-
+
+## Objectifs du jour
+- [ ]
+
+## Notes
+
+
+## Réflexion
+`,
+      icon: 'BookOpen',
+      category: 'personal',
+      isBuiltIn: true,
+      isPublic: true,
+    },
+    {
+      id: '00000000-0000-0000-0001-000000000004',
+      name: 'Projet',
+      description: 'Fiche projet avec objectifs et étapes',
+      content: `# Projet :
+
+## Objectif
+
+
+## Contexte
+
+
+## Étapes
+- [ ]
+- [ ]
+- [ ]
+
+## Ressources
+-
+
+## Notes
+
+
+## Statut
+- **Début :**
+- **Deadline :**
+- **Avancement :** 0%
+`,
+      icon: 'Briefcase',
+      category: 'work',
+      isBuiltIn: true,
+      isPublic: true,
+    },
+    {
+      id: '00000000-0000-0000-0001-000000000005',
+      name: 'Documentation',
+      description: 'Template pour documentation technique',
+      content: `# Titre
+
+## Description
+
+
+## Installation
+
+\`\`\`bash
+
+\`\`\`
+
+## Utilisation
+
+\`\`\`
+
+\`\`\`
+
+## Configuration
+
+| Option | Description | Défaut |
+|--------|-------------|--------|
+|        |             |        |
+
+## Exemples
+
+
+## Voir aussi
+-
+`,
+      icon: 'FileCode',
+      category: 'technical',
+      isBuiltIn: true,
+      isPublic: true,
+    },
+  ];
+
+  for (const template of builtInTemplates) {
+    await prisma.noteTemplate.upsert({
+      where: { id: template.id },
+      update: {
+        name: template.name,
+        description: template.description,
+        content: template.content,
+        icon: template.icon,
+        category: template.category,
+        isBuiltIn: template.isBuiltIn,
+        isPublic: template.isPublic,
+      },
+      create: template,
+    });
+  }
+
+  console.log('✅ Note templates created\n');
+
   console.log('🎉 Seeding completed successfully!');
   console.log(`
   Default users:
